@@ -60,7 +60,7 @@ public static class Scheduler
 
     /// <summary>Reglas usadas por la limpieza automática: las seleccionadas, sin privacidad ni programas abiertos.</summary>
     private static List<CleanRule> AutoRules() =>
-        JunkCleaner.BuildRules().Where(r => r.Selected && r.Group != "Privacidad").ToList();
+        JunkCleaner.BuildRules().Where(r => r.Selected && r.Group != "Privacidad" && r.Id != "win.recycle").ToList();
 
     public static long MeasureJunk() =>
         AutoRules().Sum(r => { try { return JunkCleaner.Analyze(r, false, CancellationToken.None).Bytes; } catch { return 0L; } });

@@ -161,7 +161,10 @@ object MediaAnalyzer {
             if (assigned[a]) continue
             val g = mutableListOf(ordered[a])
             for (b in a + 1 until ordered.size) {
-                if (!assigned[b] && java.lang.Long.bitCount(ordered[a].hash xor ordered[b].hash) <= threshold) {
+                if (assigned[b]) continue
+                // Vídeos: además de la miniatura parecida, tamaño similar (evita juntar vídeos con la misma portada)
+                if (ordered[a].isVideo && minOf(ordered[a].size, ordered[b].size) < maxOf(ordered[a].size, ordered[b].size) * 0.85) continue
+                if (java.lang.Long.bitCount(ordered[a].hash xor ordered[b].hash) <= threshold) {
                     g.add(ordered[b]); assigned[b] = true
                 }
             }
@@ -175,10 +178,13 @@ object MediaAnalyzer {
     }
 
     /** Borra un archivo multimedia (MediaStore + archivo). */
-    fun delete(ctx: Context, m: MediaRec): Boolean = try {
-        val rows = ctx.contentResolver.delete(m.uri, null, null)
-        rows > 0 || (m.path.isNotEmpty() && File(m.path).delete())
-    } catch (_: Exception) {
-        m.path.isNotEmpty() && File(m.path).delete()
+    fun delete(ctx: Context, m: MediaRec): Boolean {
+        val viaStore = try { ctx.contentResolver.delete(m.uri, null, null) > 0 } catch (_: Exception) { false }
+        if (viaStore) return true
+        if (m.path.isEmpty()) return false
+        val file = File(m.path)
+        val ok = file.delete() || !file.exists()
+        if (ok) android.media.MediaScannerConnection.scanFile(ctx, arrayOf(m.path), null, null)
+        return ok
     }
 }

@@ -130,6 +130,14 @@ public static class DiskTools
                 try { len = f.Length; } catch { continue; }
                 if (len < minSize || len == 0) continue;
                 if (f.FullName.StartsWith(winDir, StringComparison.OrdinalIgnoreCase)) continue;
+                if (IsProgramArea(f.FullName)) continue;
+                try
+                {
+                    // Archivos de sistema, o de OneDrive que solo están en la nube (leerlos los descargaría)
+                    const FileAttributes cloud = FileAttributes.Offline | (FileAttributes)0x00400000 | (FileAttributes)0x00040000;
+                    if ((f.Attributes & (FileAttributes.System | cloud)) != 0) continue;
+                }
+                catch { continue; }
                 if (!bySize.TryGetValue(len, out var l)) bySize[len] = l = [];
                 l.Add(f);
                 if (++scanned % 2000 == 0) progress.Report($"{scanned:N0} archivos encontrados...");
@@ -172,6 +180,17 @@ public static class DiskTools
             gi++;
         }
         return groups.OrderBy(g => g[0].Group).ToList();
+    }
+
+    /// <summary>Carpetas de programas: borrar duplicados ahí (DLL repetidas, etc.) rompería aplicaciones.</summary>
+    private static bool IsProgramArea(string path)
+    {
+        foreach (var dir in new[] { Util.Env("ProgramFiles"), Util.Env("ProgramFiles(x86)"), Util.ProgramData })
+            if (dir.Length > 0 && path.StartsWith(dir + "\\", StringComparison.OrdinalIgnoreCase)) return true;
+        return path.Contains("\\AppData\\", StringComparison.OrdinalIgnoreCase)
+            || path.Contains("\\$Recycle.Bin\\", StringComparison.OrdinalIgnoreCase)
+            || path.Contains("\\node_modules\\", StringComparison.OrdinalIgnoreCase)
+            || path.Contains("\\.git\\", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? Hash(string path, long maxBytes)

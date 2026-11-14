@@ -92,6 +92,11 @@ object AppManager {
         ctx.packageManager.getPackageInfo(pkg, 0); true
     } catch (_: PackageManager.NameNotFoundException) { false }
 
+    private val standardDirs = setOf(
+        "Android", "DCIM", "Download", "Downloads", "Pictures", "Music", "Movies", "Documents", "Alarms", "Notifications",
+        "Podcasts", "Ringtones", "Audiobooks", "Recordings", "Screenshots",
+    )
+
     /** Carpetas que una app desinstalada puede haber dejado en el almacenamiento compartido. */
     fun leftovers(pkg: String, label: String): List<String> {
         val root = Environment.getExternalStorageDirectory().absolutePath
@@ -102,7 +107,7 @@ object AppManager {
         val cleanLabel = label.filter { it.isLetterOrDigit() }.lowercase()
         if (cleanLabel.length >= 4) {
             File(root).listFiles()?.forEach { d ->
-                if (d.isDirectory && d.name.filter { it.isLetterOrDigit() }.lowercase() == cleanLabel) candidates.add(d.absolutePath)
+                if (d.isDirectory && d.name !in standardDirs && d.name.filter { it.isLetterOrDigit() }.lowercase() == cleanLabel) candidates.add(d.absolutePath)
             }
         }
         return candidates.filter { File(it).exists() }

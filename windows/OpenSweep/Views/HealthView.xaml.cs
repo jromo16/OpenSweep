@@ -100,7 +100,7 @@ public partial class HealthView : UserControl
             }
             if (_regIssues.Count > 0)
             {
-                if (AppSettings.Current.BackupRegistryBeforeFix) RegistryCleaner.Backup(_regIssues);
+                RegistryCleaner.Backup(_regIssues);   // en la reparación de un clic siempre se guarda copia
                 regFixed = RegistryCleaner.Fix(_regIssues).fixedCount;
             }
         });

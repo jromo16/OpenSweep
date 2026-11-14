@@ -71,7 +71,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-private enum class SortBy(val title: String) { NAME(t("Nombre")), SIZE(t("Tamaño")), LAST_USED(t("Sin usar")), INSTALLED(t("Instalación")) }
+private enum class SortBy(val title: String) { NAME("Nombre"), SIZE("Tamaño"), LAST_USED("Sin usar"), INSTALLED("Instalación") }
 
 @Composable
 fun AppsScreen(modifier: Modifier) {
@@ -152,7 +152,7 @@ fun AppsScreen(modifier: Modifier) {
             placeholder = { Text(t("Buscar app")) }, singleLine = true,
         )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 8.dp)) {
-            items(SortBy.entries) { s -> FilterChip(selected = sort == s, onClick = { sort = s }, label = { Text(s.title) }) }
+            items(SortBy.entries) { s -> FilterChip(selected = sort == s, onClick = { sort = s }, label = { Text(t(s.title)) }) }
             item { FilterChip(selected = showSystem, onClick = { showSystem = !showSystem }, label = { Text(t("Sistema")) }) }
         }
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())

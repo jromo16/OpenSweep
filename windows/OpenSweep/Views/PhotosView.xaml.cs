@@ -29,6 +29,12 @@ public partial class PhotosView : UserControl
                      Path.Combine(Util.UserProfile, "OneDrive", "Pictures"),
                  })
             if (Directory.Exists(f) && !_folders.Contains(f)) _folders.Add(f);
+#if DEBUG
+        // Solo en desarrollo: --photos-dir <carpeta> analiza únicamente esa carpeta (para pruebas automáticas)
+        var dbg = Environment.GetCommandLineArgs();
+        var di = Array.IndexOf(dbg, "--photos-dir");
+        if (di >= 0 && di + 1 < dbg.Length) { _folders.Clear(); _folders.Add(dbg[di + 1]); }
+#endif
         FoldersList.ItemsSource = _folders;
         foreach (TabItem t in Tabs.Items) t.Content = MakeList();
     }
@@ -110,7 +116,7 @@ public partial class PhotosView : UserControl
         void Set(TabItem tab, string title, List<MediaGroup> groups, int count)
         {
             tab.Header = $"{title} ({count})";
-            ((ListBox)tab.Content).ItemsSource = groups;
+            ((ListBox)tab.Content).ItemsSource = groups.ToList();   // copia nueva: obliga a la lista a refrescarse
         }
         Set(TabSimilar, Loc.T("Fotos similares"), _result.Similar, _result.Similar.Sum(g => g.Items.Count));
         Set(TabVideos, Loc.T("Vídeos similares"), _result.SimilarVideos, _result.SimilarVideos.Sum(g => g.Items.Count));
@@ -143,6 +149,13 @@ public partial class PhotosView : UserControl
         {
             try { Process.Start(new ProcessStartInfo(m.Path) { UseShellExecute = true }); } catch { }
         }
+    }
+
+    private void CheckAll_Click(object sender, RoutedEventArgs e)
+    {
+        // En fotos/vídeos similares nunca se marca la mejor de cada grupo
+        foreach (var i in CurrentItems()) i.Selected = !i.IsBest;
+        ShowResults();
     }
 
     private void Uncheck_Click(object sender, RoutedEventArgs e)
@@ -181,9 +194,18 @@ public partial class PhotosView : UserControl
             (ok, failed) => $"{ok} {Loc.T("archivos enviados a la papelera")} · {Util.FormatBytes(freed)}" + (failed > 0 ? $" · {failed} {Loc.T("no se pudieron eliminar")}" : ""));
         void Remove(List<MediaItem> l) => l.RemoveAll(i => deleted.Contains(i.Path));
         Remove(_result.Blurry); Remove(_result.Dark); Remove(_result.Screenshots);
-        foreach (var g in _result.Similar.Concat(_result.SimilarVideos)) Remove(g.Items);
-        _result.Similar.RemoveAll(g => g.Items.Count < 2);
-        _result.SimilarVideos.RemoveAll(g => g.Items.Count < 2);
+        // Los grupos se RECONSTRUYEN con listas nuevas: modificar una lista que la pantalla ya está mostrando
+        // (sin avisarle) provocaba el error «Index was out of range» al redibujar.
+        void Rebuild(List<MediaGroup> groups)
+        {
+            var rebuilt = groups
+                .Select(g => new MediaGroup { Title = g.Title, Items = g.Items.Where(i => !deleted.Contains(i.Path)).ToList() })
+                .Where(g => g.Items.Count >= 2).ToList();
+            groups.Clear();
+            groups.AddRange(rebuilt);
+        }
+        Rebuild(_result.Similar);
+        Rebuild(_result.SimilarVideos);
         ShowResults();
         StatusText.Text = $"{Loc.T("Se enviaron")} {deleted.Count} {Loc.T("archivos a la papelera.")}";
     }

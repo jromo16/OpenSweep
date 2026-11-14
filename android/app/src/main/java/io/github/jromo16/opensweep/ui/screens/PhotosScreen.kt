@@ -92,9 +92,6 @@ fun PhotosScreen(modifier: Modifier) {
         selected.clear()
         r.similar.forEach { g -> g.filter { !it.isBest }.forEach { selected.add(it.uri.toString()) } }
         r.similarVideos.forEach { g -> g.filter { !it.isBest }.forEach { selected.add(it.uri.toString()) } }
-        (r.blurry + r.dark).forEach { selected.add(it.uri.toString()) }
-        val month = System.currentTimeMillis() - 30L * 86_400_000L
-        r.screenshots.filter { it.modified < month }.forEach { selected.add(it.uri.toString()) }
     }
 
     fun analyze() = scope.launch {
@@ -169,6 +166,11 @@ fun PhotosScreen(modifier: Modifier) {
             }
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onClick = {
+                // Marcar / desmarcar todo en esta pestaña (en similares nunca se marca la mejor)
+                val keys = sectionItems.filter { !(section.isSimilar && it.isBest) }.map { it.uri.toString() }
+                if (keys.all { it in selected }) selected.removeAll(keys) else keys.filter { it !in selected }.forEach { selected.add(it) }
+            }) { Text(if (marked.isEmpty()) t("Marcar todo") else t("Desmarcar")) }
             TextButton(onClick = { analyze() }) { Text(t("Volver a analizar")) }
             Button(onClick = { confirm = true }, enabled = marked.isNotEmpty(), modifier = Modifier.weight(1f)) {
                 Text("${t("Eliminar")} ${marked.size} (${formatBytes(marked.sumOf { it.size })})")

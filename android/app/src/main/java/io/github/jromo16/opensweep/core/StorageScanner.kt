@@ -102,7 +102,8 @@ class StorageScanner(private val ctx: Context) {
         val leftoverDirs = mutableListOf<String>()
         for (base in listOf("$rootPath/Android/media", "$rootPath/Android/data", "$rootPath/Android/obb")) {
             File(base).listFiles()?.forEach { d ->
-                if (d.isDirectory && d.name.contains('.') && d.name !in installed) leftoverDirs.add(d.absolutePath)
+                // Con menos de 30 paquetes visibles la lista está incompleta: sería peligroso deducir que una app no existe
+                if (installed.size >= 30 && d.isDirectory && d.name.contains('.') && d.name !in installed) leftoverDirs.add(d.absolutePath)
             }
         }
         val leftoverFiles = files.filter { f -> leftoverDirs.any { f.path.startsWith("$it/") } }
@@ -198,7 +199,8 @@ class StorageScanner(private val ctx: Context) {
 
     companion object {
         /** Borra archivos y carpetas. Devuelve (bytes liberados, elementos borrados). */
-        fun delete(files: List<FileRec>, folders: List<String> = emptyList()): Pair<Long, Int> {
+        /** @param recursive true solo para restos de apps desinstaladas; las carpetas vacías se borran solo si siguen vacías. */
+        fun delete(files: List<FileRec>, folders: List<String> = emptyList(), recursive: Boolean = false): Pair<Long, Int> {
             var bytes = 0L; var count = 0
             for (f in files) {
                 val file = File(f.path)
@@ -206,7 +208,9 @@ class StorageScanner(private val ctx: Context) {
             }
             for (d in folders.sortedByDescending { it.length }) {
                 val dir = File(d)
-                if (dir.exists() && dir.deleteRecursively()) count++
+                if (!dir.exists()) continue
+                val ok = if (recursive) dir.deleteRecursively() else (dir.list()?.isEmpty() == true && dir.delete())
+                if (ok) count++
             }
             return bytes to count
         }

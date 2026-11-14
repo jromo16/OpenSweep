@@ -20,6 +20,20 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
 
 ### Corregido
 - Windows: el menú lateral no cambiaba de sección al hacer clic.
+- Windows: error «Index was out of range» al eliminar fotos (los archivos sí se borraban, fallaba el refresco de la lista).
+- Windows: las casillas de las tablas se marcan con un solo clic.
+
+### Seguridad (revisión general)
+- Restos del desinstalador: lo que otro programa instalado podría estar usando se muestra **sin marcar**
+  (antes, desinstalar «Python Launcher» ofrecía borrar la carpeta de Python).
+- Duplicados: no se analizan carpetas de programas (AppData, Program Files, ProgramData) ni archivos de OneDrive solo en la nube.
+- Fotos: solo se premarcan las copias de fotos similares; borrosas, oscuras y capturas las elige el usuario. Botón «Marcar todo».
+- Vídeos similares: además de la miniatura, deben tener un tamaño parecido.
+- Limpieza: el historial de navegación y los documentos recientes ya no vienen marcados; se quita la caché de documentos de Office.
+- La limpieza automática nunca vacía la papelera; el Panel de salud siempre guarda copia del registro.
+- Carpetas protegidas: también las que contienen una carpeta del sistema.
+- Android: las carpetas vacías solo se borran si siguen vacías; no se deducen «restos» si la lista de apps está incompleta;
+  nunca se ofrece borrar carpetas estándar (Music, Download…) como resto de una app.
 
 ## [1.1.0] - 2026-11-14
 

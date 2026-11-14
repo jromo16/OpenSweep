@@ -142,7 +142,10 @@ public static class PathHelper
             foreach (var p in ProtectedRoots)
             {
                 if (string.IsNullOrEmpty(p)) continue;
-                if (string.Equals(full, p.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) return true;
+                var root = p.TrimEnd('\\');
+                if (string.Equals(full, root, StringComparison.OrdinalIgnoreCase)) return true;
+                // "C:\Users" o "C:\Program Files (x86)\Common Files" contienen carpetas protegidas
+                if (root.StartsWith(full + "\\", StringComparison.OrdinalIgnoreCase)) return true;
             }
             if (full.StartsWith(Util.WinDir, StringComparison.OrdinalIgnoreCase)) return true;
             return false;

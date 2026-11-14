@@ -97,7 +97,7 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
             val (bytes, count) = withContext(Dispatchers.IO) {
                 var b = 0L; var c = 0
                 toClean.forEach { g ->
-                    val (bb, cc) = StorageScanner.delete(g.files, g.folders)
+                    val (bb, cc) = StorageScanner.delete(g.files, g.folders, recursive = g.type == JunkType.LEFTOVERS)
                     b += bb; c += cc
                 }
                 b to c

@@ -40,6 +40,18 @@ public partial class App : Application
         base.OnExit(e);
     }
 
+    /// <summary>Marca o desmarca la casilla de una tabla con un solo clic.</summary>
+    private void GridCell_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.DataGridCell { IsReadOnly: false, Column: System.Windows.Controls.DataGridCheckBoxColumn } cell) return;
+        if (cell.Content is not System.Windows.Controls.CheckBox box) return;
+        // Se cambia directamente el valor enlazado (UpdateSourceTrigger=PropertyChanged lo guarda en el momento)
+        var binding = System.Windows.Data.BindingOperations.GetBindingExpression(box, System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty);
+        box.SetCurrentValue(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty, !(box.IsChecked ?? false));
+        binding?.UpdateSource();
+        e.Handled = true;
+    }
+
     private void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         MessageBox.Show(Loc.T("Se produjo un error inesperado:\n\n") + e.Exception.Message, "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Error);

@@ -43,8 +43,10 @@ public sealed class Leftover
     public long Size { get; init; }
     public string Reason { get; init; } = "";
     public bool Selected { get; set; } = true;
+    /// <summary>Otro programa instalado podría usar este elemento: se muestra sin marcar.</summary>
+    public bool Shared { get; set; }
 
-    public string ReasonText => Loc.T(Reason);
+    public string ReasonText => Loc.T(Reason) + (Shared ? " · " + Loc.T("posible uso por otro programa") : "");
     public string Kind => IsRegistry ? (ValueName != null ? Loc.T("Valor del registro") : Loc.T("Clave del registro")) : IsDirectory ? Loc.T("Carpeta") : Loc.T("Archivo");
     public string Display => IsRegistry
         ? (Hive == RegistryHive.CurrentUser ? "HKCU\\" : "HKLM\\") + Path + (ValueName != null ? $"  →  {ValueName}" : "") + (View == RegistryView.Registry32 ? Loc.T("  (32 bits)") : "")
@@ -440,14 +442,41 @@ public static class UninstallerService
                         var data = sk?.GetValue("") as string ?? "";
                         if ((installDir != null && installDir.Length > 3 && data.Contains(installDir, StringComparison.OrdinalIgnoreCase)) ||
                             Matches(Path.GetFileNameWithoutExtension(sub), tokens, ScanMode.Seguro))
-                            AddKey(RegistryHive.LocalMachine, view, $"{ap}\\{sub}", null, Loc.T("Ruta de aplicación"));
+                        {
+                            // App Paths es la misma clave en las vistas de 32 y 64 bits: listarla una sola vez
+                            if (seen.Add("apppath|" + sub.ToLowerInvariant()))
+                                AddKey(RegistryHive.LocalMachine, view, $"{ap}\\{sub}", null, Loc.T("Ruta de aplicación"));
+                        }
                     }
                 }
                 catch { }
             }
         }
 
+        MarkShared(p, results);
         return results;
+    }
+
+    /// <summary>
+    /// Seguridad: si el nombre de una carpeta o clave coincide con OTRO programa instalado
+    /// (p. ej. «Python» al desinstalar «Python Launcher») o es su carpeta de instalación, se deja sin marcar.
+    /// </summary>
+    private static void MarkShared(InstalledProgram p, List<Leftover> results)
+    {
+        var fullName = Util.Normalize(StripVersion(p.Name));
+        var others = GetInstalledPrograms(includeSystem: true)
+            .Where(o => !(o.KeyName == p.KeyName && o.Hive == p.Hive && o.View == p.View) && o.Name != p.Name).ToList();
+        var otherNames = others.Select(o => Util.Normalize(StripVersion(o.Name))).Where(n => n.Length >= 4 && n != fullName).Distinct().ToList();
+        var otherDirs = others.Select(o => Environment.ExpandEnvironmentVariables(o.InstallLocation).TrimEnd('\\')).Where(d => d.Length > 3).ToList();
+        foreach (var r in results)
+        {
+            if (r.ValueName != null || (r.IsRegistry && r.Path == p.KeyPath)) continue;
+            var leaf = Util.Normalize(Path.GetFileNameWithoutExtension(r.Path.TrimEnd('\\')));
+            bool shared = leaf.Length >= 4 && leaf != fullName && otherNames.Any(n => n.StartsWith(leaf) || leaf.StartsWith(n));
+            if (!r.IsRegistry && r.IsDirectory)
+                shared |= otherDirs.Any(d => d.Equals(r.Path, StringComparison.OrdinalIgnoreCase) || d.StartsWith(r.Path + "\\", StringComparison.OrdinalIgnoreCase));
+            if (shared) { r.Shared = true; r.Selected = false; }
+        }
     }
 
     private static bool StillInstalledKey(InstalledProgram p) => StillInstalled(p);

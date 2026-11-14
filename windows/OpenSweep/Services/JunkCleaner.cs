@@ -180,7 +180,7 @@ public static class JunkCleaner
         // ================= PRIVACIDAD =================
         rules.Add(new CleanRule
         {
-            Id = "priv.recent", Group = "Privacidad", Section = "Explorador de Windows", Name = "Documentos recientes",
+            Id = "priv.recent", Group = "Privacidad", Section = "Explorador de Windows", Name = "Documentos recientes", DefaultOn = false,
             Paths = () => [new PathSpec(Environment.GetFolderPath(Environment.SpecialFolder.Recent), "*.lnk", false, 0, false)]
         });
         rules.Add(new CleanRule
@@ -237,7 +237,7 @@ public static class JunkCleaner
             });
             rules.Add(new CleanRule
             {
-                Id = $"br.{b.Name}.history", Group = "Navegadores", Section = b.Name, Name = "Historial de navegación", DefaultOn = true, Processes = b.Processes,
+                Id = $"br.{b.Name}.history", Group = "Navegadores", Section = b.Name, Name = "Historial de navegación", DefaultOn = false, Processes = b.Processes,
                 Paths = () => ChromiumProfiles(ud).SelectMany(p => new[]
                 {
                     File1(Path.Combine(p, "History")), File1(Path.Combine(p, "History-journal")),
@@ -313,7 +313,6 @@ public static class JunkCleaner
         App("nuget", "Desarrollo", "Caché HTTP de NuGet", [], Path.Combine(L, @"NuGet\v3-cache"));
         App("java", "Java", "Caché de Java", [], Path.Combine(L, @"Sun\Java\Deployment\cache"), Path.Combine(R, @"Sun\Java\Deployment\cache"));
         App("adobe", "Adobe", "Caché de medios", [], Path.Combine(R, @"Adobe\Common\Media Cache Files"), Path.Combine(R, @"Adobe\Common\Media Cache"));
-        App("office", "Microsoft Office", "Caché de documentos", ["WINWORD", "EXCEL", "POWERPNT"], Path.Combine(L, @"Microsoft\Office\16.0\OfficeFileCache"));
         App("epic", "Epic Games", "Caché web", ["EpicGamesLauncher"], Path.Combine(L, @"EpicGamesLauncher\Saved\webcache"), Path.Combine(L, @"EpicGamesLauncher\Saved\webcache_4430"));
 
         // Carpetas personalizadas del usuario

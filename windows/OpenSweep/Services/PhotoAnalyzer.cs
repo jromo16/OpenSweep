@@ -113,8 +113,8 @@ public static class PhotoAnalyzer
         result.Dark.AddRange(photos.Where(p => p.Brightness < 28).OrderBy(p => p.Brightness).Select(p => p.Clone()));
         result.Screenshots.AddRange(list.Where(i => i.IsScreenshot).OrderBy(i => i.Modified).Select(p => p.Clone()));
         foreach (var i in result.Blurry.Concat(result.Dark).Concat(result.Screenshots)) i.IsBest = false;
-        foreach (var i in result.Blurry.Concat(result.Dark)) i.Selected = true;
-        foreach (var i in result.Screenshots) i.Selected = (DateTime.Now - i.Modified).TotalDays > 30;
+        // La detección de borrosas/oscuras es aproximada: no se marca nada por defecto, lo decide el usuario
+        foreach (var i in result.Blurry.Concat(result.Dark).Concat(result.Screenshots)) i.Selected = false;
         return result;
     }
 
@@ -168,11 +168,16 @@ public static class PhotoAnalyzer
             if (assigned[a]) continue;
             var g = new List<MediaItem> { ordered[a] };
             for (int b = a + 1; b < ordered.Count; b++)
-                if (!assigned[b] && BitOperations.PopCount(ordered[a].Hash ^ ordered[b].Hash) <= threshold)
+            {
+                if (assigned[b]) continue;
+                // Vídeos: además de la miniatura parecida, tamaño similar (evita juntar episodios con la misma portada)
+                if (ordered[a].IsVideo && Math.Min(ordered[a].Size, ordered[b].Size) < Math.Max(ordered[a].Size, ordered[b].Size) * 0.85) continue;
+                if (BitOperations.PopCount(ordered[a].Hash ^ ordered[b].Hash) <= threshold)
                 {
                     g.Add(ordered[b]);
                     assigned[b] = true;
                 }
+            }
             if (g.Count > 1) groups.Add(g);
         }
 

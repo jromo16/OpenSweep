@@ -78,7 +78,7 @@ public partial class DiskAnalyzerView : UserControl
             },
             f => f.Name,
             (ok, failed) => $"{ok} {Loc.T("archivos enviados a la papelera")} · {Util.FormatBytes(freed)}" + (failed > 0 ? $" · {failed} {Loc.T("no se pudieron eliminar")}" : ""));
-        foreach (var f in deleted) _files.Remove(f);
-        FilesGrid.Items.Refresh();
+        _files = _files.Except(deleted).ToList();   // lista nueva: no se modifica la que está en pantalla
+        FilesGrid.ItemsSource = _files;
     }
 }
