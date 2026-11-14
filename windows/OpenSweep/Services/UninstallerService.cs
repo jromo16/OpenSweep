@@ -136,15 +136,90 @@ public static class UninstallerService
                    .ToList();
     }
 
+    /// <summary>
+    /// Busca el icono del programa. Muchos instaladores no lo indican en el registro, así que se prueban
+    /// varias fuentes en orden: DisplayIcon → icono del instalador MSI → ejecutable principal de la carpeta
+    /// de instalación → acceso directo del menú Inicio → ejecutable del desinstalador.
+    /// </summary>
     public static void LoadIcon(InstalledProgram p)
     {
-        var icon = Native.GetIcon(p.DisplayIcon);
-        if (icon == null)
+        try
         {
-            var exe = PathHelper.ExtractPath(p.UninstallString);
-            if (exe != null && !exe.Contains("msiexec", StringComparison.OrdinalIgnoreCase)) icon = Native.GetIcon(exe);
+            p.Icon = Native.GetIcon(p.DisplayIcon)
+                     ?? Native.GetIcon(MsiProductIcon(p))
+                     ?? Native.GetIcon(MainExecutable(p))
+                     ?? Native.GetIcon(StartMenuTarget(p))
+                     ?? UninstallerIcon(p);
         }
-        p.Icon = icon;
+        catch { }
+    }
+
+    private static ImageSource? UninstallerIcon(InstalledProgram p)
+    {
+        var exe = PathHelper.ExtractPath(p.UninstallString);
+        return exe != null && !exe.Contains("msiexec", StringComparison.OrdinalIgnoreCase) ? Native.GetIcon(exe) : null;
+    }
+
+    /// <summary>Icono que Windows Installer guarda para los productos MSI (HKCR\Installer\Products\...\ProductIcon).</summary>
+    private static string? MsiProductIcon(InstalledProgram p)
+    {
+        if (!Guid.TryParse(p.KeyName, out var guid)) return null;
+        // Windows Installer guarda el GUID "empaquetado": cada bloque con los caracteres invertidos
+        var g = guid.ToString("N").ToUpperInvariant();
+        string Rev(string s) { var a = s.ToCharArray(); Array.Reverse(a); return new string(a); }
+        var packed = Rev(g[..8]) + Rev(g[8..12]) + Rev(g[12..16]);
+        for (int i = 16; i < 32; i += 2) packed += Rev(g.Substring(i, 2));
+        foreach (var hive in new[] { RegistryHive.LocalMachine, RegistryHive.CurrentUser })
+        {
+            try
+            {
+                using var k = RegistryKey.OpenBaseKey(hive, RegistryView.Registry64).OpenSubKey($@"SOFTWARE\Classes\Installer\Products\{packed}");
+                if (k?.GetValue("ProductIcon") is string icon && icon.Length > 0) return icon;
+            }
+            catch { }
+        }
+        return null;
+    }
+
+    /// <summary>Ejecutable principal: el .exe de la carpeta de instalación cuyo nombre se parece al del programa (o el más grande).</summary>
+    private static string? MainExecutable(InstalledProgram p)
+    {
+        var dir = Environment.ExpandEnvironmentVariables(p.InstallLocation ?? "").TrimEnd('\\');
+        if (dir.Length <= 3 || !Directory.Exists(dir)) return null;
+        var name = Util.Normalize(StripVersion(p.Name));
+        var exes = Util.SafeFiles(dir, "*.exe", false)
+            .Concat(Util.SafeDirs(dir).Where(d => d.Name is "bin" or "Application" or "app").SelectMany(d => Util.SafeFiles(d.FullName, "*.exe", false)))
+            .Where(f => !f.Name.StartsWith("unins", StringComparison.OrdinalIgnoreCase) && !f.Name.Contains("setup", StringComparison.OrdinalIgnoreCase)
+                        && !f.Name.Contains("update", StringComparison.OrdinalIgnoreCase) && !f.Name.Contains("crash", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (exes.Count == 0) return null;
+        var byName = exes.FirstOrDefault(f =>
+        {
+            var n = Util.Normalize(Path.GetFileNameWithoutExtension(f.Name));
+            return n.Length >= 3 && (name.Contains(n) || n.Contains(name));
+        });
+        try { return (byName ?? exes.OrderByDescending(f => f.Length).First()).FullName; } catch { return null; }
+    }
+
+    // Accesos directos del menú Inicio (nombre normalizado -> archivo .lnk); se leen una sola vez
+    private static readonly Lazy<List<(string name, string path)>> StartMenuShortcuts = new(() =>
+    {
+        var list = new List<(string, string)>();
+        foreach (var root in new[] { Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms), Environment.GetFolderPath(Environment.SpecialFolder.Programs) })
+            foreach (var f in Util.SafeFiles(root, "*.lnk"))
+                list.Add((Util.Normalize(Path.GetFileNameWithoutExtension(f.Name)), f.FullName));
+        return list;
+    });
+
+    private static string? StartMenuTarget(InstalledProgram p)
+    {
+        var name = Util.Normalize(StripVersion(p.Name));
+        if (name.Length < 3) return null;
+        var hit = StartMenuShortcuts.Value.FirstOrDefault(s => s.name == name);
+        if (hit.path == null) hit = StartMenuShortcuts.Value.FirstOrDefault(s => s.name.Length >= 4 && (name.StartsWith(s.name) || s.name.StartsWith(name)));
+        if (hit.path == null) return null;
+        var target = ResolveShortcut(hit.path);
+        return target != null && File.Exists(target) ? target : null;
     }
 
     /// <summary>Crea un punto de restauración del sistema (puede tardar o estar desactivado).</summary>

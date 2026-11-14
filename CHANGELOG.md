@@ -22,6 +22,9 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
 - Windows: el menú lateral no cambiaba de sección al hacer clic.
 - Windows: error «Index was out of range» al eliminar fotos (los archivos sí se borraban, fallaba el refresco de la lista).
 - Windows: las casillas de las tablas se marcan con un solo clic.
+- Windows: la fila seleccionada en las listas ahora se distingue bien (verde con texto blanco).
+- Windows: más programas muestran su icono en el desinstalador (se busca también en el instalador MSI, la carpeta de
+  instalación y el menú Inicio); los que no tienen icono propio muestran uno genérico.
 
 ### Seguridad (revisión general)
 - Restos del desinstalador: lo que otro programa instalado podría estar usando se muestra **sin marcar**

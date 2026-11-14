@@ -46,7 +46,14 @@
                                 <DataGridTemplateColumn Header="" Width="40" CanUserSort="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Image Source="{Binding Icon}" Width="20" Height="20"/>
+                                            <Grid Width="22" Height="22">
+                                                <!-- Icono genérico (se ve solo si el programa no tiene icono propio) -->
+                                                <Border CornerRadius="5" Background="{DynamicResource TileBrush}">
+                                                    <TextBlock Text="&#xECAA;" FontFamily="{StaticResource IconFont}" FontSize="12"
+                                                               Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <Image Source="{Binding Icon}" Width="22" Height="22" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                            </Grid>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

@@ -76,6 +76,13 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                <Style.Triggers>
+                    <!-- Texto blanco sobre la fila seleccionada -->
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Foreground" Value="{DynamicResource SelectionTextBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
             <Style x:Key="GridRow" TargetType="DataGridRow">
                 <Setter Property="Background" Value="Transparent"/>
@@ -84,8 +91,10 @@
                     <Trigger Property="IsMouseOver" Value="True">
                         <Setter Property="Background" Value="{DynamicResource HoverBrush}"/>
                     </Trigger>
+                    <!-- Fila seleccionada: verde sólido con texto blanco (como las listas de macOS) -->
                     <Trigger Property="IsSelected" Value="True">
                         <Setter Property="Background" Value="{DynamicResource SelectionBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource SelectionTextBrush}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
