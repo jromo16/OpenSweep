@@ -19,5 +19,6 @@
     <SolidColorBrush x:Key="BannerBrush" Color="#0B3B2C"/>
     <SolidColorBrush x:Key="BannerTextBrush" Color="#B7F5DC"/>
     <SolidColorBrush x:Key="DangerBrush" Color="#F87171"/>
+    <SolidColorBrush x:Key="DangerFillBrush" Color="#DC2626"/>
     <SolidColorBrush x:Key="WarnBrush" Color="#FBBF24"/>
 </ResourceDictionary>

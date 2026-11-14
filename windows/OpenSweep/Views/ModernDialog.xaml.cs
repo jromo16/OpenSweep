@@ -53,12 +53,7 @@ public partial class ModernDialog : Window
     public Button AddButton(string text, MessageBoxResult result, bool primary = false, bool danger = false, bool isCancel = false)
     {
         var b = new Button { Content = text, MinWidth = 96, Padding = new Thickness(18, 7, 18, 7), Margin = new Thickness(8, 0, 0, 0) };
-        if (primary && danger)
-        {
-            b.SetResourceReference(BackgroundProperty, "DangerBrush");
-            b.Foreground = Brushes.White;
-            b.BorderThickness = new Thickness(0);
-        }
+        if (primary && danger) b.SetResourceReference(StyleProperty, "DangerButtonStyle");
         else if (primary) b.SetResourceReference(StyleProperty, "AccentButtonStyle");
         if (primary) b.IsDefault = true;
         if (isCancel) _cancelResult = result;

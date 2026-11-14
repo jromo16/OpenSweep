@@ -50,6 +50,39 @@
                 <Setter Property="Margin" Value="0,0,0,12"/>
             </Style>
 
+            <!-- ===== Botón de acción destructiva (rojo) con sus propios estados ===== -->
+            <Style x:Key="DangerButtonStyle" TargetType="Button">
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Padding" Value="18,7"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid>
+                                <Border x:Name="Bg" CornerRadius="5" Background="{DynamicResource DangerFillBrush}"/>
+                                <!-- Capa que oscurece al pasar el ratón o pulsar -->
+                                <Border x:Name="Shade" CornerRadius="5" Background="Black" Opacity="0"/>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"
+                                                  TextElement.Foreground="White"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Shade" Property="Opacity" Value="0.12"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Shade" Property="Opacity" Value="0.24"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.5"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- ===== Listas (estilo macOS: limpias, separadores finos) ===== -->
             <Style x:Key="GridHeader" TargetType="DataGridColumnHeader">
                 <Setter Property="Background" Value="Transparent"/>
