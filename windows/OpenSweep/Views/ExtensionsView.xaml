@@ -1,0 +1,28 @@
+<UserControl x:Class="OpenSweep.Views.ExtensionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="Extensiones de navegador" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="Revisa las extensiones instaladas en Chrome, Edge, Brave, Vivaldi, Opera y Firefox. Elimina las que no reconozcas: pueden mostrar anuncios o espiar tu navegación." Style="{StaticResource PageSubtitle}"/>
+        </StackPanel>
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <TextBlock x:Name="CountText" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Actualizar" Click="Refresh_Click"/>
+                <Button Content="Abrir carpeta" Margin="6,0,0,0" Click="Open_Click"/>
+                <Button Content="Buscar en la tienda" Margin="6,0,0,0" Click="Store_Click"/>
+                <Button Content="Eliminar" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="Remove_Click"/>
+            </StackPanel>
+        </DockPanel>
+        <DataGrid x:Name="ExtGrid" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Navegador" Binding="{Binding Browser}" Width="140"/>
+                <DataGridTextColumn Header="Perfil" Binding="{Binding Profile}" Width="100"/>
+                <DataGridTextColumn Header="Extensión" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="Versión" Binding="{Binding Version}" Width="90"/>
+                <DataGridTextColumn Header="Descripción" Binding="{Binding Description}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

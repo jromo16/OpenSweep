@@ -1,0 +1,53 @@
+<UserControl x:Class="OpenSweep.Views.WiperView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <TextBlock Text="Borrado seguro" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="Elimina archivos sin posibilidad de recuperación y borra el espacio libre para que los archivos eliminados antes no puedan recuperarse con programas especializados." Style="{StaticResource PageSubtitle}"/>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="Destructor de archivos" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Style="{StaticResource Muted}" Text="Los archivos se sobrescriben con datos aleatorios, se renombran y se eliminan. NO pasan por la papelera."/>
+                    <DockPanel Margin="0,10,0,0">
+                        <StackPanel DockPanel.Dock="Right" Margin="8,0,0,0">
+                            <Button Content="Añadir archivos" Click="AddFiles_Click" HorizontalAlignment="Stretch"/>
+                            <Button Content="Añadir carpeta" Margin="0,6,0,0" Click="AddFolder_Click" HorizontalAlignment="Stretch"/>
+                            <Button Content="Quitar" Margin="0,6,0,0" Click="Remove_Click" HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        <ListBox x:Name="ShredList" Height="140" SelectionMode="Extended"/>
+                    </DockPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="Pasadas:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="ShredPasses" Width="230" Margin="8,0,0,0" SelectedIndex="0">
+                            <ComboBoxItem Content="1 pasada (rápido)" Tag="1"/>
+                            <ComboBoxItem Content="3 pasadas (DoD 5220.22-M)" Tag="3"/>
+                            <ComboBoxItem Content="7 pasadas (máxima seguridad)" Tag="7"/>
+                        </ComboBox>
+                        <Button x:Name="ShredBtn" Content="Destruir archivos" Padding="20,6" Margin="16,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="Shred_Click"/>
+                    </StackPanel>
+                    <TextBlock x:Name="ShredStatus" Style="{StaticResource Muted}" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="Borrar espacio libre de una unidad" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Style="{StaticResource Muted}" Text="Llena temporalmente el espacio libre con datos y luego lo libera. Puede tardar mucho en discos grandes. En discos SSD, Windows ya borra los bloques libres (TRIM); este proceso desgasta el SSD y no suele ser necesario."/>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <ComboBox x:Name="DriveBox" Width="120"/>
+                        <ComboBox x:Name="WipePasses" Width="230" Margin="8,0,0,0" SelectedIndex="0">
+                            <ComboBoxItem Content="1 pasada (rápido)" Tag="1"/>
+                            <ComboBoxItem Content="3 pasadas (DoD 5220.22-M)" Tag="3"/>
+                        </ComboBox>
+                        <Button x:Name="WipeBtn" Content="Borrar espacio libre" Padding="20,6" Margin="16,0,0,0" Click="Wipe_Click"/>
+                        <Button x:Name="WipeCancel" Content="Cancelar" Margin="6,0,0,0" Visibility="Collapsed" Click="WipeCancel_Click"/>
+                    </StackPanel>
+                    <ProgressBar x:Name="WipeProgress" Height="6" Margin="0,12,0,0" Maximum="100"/>
+                    <TextBlock x:Name="WipeStatus" Style="{StaticResource Muted}" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

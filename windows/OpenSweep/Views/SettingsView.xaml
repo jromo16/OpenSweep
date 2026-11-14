@@ -1,0 +1,75 @@
+<UserControl x:Class="OpenSweep.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+            <TextBlock Text="Opciones" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="Los cambios se guardan automáticamente." Style="{StaticResource PageSubtitle}"/>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="Limpieza" Style="{StaticResource SectionTitle}"/>
+                    <CheckBox x:Name="SecureDelete" Content="Borrado seguro al limpiar (más lento: sobrescribe los archivos antes de eliminarlos)" Click="Save"/>
+                    <CheckBox x:Name="CloseBrowsers" Content="Cerrar navegadores y programas automáticamente antes de limpiar" Margin="0,6,0,0" Click="Save"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="Solo borrar archivos temporales con más de" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="TempAge" Width="120" Margin="8,0" SelectionChanged="TempAge_Changed">
+                            <ComboBoxItem Content="0 horas" Tag="0"/>
+                            <ComboBoxItem Content="24 horas" Tag="24"/>
+                            <ComboBoxItem Content="48 horas" Tag="48"/>
+                            <ComboBoxItem Content="7 días" Tag="168"/>
+                        </ComboBox>
+                        <TextBlock Text="de antigüedad" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="Seguridad" Style="{StaticResource SectionTitle}"/>
+                    <CheckBox x:Name="RestorePoint" Content="Crear un punto de restauración del sistema antes de desinstalar" Click="Save"/>
+                    <CheckBox x:Name="RegBackup" Content="Ofrecer copia de seguridad antes de reparar el registro" Margin="0,6,0,0" Click="Save"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="Incluir carpetas personalizadas" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Style="{StaticResource Muted}" Text="El contenido de estas carpetas se borrará en la Limpieza (grupo «Personalizado»)." Margin="0,0,0,8"/>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Margin="8,0,0,0">
+                            <Button Content="Añadir" Click="AddInclude_Click" HorizontalAlignment="Stretch"/>
+                            <Button Content="Quitar" Margin="0,6,0,0" Click="RemoveInclude_Click" HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        <ListBox x:Name="IncludeList" Height="90"/>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="Excluir (nunca borrar)" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Style="{StaticResource Muted}" Text="Los archivos dentro de estas carpetas nunca se eliminarán durante la limpieza." Margin="0,0,0,8"/>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Margin="8,0,0,0">
+                            <Button Content="Añadir" Click="AddExclude_Click" HorizontalAlignment="Stretch"/>
+                            <Button Content="Quitar" Margin="0,6,0,0" Click="RemoveExclude_Click" HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        <ListBox x:Name="ExcludeList" Height="90"/>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="Acerca de OpenSweep" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Style="{StaticResource Muted}" Text="Limpiador, desinstalador y optimizador libre y de código abierto (licencia MIT)."/>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Content="Proyecto en GitHub" Click="GitHub_Click"/>
+                        <Button Content="Abrir copias de seguridad" Margin="6,0,0,0" Click="Backups_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

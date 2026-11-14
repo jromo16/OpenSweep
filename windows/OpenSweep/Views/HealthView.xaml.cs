@@ -1,0 +1,116 @@
+using System.Windows;
+using System.Windows.Controls;
+using Microsoft.Win32;
+using OpenSweep.Core;
+using OpenSweep.Services;
+
+namespace OpenSweep.Views;
+
+public sealed record DriveRow(string Label, string Detail, double Percent);
+
+public partial class HealthView : UserControl
+{
+    private List<CleanRule> _junkRules = [];
+    private List<RegistryIssue> _regIssues = [];
+
+    public HealthView()
+    {
+        InitializeComponent();
+        LoadSystemInfo();
+    }
+
+    private void LoadSystemInfo()
+    {
+        try
+        {
+            using var nt = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+            var product = nt?.GetValue("ProductName") as string ?? "Windows";
+            var build = Environment.OSVersion.Version.Build;
+            if (build >= 22000) product = product.Replace("Windows 10", "Windows 11");
+            var display = nt?.GetValue("DisplayVersion") as string ?? "";
+            OsText.Text = $"{product} {display} (compilación {build})";
+            using var cpu = Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
+            CpuText.Text = $"Procesador: {(cpu?.GetValue("ProcessorNameString") as string ?? "").Trim()} · {Environment.ProcessorCount} hilos";
+        }
+        catch { }
+        var (total, avail, load) = Native.GetMemory();
+        RamText.Text = $"Memoria: {Util.FormatBytes((long)total)} · en uso {load}% (libre {Util.FormatBytes((long)avail)})";
+        var up = TimeSpan.FromMilliseconds(Environment.TickCount64);
+        UptimeText.Text = $"Encendido desde hace {(int)up.TotalDays} d {up.Hours} h {up.Minutes} min";
+
+        DrivesList.ItemsSource = DriveInfo.GetDrives()
+            .Where(d => d.IsReady && d.DriveType is DriveType.Fixed or DriveType.Removable)
+            .Select(d => new DriveRow(
+                $"{d.Name.TrimEnd('\\')} {d.VolumeLabel}",
+                $"{Util.FormatBytes(d.TotalFreeSpace)} libres de {Util.FormatBytes(d.TotalSize)}",
+                d.TotalSize == 0 ? 0 : (d.TotalSize - d.TotalFreeSpace) * 100.0 / d.TotalSize))
+            .ToList();
+    }
+
+    private async void Scan_Click(object sender, RoutedEventArgs e)
+    {
+        ScanBtn.IsEnabled = FixBtn.IsEnabled = false;
+        Progress.Visibility = Visibility.Visible;
+        ScoreTitle.Text = "Analizando...";
+        ScoreSub.Text = "Esto puede tardar unos segundos.";
+        long junk = 0; int startup = 0;
+        await Task.Run(() =>
+        {
+            _junkRules = JunkCleaner.BuildRules().Where(r => r.Selected && r.Group != "Privacidad").ToList();
+            foreach (var r in _junkRules)
+            {
+                try { junk += JunkCleaner.Analyze(r, false, CancellationToken.None).Bytes; } catch { }
+            }
+            _regIssues = RegistryCleaner.Scan(RegistryCleaner.Categories().Where(c => c.DefaultOn).Select(c => c.Name), null, CancellationToken.None);
+            startup = StartupService.GetEntries(false, false).Count(s => s.Enabled);
+        });
+        JunkText.Text = Util.FormatBytes(junk);
+        RegText.Text = $"{_regIssues.Count} problemas";
+        StartupText.Text = $"{startup} habilitados";
+
+        int problems = (junk > 500L * 1024 * 1024 ? 1 : 0) + (_regIssues.Count > 20 ? 1 : 0) + (startup > 10 ? 1 : 0);
+        ScoreTitle.Text = problems switch
+        {
+            0 => "Tu PC está en buen estado",
+            1 => "Tu PC necesita un poco de atención",
+            _ => "Tu PC necesita atención"
+        };
+        ScoreSub.Text = $"Se pueden liberar {Util.FormatBytes(junk)} y corregir {_regIssues.Count} entradas del registro.";
+        Progress.Visibility = Visibility.Collapsed;
+        ScanBtn.IsEnabled = true;
+        FixBtn.IsEnabled = junk > 0 || _regIssues.Count > 0;
+    }
+
+    private async void Fix_Click(object sender, RoutedEventArgs e)
+    {
+        var browsersOpen = _junkRules.SelectMany(r => r.Processes).Distinct().Where(p => Util.IsProcessRunning(p)).ToList();
+        if (browsersOpen.Count > 0)
+            MessageBox.Show("Algunos programas están abiertos (" + string.Join(", ", browsersOpen) + "). Sus archivos se omitirán; ciérralos para una limpieza completa.",
+                "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Information);
+
+        ScanBtn.IsEnabled = FixBtn.IsEnabled = false;
+        Progress.Visibility = Visibility.Visible;
+        ScoreTitle.Text = "Mejorando...";
+        long freed = 0; int regFixed = 0;
+        await Task.Run(() =>
+        {
+            foreach (var r in _junkRules.Where(r => r.Processes.Length == 0 || !Util.IsProcessRunning(r.Processes)))
+            {
+                try { freed += JunkCleaner.Clean(r, CancellationToken.None).Bytes; } catch { }
+            }
+            if (_regIssues.Count > 0)
+            {
+                if (AppSettings.Current.BackupRegistryBeforeFix) RegistryCleaner.Backup(_regIssues);
+                regFixed = RegistryCleaner.Fix(_regIssues).fixedCount;
+            }
+        });
+        Progress.Visibility = Visibility.Collapsed;
+        ScoreTitle.Text = "¡Listo!";
+        ScoreSub.Text = $"Se liberaron {Util.FormatBytes(freed)} y se corrigieron {regFixed} entradas del registro.";
+        JunkText.Text = "0 B"; RegText.Text = "0 problemas";
+        ScanBtn.IsEnabled = true;
+        LoadSystemInfo();
+    }
+
+    private void Startup_Click(object sender, RoutedEventArgs e) => MainWindow.Current?.Navigate(4);
+}
