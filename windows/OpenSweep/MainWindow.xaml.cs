@@ -9,6 +9,7 @@ namespace OpenSweep;
 
 public sealed record NavItem(string Icon, string Title, Func<UserControl> Factory)
 {
+    public string DisplayTitle => Loc.T(Title);
     public UserControl? Instance { get; set; }
 }
 
@@ -18,19 +19,19 @@ public partial class MainWindow : Window
 
     private readonly List<NavItem> _items =
     [
-        new("", "Panel de salud", () => new HealthView()),
-        new("", "Limpieza", () => new CleanerView()),
-        new("", "Registro", () => new RegistryCleanerView()),
-        new("", "Desinstalador", () => new UninstallerView()),
-        new("", "Inicio de Windows", () => new StartupView()),
-        new("", "Extensiones", () => new ExtensionsView()),
-        new("", "Analizador de disco", () => new DiskAnalyzerView()),
-        new("", "Archivos duplicados", () => new DuplicatesView()),
-        new("", "Fotos y vídeos", () => new PhotosView()),
-        new("", "Borrado seguro", () => new WiperView()),
-        new("", "Actualizar programas", () => new UpdaterView()),
-        new("", "Copias de seguridad", () => new BackupsView()),
-        new("", "Opciones", () => new SettingsView()),
+        new("", Loc.T("Panel de salud"), () => new HealthView()),
+        new("", Loc.T("Limpieza"), () => new CleanerView()),
+        new("", Loc.T("Registro"), () => new RegistryCleanerView()),
+        new("", Loc.T("Desinstalador"), () => new UninstallerView()),
+        new("", Loc.T("Inicio de Windows"), () => new StartupView()),
+        new("", Loc.T("Extensiones"), () => new ExtensionsView()),
+        new("", Loc.T("Analizador de disco"), () => new DiskAnalyzerView()),
+        new("", Loc.T("Archivos duplicados"), () => new DuplicatesView()),
+        new("", Loc.T("Fotos y vídeos"), () => new PhotosView()),
+        new("", Loc.T("Borrado seguro"), () => new WiperView()),
+        new("", Loc.T("Actualizar programas"), () => new UpdaterView()),
+        new("", Loc.T("Copias de seguridad"), () => new BackupsView()),
+        new("", Loc.T("Opciones"), () => new SettingsView()),
     ];
 
     public MainWindow()

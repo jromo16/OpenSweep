@@ -20,7 +20,7 @@ public partial class RegistryCleanerView : UserControl
     private void Bind()
     {
         var view = new ListCollectionView(_issues);
-        view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(RegistryIssue.Category)));
+        view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(RegistryIssue.CategoryText)));
         IssuesGrid.ItemsSource = view;
         FixBtn.IsEnabled = _issues.Count > 0;
     }
@@ -29,15 +29,15 @@ public partial class RegistryCleanerView : UserControl
     {
         ScanBtn.IsEnabled = FixBtn.IsEnabled = false;
         Progress.Visibility = Visibility.Visible;
-        SummaryTitle.Text = "Buscando problemas...";
+        SummaryTitle.Text = Loc.T("Buscando problemas...");
         var cats = _categories.Where(c => c.Selected).Select(c => c.Name).ToList();
         var progress = new Progress<string>(s => SummaryText.Text = s);
         _issues = await Task.Run(() => RegistryCleaner.Scan(cats, progress, CancellationToken.None));
         Bind();
         Progress.Visibility = Visibility.Collapsed;
         ScanBtn.IsEnabled = true;
-        SummaryTitle.Text = _issues.Count == 0 ? "No se encontraron problemas" : $"Se encontraron {_issues.Count} problemas";
-        SummaryText.Text = _issues.Count == 0 ? "El registro está limpio." : "Revisa la lista y pulsa «Reparar seleccionados».";
+        SummaryTitle.Text = _issues.Count == 0 ? Loc.T("No se encontraron problemas") : $"{Loc.T("Se encontraron")} {_issues.Count} {Loc.T("problemas")}";
+        SummaryText.Text = _issues.Count == 0 ? Loc.T("El registro está limpio.") : Loc.T("Revisa la lista y pulsa «Reparar seleccionados».");
     }
 
     private async void Fix_Click(object sender, RoutedEventArgs e)
@@ -49,14 +49,14 @@ public partial class RegistryCleanerView : UserControl
         string? backup = null;
         if (AppSettings.Current.BackupRegistryBeforeFix)
         {
-            var ask = MessageBox.Show("¿Deseas guardar una copia de seguridad de los cambios en el registro?\n(Recomendado)", "OpenSweep",
+            var ask = MessageBox.Show(Loc.T("¿Deseas guardar una copia de seguridad de los cambios en el registro?\n(Recomendado)"), "OpenSweep",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
             if (ask == MessageBoxResult.Cancel) return;
             if (ask == MessageBoxResult.Yes)
             {
                 backup = await Task.Run(() => RegistryCleaner.Backup(selected));
                 if (backup == null &&
-                    MessageBox.Show("No se pudo crear la copia de seguridad. ¿Continuar igualmente?", "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    MessageBox.Show(Loc.T("No se pudo crear la copia de seguridad. ¿Continuar igualmente?"), "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                     return;
             }
         }
@@ -68,8 +68,8 @@ public partial class RegistryCleanerView : UserControl
         _issues = _issues.Except(selected).ToList();
         Bind();
         ScanBtn.IsEnabled = true;
-        SummaryTitle.Text = $"Se repararon {ok} problemas";
-        SummaryText.Text = (failed > 0 ? $"{failed} no se pudieron reparar. " : "") + (backup != null ? $"Copia guardada en: {backup}" : "");
+        SummaryTitle.Text = $"{Loc.T("Se repararon")} {ok} {Loc.T("problemas")}";
+        SummaryText.Text = (failed > 0 ? $"{failed} {Loc.T("no se pudieron reparar.")} " : "") + (backup != null ? $"{Loc.T("Copia guardada en")}: {backup}" : "");
     }
 
     private void CheckAll_Click(object sender, RoutedEventArgs e) { _issues.ForEach(i => i.Selected = true); Bind(); }

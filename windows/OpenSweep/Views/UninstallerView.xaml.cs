@@ -42,7 +42,7 @@ public partial class UninstallerView : UserControl
             ? _programs
             : _programs.Where(p => p.Name.Contains(q, StringComparison.OrdinalIgnoreCase) || p.Publisher.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
         ProgramsGrid.ItemsSource = filtered;
-        CountText.Text = $"{filtered.Count} programas · {Util.FormatBytes(filtered.Sum(p => p.SizeBytes))} en total";
+        CountText.Text = $"{filtered.Count} {Loc.T("programas")} · {Util.FormatBytes(filtered.Sum(p => p.SizeBytes))} {Loc.T("en total")}";
     }
 
     private void Search_Changed(object sender, TextChangedEventArgs e) => ApplyFilter();
@@ -51,7 +51,7 @@ public partial class UninstallerView : UserControl
     private InstalledProgram? Selected()
     {
         if (ProgramsGrid.SelectedItem is InstalledProgram p) return p;
-        MessageBox.Show("Selecciona un programa de la lista.", "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageBox.Show(Loc.T("Selecciona un programa de la lista."), "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Information);
         return null;
     }
 
@@ -64,7 +64,7 @@ public partial class UninstallerView : UserControl
     {
         var p = Selected();
         if (p == null) return;
-        if (MessageBox.Show($"¿Desinstalar «{p.Name}»?\n\nSe ejecutará su desinstalador y después podrás buscar los restos.", "Desinstalar",
+        if (MessageBox.Show($"{Loc.T("¿Desinstalar «")}{p.Name}»?\n\n{Loc.T("Se ejecutará su desinstalador y después podrás buscar los restos.")}", Loc.T("Desinstalar"),
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
 
         UninstallBtn.IsEnabled = false;
@@ -73,17 +73,17 @@ public partial class UninstallerView : UserControl
         {
             if (AppSettings.Current.CreateRestorePointBeforeUninstall)
             {
-                CountText.Text = "Creando punto de restauración del sistema...";
-                await Task.Run(() => UninstallerService.CreateRestorePoint($"OpenSweep: antes de desinstalar {p.Name}"));
+                CountText.Text = Loc.T("Creando punto de restauración del sistema...");
+                await Task.Run(() => UninstallerService.CreateRestorePoint($"{Loc.T("OpenSweep: antes de desinstalar")} {p.Name}"));
             }
-            CountText.Text = $"Ejecutando el desinstalador de {p.Name}...";
+            CountText.Text = $"{Loc.T("Ejecutando el desinstalador de")} {p.Name}...";
             try
             {
                 await UninstallerService.RunUninstallerAsync(p, quiet: false);
             }
             catch (Exception ex)
             {
-                if (MessageBox.Show($"No se pudo ejecutar el desinstalador:\n{ex.Message}\n\n¿Quieres hacer una desinstalación forzada?",
+                if (MessageBox.Show($"{Loc.T("No se pudo ejecutar el desinstalador")}:\n{ex.Message}\n\n{Loc.T("¿Quieres hacer una desinstalación forzada?")}",
                         "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
             }
         }
@@ -101,8 +101,8 @@ public partial class UninstallerView : UserControl
     {
         var p = Selected();
         if (p == null) return;
-        if (MessageBox.Show($"La desinstalación forzada NO ejecuta el desinstalador de «{p.Name}»: busca y elimina directamente sus archivos y claves del registro.\n\n¿Continuar?",
-                "Desinstalación forzada", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        if (MessageBox.Show($"{Loc.T("La desinstalación forzada NO ejecuta el desinstalador de «")}{p.Name}»: {Loc.T("busca y elimina directamente sus archivos y claves del registro.")}\n\n{Loc.T("¿Continuar?")}",
+                Loc.T("Desinstalación forzada"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         new LeftoversWindow(p, forced: true) { Owner = Window.GetWindow(this) }.ShowDialog();
         await LoadPrograms();
     }
@@ -118,7 +118,7 @@ public partial class UninstallerView : UserControl
             dir = exe != null ? Path.GetDirectoryName(exe) ?? "" : "";
         }
         if (Directory.Exists(dir)) Util.OpenInExplorer(dir);
-        else MessageBox.Show("No se conoce la carpeta de instalación de este programa.", "OpenSweep");
+        else MessageBox.Show(Loc.T("No se conoce la carpeta de instalación de este programa."), "OpenSweep");
     }
 
     private void OpenRegistry_Click(object sender, RoutedEventArgs e)
@@ -175,7 +175,7 @@ public partial class UninstallerView : UserControl
             TraceStatus.Text = $"«{trace.Name}»: {trace.Count} {Loc.T("elementos registrados")}";
             await LoadPrograms();
         }
-        catch (Exception ex) { TraceStatus.Text = "Error: " + ex.Message; }
+        catch (Exception ex) { TraceStatus.Text = Loc.T("Error: ") + ex.Message; }
         finally
         {
             MonitorBtn.IsEnabled = true;
@@ -213,7 +213,7 @@ public partial class UninstallerView : UserControl
     private void Hunter_Down(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         HunterTarget.CaptureMouse();
-        CountText.Text = "Suelta el botón sobre la ventana del programa que quieres desinstalar…";
+        CountText.Text = Loc.T("Suelta el botón sobre la ventana del programa que quieres desinstalar…");
     }
 
     private void Hunter_Up(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -223,7 +223,7 @@ public partial class UninstallerView : UserControl
         if (pid == 0 || pid == Environment.ProcessId) { ApplyFilter(); return; }
         string? exe = null;
         try { exe = Process.GetProcessById(pid).MainModule?.FileName; } catch { }
-        if (exe == null) { CountText.Text = "No se pudo identificar esa ventana."; return; }
+        if (exe == null) { CountText.Text = Loc.T("No se pudo identificar esa ventana."); return; }
         ShowOwner(exe, pid);
     }
 
@@ -247,14 +247,14 @@ public partial class UninstallerView : UserControl
         ApplyFilter();
         ProgramsGrid.SelectedItem = owner;
         ProgramsGrid.ScrollIntoView(owner);
-        CountText.Text = $"Encontrado: {owner.Name}";
+        CountText.Text = $"{Loc.T("Encontrado")}: {owner.Name}";
 
         var menu = new ContextMenu();
         void Add(string text, Action a) { var mi = new MenuItem { Header = text }; mi.Click += (_, _) => a(); menu.Items.Add(mi); }
-        Add($"Desinstalar «{owner.Name}»", () => Uninstall_Click(this, new RoutedEventArgs()));
-        Add("Desinstalación forzada", () => Forced_Click(this, new RoutedEventArgs()));
-        Add("Abrir carpeta", () => Util.OpenInExplorer(exe));
-        if (pid != 0) Add("Cerrar el programa", () => { try { Process.GetProcessById(pid).Kill(true); } catch { } });
+        Add($"{Loc.T("Desinstalar «")}{owner.Name}»", () => Uninstall_Click(this, new RoutedEventArgs()));
+        Add(Loc.T("Desinstalación forzada"), () => Forced_Click(this, new RoutedEventArgs()));
+        Add(Loc.T("Abrir carpeta"), () => Util.OpenInExplorer(exe));
+        if (pid != 0) Add(Loc.T("Cerrar el programa"), () => { try { Process.GetProcessById(pid).Kill(true); } catch { } });
         menu.PlacementTarget = HunterTarget;
         menu.IsOpen = true;
     }
@@ -265,7 +265,7 @@ public partial class UninstallerView : UserControl
         StoreBar.Visibility = Visibility.Visible;
         _storeApps = await Task.Run(UninstallerService.GetStoreApps);
         StoreGrid.ItemsSource = _storeApps;
-        StoreCountText.Text = $"{_storeApps.Count} aplicaciones";
+        StoreCountText.Text = $"{_storeApps.Count} {Loc.T("aplicaciones")}";
         StoreBar.Visibility = Visibility.Collapsed;
     }
 
@@ -274,25 +274,25 @@ public partial class UninstallerView : UserControl
         StoreGrid.CommitEdit(DataGridEditingUnit.Row, true);
         var sel = _storeApps.Where(a => a.Selected).ToList();
         if (sel.Count == 0) return;
-        if (MessageBox.Show($"¿Desinstalar {sel.Count} aplicaciones?\n\n" + string.Join("\n", sel.Select(a => "• " + a.Name)), "OpenSweep",
+        if (MessageBox.Show($"{Loc.T("¿Desinstalar")} {sel.Count} {Loc.T("aplicaciones?")}\n\n" + string.Join("\n", sel.Select(a => "• " + a.Name)), "OpenSweep",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         StoreBar.Visibility = Visibility.Visible;
         RemoveStoreBtn.IsEnabled = false;
         int ok = 0;
         foreach (var a in sel)
         {
-            StoreCountText.Text = $"Desinstalando {a.Name}...";
+            StoreCountText.Text = $"{Loc.T("Desinstalando")} {a.Name}...";
             if (await Task.Run(() => UninstallerService.RemoveStoreApp(a))) ok++;
         }
         RemoveStoreBtn.IsEnabled = true;
-        MessageBox.Show($"Se desinstalaron {ok} de {sel.Count} aplicaciones.", "OpenSweep");
+        MessageBox.Show($"{Loc.T("Se desinstalaron")} {ok} de {sel.Count} {Loc.T("aplicaciones.")}", "OpenSweep");
         LoadStore_Click(sender, e);
     }
 
     // ---------------- Forzada manual ----------------
     private void BrowseForced_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new OpenFolderDialog { Title = "Carpeta de instalación del programa" };
+        var dlg = new OpenFolderDialog { Title = Loc.T("Carpeta de instalación del programa") };
         if (dlg.ShowDialog() == true)
         {
             ForcedFolder.Text = dlg.FolderName;
@@ -305,13 +305,13 @@ public partial class UninstallerView : UserControl
         var name = ForcedName.Text.Trim();
         if (name.Length < 3)
         {
-            MessageBox.Show("Escribe el nombre del programa (mínimo 3 letras).", "OpenSweep");
+            MessageBox.Show(Loc.T("Escribe el nombre del programa (mínimo 3 letras)."), "OpenSweep");
             return;
         }
         var folder = ForcedFolder.Text.Trim();
         if (folder.Length > 0 && PathHelper.IsProtectedFolder(folder))
         {
-            MessageBox.Show("Esa carpeta es del sistema y no se puede eliminar.", "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(Loc.T("Esa carpeta es del sistema y no se puede eliminar."), "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         var fake = UninstallerService.FakeProgram(name, folder.Length > 0 ? folder : null);

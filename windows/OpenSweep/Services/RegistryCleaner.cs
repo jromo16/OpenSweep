@@ -23,12 +23,16 @@ public sealed class RegistryIssue
         _ => Hive.ToString()
     };
     public string FullKey => $"{HiveName}\\{KeyPath}";
+    public string CategoryText => Loc.T(Category);
+    public string ProblemText => Problem.Contains(':') ? Loc.T(Problem[..Problem.IndexOf(':')]) + Problem[Problem.IndexOf(':')..]
+                               : Problem.Contains(" (") ? Loc.T(Problem[..Problem.IndexOf(" (")]) + Problem[Problem.IndexOf(" (")..] : Loc.T(Problem);
     public string Entry => ValueName == null ? FullKey : $"{FullKey}  →  {(ValueName.Length == 0 ? "(Predeterminado)" : ValueName)}";
 }
 
 public sealed record RegistryCategory(string Name, bool DefaultOn = true)
 {
     public bool Selected { get; set; } = DefaultOn;
+    public string NameText => Loc.T(Name);
 }
 
 public static class RegistryCleaner

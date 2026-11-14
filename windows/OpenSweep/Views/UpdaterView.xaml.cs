@@ -18,14 +18,14 @@ public partial class UpdaterView : UserControl
     {
         CheckBtn.IsEnabled = UpdateBtn.IsEnabled = false;
         Bar.Visibility = Visibility.Visible;
-        StatusText.Text = "Consultando winget...";
+        StatusText.Text = Loc.T("Consultando winget...");
         bool available = await Task.Run(SoftwareUpdater.IsAvailable);
         if (!available)
         {
             Bar.Visibility = Visibility.Collapsed;
             CheckBtn.IsEnabled = true;
-            StatusText.Text = "winget no está instalado.";
-            if (MessageBox.Show("El Administrador de paquetes de Windows (winget) no está disponible. ¿Abrir la Microsoft Store para instalar «Instalador de aplicación»?",
+            StatusText.Text = Loc.T("winget no está instalado.");
+            if (MessageBox.Show(Loc.T("El Administrador de paquetes de Windows (winget) no está disponible. ¿Abrir la Microsoft Store para instalar «Instalador de aplicación»?"),
                     "OpenSweep", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                 Util.OpenUrl("ms-windows-store://pdp/?productid=9NBLGGH4NNS1");
             return;
@@ -35,7 +35,7 @@ public partial class UpdaterView : UserControl
         Bar.Visibility = Visibility.Collapsed;
         CheckBtn.IsEnabled = true;
         UpdateBtn.IsEnabled = _items.Count > 0;
-        StatusText.Text = _items.Count == 0 ? "Todos tus programas están actualizados." : $"{_items.Count} actualizaciones disponibles.";
+        StatusText.Text = _items.Count == 0 ? Loc.T("Todos tus programas están actualizados.") : $"{_items.Count} {Loc.T("actualizaciones disponibles.")}";
     }
 
     private async void Update_Click(object sender, RoutedEventArgs e)
@@ -48,16 +48,16 @@ public partial class UpdaterView : UserControl
         int ok = 0;
         foreach (var item in sel)
         {
-            item.Status = "Actualizando...";
+            item.Status = Loc.T("Actualizando...");
             UpdatesGrid.Items.Refresh();
-            StatusText.Text = $"Actualizando {item.Name}...";
+            StatusText.Text = $"{Loc.T("Actualizando")} {item.Name}...";
             bool success = await SoftwareUpdater.UpgradeAsync(item);
-            item.Status = success ? "Actualizado" : "Error";
+            item.Status = success ? Loc.T("Actualizado") : "Error";
             if (success) ok++;
             UpdatesGrid.Items.Refresh();
         }
         Bar.Visibility = Visibility.Collapsed;
         CheckBtn.IsEnabled = UpdateBtn.IsEnabled = true;
-        StatusText.Text = $"{ok} de {sel.Count} programas actualizados.";
+        StatusText.Text = $"{ok} de {sel.Count} {Loc.T("programas actualizados.")}";
     }
 }

@@ -11,7 +11,7 @@ public sealed class UpdateItem
     public string Available { get; init; } = "";
     public string Source { get; init; } = "";
     public bool Selected { get; set; } = true;
-    public string Status { get; set; } = "Pendiente";
+    public string Status { get; set; } = Loc.T("Pendiente");
 }
 
 /// <summary>Usa winget (Administrador de paquetes de Windows) para encontrar e instalar actualizaciones.</summary>

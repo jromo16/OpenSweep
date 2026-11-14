@@ -83,7 +83,7 @@ public partial class PhotosView : UserControl
             _result = await Task.Run(() => PhotoAnalyzer.Analyze(roots, threshold, progress, ct), ct);
             ShowResults();
         }
-        catch (OperationCanceledException) { StatusText.Text = "Análisis cancelado."; }
+        catch (OperationCanceledException) { StatusText.Text = Loc.T("Análisis cancelado."); }
         finally
         {
             ScanBtn.IsEnabled = true;
@@ -112,11 +112,11 @@ public partial class PhotosView : UserControl
             tab.Header = $"{title} ({count})";
             ((ListBox)tab.Content).ItemsSource = groups;
         }
-        Set(TabSimilar, "Fotos similares", _result.Similar, _result.Similar.Sum(g => g.Items.Count));
-        Set(TabVideos, "Vídeos similares", _result.SimilarVideos, _result.SimilarVideos.Sum(g => g.Items.Count));
-        Set(TabBlurry, "Borrosas", ByMonth(_result.Blurry), _result.Blurry.Count);
-        Set(TabDark, "Oscuras", ByMonth(_result.Dark), _result.Dark.Count);
-        Set(TabShots, "Capturas de pantalla", ByMonth(_result.Screenshots), _result.Screenshots.Count);
+        Set(TabSimilar, Loc.T("Fotos similares"), _result.Similar, _result.Similar.Sum(g => g.Items.Count));
+        Set(TabVideos, Loc.T("Vídeos similares"), _result.SimilarVideos, _result.SimilarVideos.Sum(g => g.Items.Count));
+        Set(TabBlurry, Loc.T("Borrosas"), ByMonth(_result.Blurry), _result.Blurry.Count);
+        Set(TabDark, Loc.T("Oscuras"), ByMonth(_result.Dark), _result.Dark.Count);
+        Set(TabShots, Loc.T("Capturas de pantalla"), ByMonth(_result.Screenshots), _result.Screenshots.Count);
         UpdateStatus();
     }
 
@@ -127,7 +127,7 @@ public partial class PhotosView : UserControl
     {
         if (_result == null) return;
         var sel = CurrentItems().Where(i => i.Selected).ToList();
-        StatusText.Text = $"{_result.Total:N0} fotos y vídeos analizados · marcados en esta pestaña: {sel.Count} ({Util.FormatBytes(sel.Sum(i => i.Size))})";
+        StatusText.Text = $"{_result.Total:N0} {Loc.T("fotos y vídeos analizados · marcados en esta pestaña")}: {sel.Count} ({Util.FormatBytes(sel.Sum(i => i.Size))})";
     }
 
     private void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -161,11 +161,11 @@ public partial class PhotosView : UserControl
         bool isSimilar = Tabs.SelectedItem == TabSimilar || Tabs.SelectedItem == TabVideos;
         if (isSimilar && groups.Any(g => g.Items.All(i => i.Selected)))
         {
-            MessageBox.Show("Has marcado todas las fotos de algún grupo. Deja al menos una sin marcar en cada grupo.", "OpenSweep",
+            MessageBox.Show(Loc.T("Has marcado todas las fotos de algún grupo. Deja al menos una sin marcar en cada grupo."), "OpenSweep",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (MessageBox.Show($"¿Enviar {sel.Count} archivos ({Util.FormatBytes(sel.Sum(i => i.Size))}) a la papelera?\nPodrás recuperarlos desde la papelera de reciclaje.",
+        if (MessageBox.Show($"{Loc.T("¿Enviar")} {sel.Count} {Loc.T("archivos")} ({Util.FormatBytes(sel.Sum(i => i.Size))}) {Loc.T("a la papelera?")}\n{Loc.T("Podrás recuperarlos desde la papelera de reciclaje.")}",
                 "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
 
         var deleted = await Task.Run(() => sel.Where(i => Native.SendToRecycleBin(i.Path))
@@ -176,6 +176,6 @@ public partial class PhotosView : UserControl
         _result.Similar.RemoveAll(g => g.Items.Count < 2);
         _result.SimilarVideos.RemoveAll(g => g.Items.Count < 2);
         ShowResults();
-        StatusText.Text = $"Se enviaron {deleted.Count} archivos a la papelera.";
+        StatusText.Text = $"{Loc.T("Se enviaron")} {deleted.Count} {Loc.T("archivos a la papelera.")}";
     }
 }

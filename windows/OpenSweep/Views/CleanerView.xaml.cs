@@ -24,7 +24,7 @@ public partial class CleanerView : UserControl
         _rules = JunkCleaner.BuildRules();
         GroupsList.ItemsSource = _rules
             .GroupBy(r => r.Group)
-            .Select(g => new GroupNode(g.Key, g.GroupBy(r => r.Section).Select(s => new SectionNode(s.Key, s.ToList())).ToList()))
+            .Select(g => new GroupNode(Loc.T(g.Key), g.GroupBy(r => r.Section).Select(s => new SectionNode(Loc.T(s.Key), s.ToList())).ToList()))
             .ToList();
     }
 
@@ -47,7 +47,7 @@ public partial class CleanerView : UserControl
     {
         // Solo avisar cuando el cambio lo hace el usuario (no al refrescar la lista)
         if (sender is CheckBox { DataContext: CleanRule r, IsChecked: true } cb && r.Warning != null && (cb.IsMouseOver || cb.IsKeyboardFocused))
-            MessageBox.Show(r.Warning, $"{r.Section} - {r.Name}", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(r.DisplayWarning, $"{r.DisplaySection} - {r.DisplayName}", MessageBoxButton.OK, MessageBoxImage.Information);
         SaveSelection();
     }
 
@@ -67,7 +67,7 @@ public partial class CleanerView : UserControl
     {
         var selected = _rules.Where(r => r.Selected).ToList();
         if (selected.Count == 0) return;
-        if (MessageBox.Show("Se eliminarán de forma permanente los archivos seleccionados. ¿Continuar?", "OpenSweep",
+        if (MessageBox.Show(Loc.T("Se eliminarán de forma permanente los archivos seleccionados. ¿Continuar?"), "OpenSweep",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         await Run(clean: true);
     }
@@ -79,7 +79,7 @@ public partial class CleanerView : UserControl
         var selected = _rules.Where(r => r.Selected).ToList();
         if (selected.Count == 0)
         {
-            SummaryTitle.Text = "Nada seleccionado";
+            SummaryTitle.Text = Loc.T("Nada seleccionado");
             return;
         }
 
@@ -90,12 +90,12 @@ public partial class CleanerView : UserControl
             var running = selected.Where(r => r.Processes.Length > 0 && Util.IsProcessRunning(r.Processes)).ToList();
             if (running.Count > 0)
             {
-                var names = string.Join(", ", running.Select(r => r.Section).Distinct());
+                var names = string.Join(", ", running.Select(r => r.DisplaySection).Distinct());
                 bool close = AppSettings.Current.CloseBrowsersAutomatically;
                 if (!close)
                 {
-                    var answer = MessageBox.Show($"Estos programas están abiertos: {names}.\n\n¿Quieres cerrarlos para limpiarlos?\n\nSí = cerrarlos · No = omitirlos",
-                        "Programas abiertos", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                    var answer = MessageBox.Show($"{Loc.T("Estos programas están abiertos")}: {names}.\n\n{Loc.T("¿Quieres cerrarlos para limpiarlos?")}\n\nSí = cerrarlos · No = omitirlos",
+                        Loc.T("Programas abiertos"), MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
                     if (answer == MessageBoxResult.Cancel) return;
                     close = answer == MessageBoxResult.Yes;
                 }
@@ -107,7 +107,7 @@ public partial class CleanerView : UserControl
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
         SetBusy(true);
-        SummaryTitle.Text = clean ? "Limpiando..." : "Analizando...";
+        SummaryTitle.Text = clean ? Loc.T("Limpiando...") : Loc.T("Analizando...");
         var results = new List<RuleResult>();
         Progress.Value = 0;
         try
@@ -116,7 +116,7 @@ public partial class CleanerView : UserControl
             foreach (var rule in selected)
             {
                 if (skip.Contains(rule)) continue;
-                SummaryText.Text = $"{rule.Section} - {rule.Name}";
+                SummaryText.Text = $"{rule.DisplaySection} - {rule.DisplayName}";
                 var res = await Task.Run(() => clean ? JunkCleaner.Clean(rule, ct) : JunkCleaner.Analyze(rule, false, ct), ct);
                 if (res.Count > 0 || res.Bytes > 0) results.Add(res);
                 Progress.Value = ++i * 100.0 / selected.Count;
@@ -125,14 +125,14 @@ public partial class CleanerView : UserControl
             long total = results.Sum(r => r.Bytes);
             long files = results.Where(r => r.Rule.CustomMeasure == null).Sum(r => r.Count);
             long failed = results.Sum(r => r.Failed);
-            SummaryTitle.Text = clean ? $"Limpieza completada: {Util.FormatBytes(total)} liberados" : $"Se pueden liberar {Util.FormatBytes(total)}";
+            SummaryTitle.Text = clean ? $"{Loc.T("Limpieza completada")}: {Util.FormatBytes(total)} {Loc.T("liberados")}" : $"{Loc.T("Se pueden liberar")} {Util.FormatBytes(total)}";
             SummaryText.Text = clean
-                ? $"{files:N0} archivos eliminados." + (failed > 0 ? $" {failed:N0} archivos en uso no se pudieron eliminar." : "") + (skip.Count > 0 ? " Se omitieron programas abiertos." : "")
-                : $"{files:N0} archivos encontrados. Pulsa «Ejecutar limpieza» para eliminarlos.";
+                ? $"{files:N0} {Loc.T("archivos eliminados.")}" + (failed > 0 ? $" {failed:N0} {Loc.T("archivos en uso no se pudieron eliminar.")}" : "") + (skip.Count > 0 ? Loc.T(" Se omitieron programas abiertos.") : "")
+                : $"{files:N0} {Loc.T("archivos encontrados. Pulsa «Ejecutar limpieza» para eliminarlos.")}";
         }
         catch (OperationCanceledException)
         {
-            SummaryTitle.Text = "Operación cancelada";
+            SummaryTitle.Text = Loc.T("Operación cancelada");
             SummaryText.Text = "";
         }
         finally

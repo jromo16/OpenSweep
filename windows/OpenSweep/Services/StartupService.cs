@@ -25,11 +25,11 @@ public sealed class StartupEntry
 
     public string KindText => Kind switch
     {
-        StartupKind.RegistryRun => "Registro",
-        StartupKind.StartupFolder => "Carpeta Inicio",
-        _ => "Tarea programada"
+        StartupKind.RegistryRun => Loc.T("Registro"),
+        StartupKind.StartupFolder => Loc.T("Carpeta Inicio"),
+        _ => Loc.T("Tarea programada")
     };
-    public string StateText => Enabled ? "Habilitado" : "Deshabilitado";
+    public string StateText => Enabled ? Loc.T("Habilitado") : Loc.T("Deshabilitado");
 }
 
 public sealed class ScheduledTaskJson

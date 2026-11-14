@@ -74,13 +74,13 @@ class StorageScanner(private val ctx: Context) {
                 } else {
                     allEmpty = false
                     files.add(FileRec(c.absolutePath, c.length(), c.lastModified()))
-                    if (++n % 500 == 0) onProgress("$n archivos analizados…")
+                    if (++n % 500 == 0) onProgress("$n ${t("archivos analizados…")}")
                 }
             }
             return allEmpty
         }
         walk(root, 0)
-        onProgress("${files.size} archivos analizados")
+        onProgress("${files.size} ${t("archivos analizados")}")
     }
 
     // ---------------------- Basura ----------------------
@@ -170,7 +170,7 @@ class StorageScanner(private val ctx: Context) {
         val result = mutableListOf<List<FileRec>>()
         var i = 0
         for ((size, group) in bySize) {
-            if (++i % 20 == 0) onProgress("Comparando $i de ${bySize.size} grupos…")
+            if (++i % 20 == 0) onProgress("${t("Comparando")} $i ${t("de")} ${bySize.size} ${t("grupos…")}")
             val partial = group.groupBy { hash(it.path, 64 * 1024) }.filterKeys { it != null }.values.filter { it.size > 1 }
             for (p in partial) {
                 val full = if (size <= 64 * 1024) listOf(p)

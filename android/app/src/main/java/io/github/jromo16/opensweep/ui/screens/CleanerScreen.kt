@@ -79,12 +79,12 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
     fun analyze() {
         scope.launch {
             busy = true
-            status = "Analizando…"
+            status = t("Analizando…")
             val scanner = ScanState.scan(ctx)
             val cache = withContext(Dispatchers.IO) { AppManager.totalCacheBytes(ctx) }
             groups = withContext(Dispatchers.Default) { scanner.junkGroups(cache) }
             val total = groups.filter { it.type in selected }.sumOf { it.bytes }
-            status = "Se pueden liberar ${formatBytes(total)}"
+            status = "${t("Se pueden liberar")} ${formatBytes(total)}"
             busy = false
         }
     }
@@ -92,7 +92,7 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
     fun clean() {
         scope.launch {
             busy = true
-            status = "Limpiando…"
+            status = t("Limpiando…")
             val toClean = groups.filter { it.type in selected }
             val (bytes, count) = withContext(Dispatchers.IO) {
                 var b = 0L; var c = 0
@@ -109,31 +109,31 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
                     catch (_: ActivityNotFoundException) { }
                     catch (_: SecurityException) { }
                 } else {
-                    Toast.makeText(ctx, "Limpia la caché de las apps desde Ajustes › Almacenamiento", Toast.LENGTH_LONG).show()
+                    Toast.makeText(ctx, t("Limpia la caché de las apps desde Ajustes › Almacenamiento"), Toast.LENGTH_LONG).show()
                 }
             }
             ScanState.invalidate()
             StorageWidget.updateAll(ctx)
             groups = emptyList()
-            status = "Listo: ${formatBytes(bytes)} liberados ($count elementos)"
+            status = "${t("Listo")}: ${formatBytes(bytes)} ${t("liberados")} ($count ${t("elementos")})"
             busy = false
         }
     }
 
     Column(modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(16.dp))
-        ScreenTitle("Limpieza", "Elimina archivos basura de forma segura")
+        ScreenTitle(t("Limpieza"), t("Elimina archivos basura de forma segura"))
         if (!perms.storage) {
-            PermissionCard(Icons.Filled.Lock, "Se necesita acceso a los archivos",
-                "Sin este permiso solo se puede limpiar la caché.", "Conceder acceso", perms.requestStorage)
+            PermissionCard(Icons.Filled.Lock, t("Se necesita acceso a los archivos"),
+                t("Sin este permiso solo se puede limpiar la caché."), t("Conceder acceso"), perms.requestStorage)
         }
         if (!perms.usage) {
-            PermissionCard(Icons.Filled.Lock, "Acceso de uso (opcional)",
-                "Permite medir la caché de todas las apps instaladas.", "Conceder", perms.requestUsage)
+            PermissionCard(Icons.Filled.Lock, "${t("Acceso de uso (opcional")})",
+                t("Permite medir la caché de todas las apps instaladas."), t("Conceder"), perms.requestUsage)
         }
 
         SectionCard {
-            Text(if (status.isEmpty()) "Pulsa «Analizar» para empezar" else status, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            Text(if (status.isEmpty()) t("Pulsa «Analizar» para empezar") else status, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
             if (busy) {
                 Spacer(Modifier.height(8.dp))
                 LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -141,8 +141,8 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { analyze() }, enabled = !busy) { Text("Analizar") }
-                Button(onClick = { confirm = true }, enabled = !busy && groups.isNotEmpty() && selected.isNotEmpty()) { Text("Limpiar") }
+                Button(onClick = { analyze() }, enabled = !busy) { Text(t("Analizar")) }
+                Button(onClick = { confirm = true }, enabled = !busy && groups.isNotEmpty() && selected.isNotEmpty()) { Text(t("Limpiar")) }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -175,10 +175,10 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
         val total = groups.filter { it.type in selected }.sumOf { it.bytes }
         AlertDialog(
             onDismissRequest = { confirm = false },
-            title = { Text("¿Limpiar ahora?") },
-            text = { Text("Se eliminarán ${formatBytes(total)} de forma permanente.") },
-            confirmButton = { TextButton(onClick = { confirm = false; clean() }) { Text("Limpiar") } },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text("Cancelar") } },
+            title = { Text(t("¿Limpiar ahora?")) },
+            text = { Text("${t("Se eliminarán")} ${formatBytes(total)} ${t("de forma permanente.")}") },
+            confirmButton = { TextButton(onClick = { confirm = false; clean() }) { Text(t("Limpiar")) } },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text(t("Cancelar")) } },
         )
     }
 }
@@ -190,9 +190,9 @@ private fun JunkRow(group: JunkGroup, analyzed: Boolean, checked: Boolean, onChe
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable(enabled = analyzed && group.count > 0) { expanded = !expanded }) {
             Checkbox(checked = checked, onCheckedChange = onChecked)
             Column(Modifier.weight(1f)) {
-                Text(group.type.title, fontWeight = FontWeight.SemiBold)
-                Text(group.type.description, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                group.note?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary) }
+                Text(t(group.type.title), fontWeight = FontWeight.SemiBold)
+                Text(t(group.type.description), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                group.note?.let { Text(t(it), fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary) }
             }
             if (analyzed) {
                 Column(horizontalAlignment = Alignment.End) {
@@ -207,7 +207,7 @@ private fun JunkRow(group: JunkGroup, analyzed: Boolean, checked: Boolean, onChe
             lines.take(60).forEach {
                 Text(it, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.MiddleEllipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (lines.size > 60) Text("… y ${lines.size - 60} más", fontSize = 12.sp)
+            if (lines.size > 60) Text("… y ${lines.size - 60} ${t("más")}", fontSize = 12.sp)
         }
     }
 }

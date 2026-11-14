@@ -1,3 +1,4 @@
+using OpenSweep.Core;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -11,7 +12,8 @@ public partial class App : Application
         DispatcherUnhandledException += OnUnhandled;
         ApplyBrandAccent();
         base.OnStartup(e);
-        Core.Loc.Init();
+        var li = Array.IndexOf(e.Args, "--lang");
+        Core.Loc.Init(li >= 0 && li + 1 < e.Args.Length ? e.Args[li + 1] : null);
 
         if (e.Args.Contains("--auto-clean"))
         {
@@ -63,7 +65,7 @@ public partial class App : Application
 
     private void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        MessageBox.Show("Se produjo un error inesperado:\n\n" + e.Exception.Message, "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show(Loc.T("Se produjo un error inesperado:\n\n") + e.Exception.Message, "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
 }

@@ -1,10 +1,11 @@
 <UserControl x:Class="OpenSweep.Views.HealthView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:OpenSweep.Core">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
-            <TextBlock Text="Panel de salud" Style="{StaticResource PageTitle}"/>
-            <TextBlock Text="Analiza tu PC en un clic: archivos basura, problemas del registro y programas que ralentizan el arranque." Style="{StaticResource PageSubtitle}"/>
+            <TextBlock Text="{l:T 'Panel de salud'}" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="{l:T 'Analiza tu PC en un clic: archivos basura, problemas del registro y programas que ralentizan el arranque.'}" Style="{StaticResource PageSubtitle}"/>
 
             <!-- Resumen del equipo -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,14">
@@ -40,13 +41,13 @@
                 <StackPanel>
                     <DockPanel>
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                            <Button x:Name="ScanBtn" Content="Analizar PC" Padding="18,8" Click="Scan_Click"/>
-                            <Button x:Name="FixBtn" Content="Mejorarlo ahora" Padding="18,8" Margin="8,0,0,0" IsEnabled="False"
+                            <Button x:Name="ScanBtn" Content="{l:T 'Analizar PC'}" Padding="18,8" Click="Scan_Click"/>
+                            <Button x:Name="FixBtn" Content="{l:T 'Mejorarlo ahora'}" Padding="18,8" Margin="8,0,0,0" IsEnabled="False"
                                     Style="{DynamicResource AccentButtonStyle}" Click="Fix_Click"/>
                         </StackPanel>
                         <StackPanel>
-                            <TextBlock x:Name="ScoreTitle" Text="Aún no se ha analizado" FontSize="18" FontWeight="SemiBold"/>
-                            <TextBlock x:Name="ScoreSub" Text="Pulsa «Analizar PC» para comprobar el estado del equipo." Style="{StaticResource Muted}"/>
+                            <TextBlock x:Name="ScoreTitle" Text="{l:T 'Aún no se ha analizado'}" FontSize="18" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="ScoreSub" Text="{l:T 'Pulsa «Analizar PC» para comprobar el estado del equipo.'}" Style="{StaticResource Muted}"/>
                         </StackPanel>
                     </DockPanel>
                     <ProgressBar x:Name="Progress" Height="4" Margin="0,14,0,0" IsIndeterminate="True" Visibility="Collapsed"/>
@@ -54,27 +55,27 @@
                     <UniformGrid Columns="3" Margin="0,16,0,0">
                         <Border Style="{StaticResource Card}" Margin="0,0,8,0">
                             <StackPanel>
-                                <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{StaticResource AccentBrush}"/>
-                                <TextBlock Text="Archivos basura" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                                <TextBlock Text="{l:T '&#xE74D;'}" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{l:T 'Archivos basura'}" FontWeight="SemiBold" Margin="0,8,0,0"/>
                                 <TextBlock x:Name="JunkText" Text="—" FontSize="20"/>
-                                <TextBlock Text="Temporales, caché y papelera" Style="{StaticResource Muted}"/>
+                                <TextBlock Text="{l:T 'Temporales, caché y papelera'}" Style="{StaticResource Muted}"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource Card}" Margin="4,0">
                             <StackPanel>
-                                <TextBlock Text="&#xE9F5;" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{StaticResource AccentBrush}"/>
-                                <TextBlock Text="Registro" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                                <TextBlock Text="{l:T '&#xE9F5;'}" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{l:T 'Registro'}" FontWeight="SemiBold" Margin="0,8,0,0"/>
                                 <TextBlock x:Name="RegText" Text="—" FontSize="20"/>
-                                <TextBlock Text="Entradas inválidas u obsoletas" Style="{StaticResource Muted}"/>
+                                <TextBlock Text="{l:T 'Entradas inválidas u obsoletas'}" Style="{StaticResource Muted}"/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource Card}" Margin="8,0,0,0">
                             <StackPanel>
-                                <TextBlock Text="&#xE7B5;" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{StaticResource AccentBrush}"/>
-                                <TextBlock Text="Programas de inicio" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                                <TextBlock Text="{l:T '&#xE7B5;'}" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{l:T 'Programas de inicio'}" FontWeight="SemiBold" Margin="0,8,0,0"/>
                                 <TextBlock x:Name="StartupText" Text="—" FontSize="20"/>
-                                <TextBlock Text="Se abren al iniciar Windows" Style="{StaticResource Muted}"/>
-                                <Button Content="Administrar" Margin="0,8,0,0" HorizontalAlignment="Left" Click="Startup_Click"/>
+                                <TextBlock Text="{l:T 'Se abren al iniciar Windows'}" Style="{StaticResource Muted}"/>
+                                <Button Content="{l:T 'Administrar'}" Margin="0,8,0,0" HorizontalAlignment="Left" Click="Startup_Click"/>
                             </StackPanel>
                         </Border>
                     </UniformGrid>

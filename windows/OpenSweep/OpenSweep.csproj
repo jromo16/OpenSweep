@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <Resource Include="app.ico" />
+    <!-- Traducciones compartidas con Android -->
+    <EmbeddedResource Include="..\..\i18n\*.json" LogicalName="i18n.%(Filename).json" />
     <Using Include="System.IO" />
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />

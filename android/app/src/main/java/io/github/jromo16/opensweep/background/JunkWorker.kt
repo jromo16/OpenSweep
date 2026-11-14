@@ -1,5 +1,6 @@
 package io.github.jromo16.opensweep.background
 
+import io.github.jromo16.opensweep.core.t
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -31,6 +32,7 @@ class JunkWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
 
     override suspend fun doWork(): Result {
         val ctx = applicationContext
+        io.github.jromo16.opensweep.core.I18n.init(ctx)
         StorageWidget.updateAll(ctx)
         if (!Prefs.junkAlerts(ctx) || !Permissions.hasStorage(ctx)) return Result.success()
         val scanner = StorageScanner(ctx).apply { scan { } }
@@ -56,7 +58,7 @@ class JunkWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
             if (Build.VERSION.SDK_INT >= 33 &&
                 ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
             val nm = ctx.getSystemService(NotificationManager::class.java)
-            nm.createNotificationChannel(NotificationChannel(CHANNEL, "Avisos de basura", NotificationManager.IMPORTANCE_DEFAULT))
+            nm.createNotificationChannel(NotificationChannel(CHANNEL, t("Avisos de basura"), NotificationManager.IMPORTANCE_DEFAULT))
             val open = PendingIntent.getActivity(
                 ctx, 1,
                 Intent(ctx, MainActivity::class.java).putExtra(MainActivity.EXTRA_TAB, 1).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP),
@@ -64,8 +66,8 @@ class JunkWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
             )
             val n = NotificationCompat.Builder(ctx, CHANNEL)
                 .setSmallIcon(R.drawable.ic_stat_clean)
-                .setContentTitle("Tienes ${formatBytes(bytes)} de basura")
-                .setContentText("Toca para liberar espacio con OpenSweep.")
+                .setContentTitle("${t("Tienes")} ${formatBytes(bytes)} ${t("de basura")}")
+                .setContentText(t("Toca para liberar espacio con OpenSweep."))
                 .setContentIntent(open)
                 .setAutoCancel(true)
                 .build()

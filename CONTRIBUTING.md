@@ -39,6 +39,15 @@ App("miapp", "Mi App", "Caché", ["MiApp"], Path.Combine(L, @"MiApp\Cache"));
 
 Los parámetros son: id, sección, nombre, procesos que deben estar cerrados y carpetas.
 
+## Traducciones
+
+- Los textos de la interfaz se escriben en español y se marcan para traducir:
+  - C#: `Loc.T("Texto")` · XAML: `Text="{l:T 'Texto'}"`
+  - Kotlin: `t("Texto")`
+- Las traducciones están en `i18n/<idioma>.json` (compartidas por Windows y Android). Si añades un texto nuevo,
+  añade también su traducción en `i18n/en.json`.
+- Para un idioma nuevo, copia `i18n/en.json` como `i18n/<código>.json` y traduce los valores.
+
 ## Publicar una versión
 
 Los mantenedores crean una etiqueta `vX.Y.Z`. GitHub Actions compila el `.exe` y el `.apk` y los adjunta a la release automáticamente.

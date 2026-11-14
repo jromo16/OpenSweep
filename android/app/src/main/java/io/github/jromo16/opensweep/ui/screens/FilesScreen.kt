@@ -1,5 +1,6 @@
 package io.github.jromo16.opensweep.ui.screens
 
+import io.github.jromo16.opensweep.core.t
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -90,7 +91,7 @@ fun FilesScreen(modifier: Modifier) {
                     dups = withContext(Dispatchers.IO) { s.duplicates(1 * MB) { status = it } }
                     // marcar todas las copias excepto la más antigua
                     dups.forEach { g -> g.drop(1).forEach { checked.add(it.path) } }
-                    status = "${dups.size} grupos · ${formatBytes(dups.sumOf { it.first().size * (it.size - 1) })} recuperables"
+                    status = "${dups.size} ${t("grupos")} · ${formatBytes(dups.sumOf { it.first().size * (it.size - 1) })} ${t("recuperables")}"
                 }
             }
             busy = false
@@ -101,14 +102,14 @@ fun FilesScreen(modifier: Modifier) {
 
     Column(modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(16.dp))
-        ScreenTitle("Archivos", "Encuentra lo que más espacio ocupa")
+        ScreenTitle(t("Archivos"), t("Encuentra lo que más espacio ocupa"))
         if (!perms.storage) {
-            PermissionCard(Icons.Filled.Lock, "Se necesita acceso a los archivos",
-                "Para analizar fotos, vídeos, descargas y duplicados.", "Conceder acceso", perms.requestStorage)
+            PermissionCard(Icons.Filled.Lock, t("Se necesita acceso a los archivos"),
+                t("Para analizar fotos, vídeos, descargas y duplicados."), t("Conceder acceso"), perms.requestStorage)
             return@Column
         }
         PrimaryTabRow(selectedTabIndex = tab, containerColor = MaterialTheme.colorScheme.background) {
-            listOf("Resumen", "Grandes", "Duplicados").forEachIndexed { i, t ->
+            listOf(t("Resumen"), t("Grandes"), t("Duplicados")).forEachIndexed { i, t ->
                 Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t) })
             }
         }
@@ -124,14 +125,14 @@ fun FilesScreen(modifier: Modifier) {
                     item {
                         SectionCard {
                             val total = stats.sumOf { it.bytes }.coerceAtLeast(1)
-                            Text("Uso por tipo de archivo", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                            Text(t("Uso por tipo de archivo"), fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                             stats.forEach { s ->
-                                LabeledBar("${s.name} (${s.count})", formatBytes(s.bytes), s.bytes.toFloat() / total, Brand)
+                                LabeledBar("${t(s.name)} (${s.count})", formatBytes(s.bytes), s.bytes.toFloat() / total, Brand)
                             }
                         }
                     }
                     item {
-                        TextButton(onClick = { ScanState.invalidate(); load() }) { Text("Volver a analizar") }
+                        TextButton(onClick = { ScanState.invalidate(); load() }) { Text(t("Volver a analizar")) }
                     }
                 }
                 1 -> Column {
@@ -147,7 +148,7 @@ fun FilesScreen(modifier: Modifier) {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         dups.forEachIndexed { gi, g ->
                             item(key = "h$gi") {
-                                Text("Grupo ${gi + 1} · ${g.size} copias de ${formatBytes(g.first().size)}",
+                                Text("${t("Grupo")} ${gi + 1} · ${g.size} ${t("copias de")} ${formatBytes(g.first().size)}",
                                     fontWeight = FontWeight.SemiBold, color = Brand, modifier = Modifier.padding(top = 8.dp))
                             }
                             items(g, key = { "d$gi-${it.path}" }) { f -> FileRow(f, f.path in checked) { c -> if (c) checked.add(f.path) else checked.remove(f.path) } }
@@ -160,7 +161,7 @@ fun FilesScreen(modifier: Modifier) {
         if (checked.isNotEmpty() && tab != 0) {
             val all = (large + dups.flatten()).distinctBy { it.path }.filter { it.path in checked }
             Button(onClick = { confirm = true }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                Text("Eliminar ${all.size} archivos (${formatBytes(all.sumOf { it.size })})")
+                Text("${t("Eliminar")} ${all.size} ${t("archivos")} (${formatBytes(all.sumOf { it.size })})")
             }
         }
     }
@@ -171,11 +172,11 @@ fun FilesScreen(modifier: Modifier) {
         val unsafe = tab == 2 && dups.any { g -> g.all { it.path in checked } }
         AlertDialog(
             onDismissRequest = { confirm = false },
-            title = { Text(if (unsafe) "Revisa la selección" else "¿Eliminar archivos?") },
+            title = { Text(if (unsafe) t("Revisa la selección") else t("¿Eliminar archivos?")) },
             text = {
                 Text(
-                    if (unsafe) "Has marcado todas las copias de algún grupo. Deja al menos una copia sin marcar."
-                    else "Se eliminarán ${all.size} archivos (${formatBytes(all.sumOf { it.size })}) de forma permanente."
+                    if (unsafe) t("Has marcado todas las copias de algún grupo. Deja al menos una copia sin marcar.")
+                    else "${t("Se eliminarán")} ${all.size} ${t("archivos")} (${formatBytes(all.sumOf { it.size })}) ${t("de forma permanente.")}"
                 )
             },
             confirmButton = {
@@ -185,13 +186,13 @@ fun FilesScreen(modifier: Modifier) {
                         busy = true
                         val (bytes, _) = withContext(Dispatchers.IO) { StorageScanner.delete(all) }
                         ScanState.invalidate()
-                        status = "Se liberaron ${formatBytes(bytes)}"
+                        status = "${t("Se liberaron")} ${formatBytes(bytes)}"
                         busy = false
                         load()
                     }
-                }) { Text("Eliminar") }
+                }) { Text(t("Eliminar")) }
             },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text(if (unsafe) "Entendido" else "Cancelar") } },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text(if (unsafe) t("Entendido") else t("Cancelar")) } },
         )
     }
 }

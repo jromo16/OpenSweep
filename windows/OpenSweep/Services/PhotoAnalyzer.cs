@@ -35,7 +35,7 @@ public sealed class MediaGroup
     public required string Title { get; init; }
     public required List<MediaItem> Items { get; init; }
     public long Recoverable => Items.Where(i => i.Selected).Sum(i => i.Size);
-    public string Subtitle => $"{Items.Count} archivos · {Util.FormatBytes(Items.Sum(i => i.Size))}";
+    public string Subtitle => $"{Items.Count} {Loc.T("archivos")} · {Util.FormatBytes(Items.Sum(i => i.Size))}";
 }
 
 public sealed class MediaAnalysis
@@ -93,13 +93,13 @@ public static class PhotoAnalyzer
                 }
             }
             var n = Interlocked.Increment(ref done);
-            if (n % 25 == 0) progress.Report($"Analizando fotos y vídeos: {n:N0} de {files.Count:N0}");
+            if (n % 25 == 0) progress.Report($"{Loc.T("Analizando fotos y vídeos")}: {n:N0} de {files.Count:N0}");
         });
 
         var list = ok.ToList();
         var result = new MediaAnalysis { Total = list.Count };
-        result.Similar.AddRange(GroupSimilar(list.Where(i => !i.IsVideo).ToList(), threshold, "Fotos similares"));
-        result.SimilarVideos.AddRange(GroupSimilar(list.Where(i => i.IsVideo).ToList(), Math.Min(threshold, 6), "Vídeos similares"));
+        result.Similar.AddRange(GroupSimilar(list.Where(i => !i.IsVideo).ToList(), threshold, Loc.T("Fotos similares")));
+        result.SimilarVideos.AddRange(GroupSimilar(list.Where(i => i.IsVideo).ToList(), Math.Min(threshold, 6), Loc.T("Vídeos similares")));
 
         var photos = list.Where(i => !i.IsVideo && !i.IsScreenshot).ToList();
         // Borrosas: nitidez muy baja respecto a la media de la colección
@@ -183,7 +183,7 @@ public static class PhotoAnalyzer
             // Conservar la de mejor calidad: más nítida y más pesada (más resolución)
             var best = g.OrderByDescending(i => Math.Log(i.Size + 1) * Math.Sqrt(i.Sharpness + 1)).First();
             foreach (var i in g) { i.Group = gi; i.IsBest = i == best; i.Selected = i != best; }
-            result.Add(new MediaGroup { Title = $"{title} · grupo {gi}", Items = g.OrderByDescending(i => i.IsBest).ThenByDescending(i => i.Size).ToList() });
+            result.Add(new MediaGroup { Title = $"{title} · {Loc.T("grupo")} {gi}", Items = g.OrderByDescending(i => i.IsBest).ThenByDescending(i => i.Size).ToList() });
             gi++;
         }
         return result;

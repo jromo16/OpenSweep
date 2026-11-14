@@ -20,6 +20,11 @@ public sealed class CleanRule
     public Action? CustomClean { get; init; }
 
     public bool Selected { get; set; }
+
+    // Textos traducidos solo para mostrar (Group/Section/Name se usan también en la lógica)
+    public string DisplayName => Loc.T(Name);
+    public string DisplaySection => Loc.T(Section);
+    public string? DisplayWarning => Warning == null ? null : Loc.T(Warning);
 }
 
 public sealed class RuleResult
@@ -29,7 +34,7 @@ public sealed class RuleResult
     public long Count { get; set; }
     public long Failed { get; set; }
     public List<string> Files { get; } = [];
-    public string Display => $"{Rule.Section} - {Rule.Name}";
+    public string Display => $"{Rule.DisplaySection} - {Rule.DisplayName}";
     public string SizeText => Util.FormatBytes(Bytes);
 }
 
@@ -341,7 +346,7 @@ public static class JunkCleaner
         // Con lista blanca: se borran filas dentro de la base de datos en lugar del archivo completo
         return new CleanRule
         {
-            Id = id, Group = "Navegadores", Section = section, Name = $"Cookies (se conservan {keep.Count} sitios)", DefaultOn = false, Processes = procs,
+            Id = id, Group = "Navegadores", Section = section, Name = "Cookies (excepto los sitios protegidos)", DefaultOn = false, Processes = procs,
             CustomMeasure = () => (0, dbs().Sum(d => CookieKeeper.Process(d, keep, false))),
             CustomClean = () => { foreach (var d in dbs()) CookieKeeper.Process(d, keep, true); },
         };

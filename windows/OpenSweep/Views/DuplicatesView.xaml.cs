@@ -49,9 +49,9 @@ public partial class DuplicatesView : UserControl
             _files = groups.SelectMany(g => g).ToList();
             DupGrid.ItemsSource = _files;
             long wasted = groups.Sum(g => g[0].Size * (g.Count - 1));
-            StatusText.Text = $"{groups.Count:N0} grupos de duplicados · {Util.FormatBytes(wasted)} recuperables";
+            StatusText.Text = $"{groups.Count:N0} {Loc.T("grupos de duplicados")} · {Util.FormatBytes(wasted)} {Loc.T("recuperables")}";
         }
-        catch (OperationCanceledException) { StatusText.Text = "Búsqueda cancelada."; }
+        catch (OperationCanceledException) { StatusText.Text = Loc.T("Búsqueda cancelada."); }
         finally
         {
             SearchBtn.IsEnabled = true;
@@ -81,11 +81,11 @@ public partial class DuplicatesView : UserControl
         var fullGroups = _files.GroupBy(f => f.Group).Where(g => g.All(f => f.Selected)).Select(g => g.Key).ToList();
         if (fullGroups.Count > 0)
         {
-            MessageBox.Show($"Has marcado todas las copias de {fullGroups.Count} grupo(s) (p. ej. grupo {fullGroups[0]}). Deja al menos una copia sin marcar en cada grupo.",
+            MessageBox.Show($"{Loc.T("Has marcado todas las copias de")} {fullGroups.Count} {Loc.T("grupo(s) (p. ej. grupo")} {fullGroups[0]}). {Loc.T("Deja al menos una copia sin marcar en cada grupo.")}",
                 "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (MessageBox.Show($"¿Enviar {sel.Count} archivos duplicados ({Util.FormatBytes(sel.Sum(f => f.Size))}) a la papelera?", "OpenSweep",
+        if (MessageBox.Show($"{Loc.T("¿Enviar")} {sel.Count} {Loc.T("archivos duplicados")} ({Util.FormatBytes(sel.Sum(f => f.Size))}) {Loc.T("a la papelera?")}", "OpenSweep",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         var deleted = await Task.Run(() => sel.Where(f => Native.SendToRecycleBin(f.Path)).ToList());
         _files = _files.Except(deleted).ToList();
@@ -93,6 +93,6 @@ public partial class DuplicatesView : UserControl
         var single = _files.GroupBy(f => f.Group).Where(g => g.Count() < 2).SelectMany(g => g).ToList();
         _files = _files.Except(single).ToList();
         DupGrid.ItemsSource = _files;
-        StatusText.Text = $"Se enviaron {deleted.Count} archivos a la papelera.";
+        StatusText.Text = $"{Loc.T("Se enviaron")} {deleted.Count} {Loc.T("archivos a la papelera.")}";
     }
 }

@@ -28,8 +28,8 @@ public sealed class InstalledProgram
     public string KeyPath => $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{KeyName}";
     public string SizeText => SizeBytes > 0 ? Util.FormatBytes(SizeBytes) : "";
     public string DateText => InstallDate?.ToString("dd/MM/yyyy") ?? "";
-    public string Arch => View == RegistryView.Registry32 && Environment.Is64BitOperatingSystem ? "32 bits" : "64 bits";
-    public string Scope => Hive == RegistryHive.CurrentUser ? "Usuario actual" : "Todos los usuarios";
+    public string Arch => View == RegistryView.Registry32 && Environment.Is64BitOperatingSystem ? Loc.T("32 bits") : Loc.T("64 bits");
+    public string Scope => Hive == RegistryHive.CurrentUser ? Loc.T("Usuario actual") : Loc.T("Todos los usuarios");
 }
 
 public sealed class Leftover
@@ -44,9 +44,10 @@ public sealed class Leftover
     public string Reason { get; init; } = "";
     public bool Selected { get; set; } = true;
 
-    public string Kind => IsRegistry ? (ValueName != null ? "Valor del registro" : "Clave del registro") : IsDirectory ? "Carpeta" : "Archivo";
+    public string ReasonText => Loc.T(Reason);
+    public string Kind => IsRegistry ? (ValueName != null ? Loc.T("Valor del registro") : Loc.T("Clave del registro")) : IsDirectory ? Loc.T("Carpeta") : Loc.T("Archivo");
     public string Display => IsRegistry
-        ? (Hive == RegistryHive.CurrentUser ? "HKCU\\" : "HKLM\\") + Path + (ValueName != null ? $"  →  {ValueName}" : "") + (View == RegistryView.Registry32 ? "  (32 bits)" : "")
+        ? (Hive == RegistryHive.CurrentUser ? "HKCU\\" : "HKLM\\") + Path + (ValueName != null ? $"  →  {ValueName}" : "") + (View == RegistryView.Registry32 ? Loc.T("  (32 bits)") : "")
         : Path;
     public string SizeText => Size > 0 ? Util.FormatBytes(Size) : "";
 }
@@ -313,7 +314,7 @@ public static class UninstallerService
 
         // ---- 1. Carpeta de instalación ----
         if (!string.IsNullOrWhiteSpace(p.InstallLocation))
-            AddDir(Environment.ExpandEnvironmentVariables(p.InstallLocation).TrimEnd('\\'), "Carpeta de instalación");
+            AddDir(Environment.ExpandEnvironmentVariables(p.InstallLocation).TrimEnd('\\'), Loc.T("Carpeta de instalación"));
         var uninstExe = PathHelper.ExtractPath(p.UninstallString);
         if (uninstExe != null && !p.IsMsi && Path.IsPathRooted(uninstExe))
         {
@@ -324,7 +325,7 @@ public static class UninstallerService
         // ---- 2. Carpetas comunes ----
         var roots = new List<string>
         {
-            Util.Env("ProgramFiles"), Util.Env("ProgramFiles(x86)"), Util.ProgramData,
+            Util.Env("ProgramFiles"), Util.Env(Loc.T("ProgramFiles(x86)")), Util.ProgramData,
             Util.LocalAppData, Util.RoamingAppData, Path.Combine(Util.UserProfile, @"AppData\LocalLow"),
             Path.Combine(Util.LocalAppData, "Programs"),
             Path.Combine(Util.Env("ProgramFiles"), "Common Files"), Path.Combine(Util.Env("ProgramFiles(x86)"), "Common Files"),
@@ -337,18 +338,18 @@ public static class UninstallerService
             ct.ThrowIfCancellationRequested();
             foreach (var d in Util.SafeDirs(root))
             {
-                if (Matches(d.Name, tokens, mode)) { AddDir(d.FullName, "Carpeta de datos del programa"); continue; }
+                if (Matches(d.Name, tokens, mode)) { AddDir(d.FullName, Loc.T("Carpeta de datos del programa")); continue; }
                 // carpeta del fabricante -> buscar dentro
                 if (mode >= ScanMode.Moderado && publisher.Length >= 3 && Util.Normalize(d.Name) == publisher && !GenericWords.Contains(publisher))
                 {
                     var subs = Util.SafeDirs(d.FullName).ToList();
                     foreach (var sd in subs)
-                        if (Matches(sd.Name, tokens, mode)) AddDir(sd.FullName, "Carpeta dentro del fabricante");
+                        if (Matches(sd.Name, tokens, mode)) AddDir(sd.FullName, Loc.T("Carpeta dentro del fabricante"));
                     // carpeta del fabricante vacía o solo con restos de este programa
                     if (mode == ScanMode.Avanzado && subs.Count > 0 && subs.All(sd => Matches(sd.Name, tokens, mode)))
-                        AddDir(d.FullName, "Carpeta del fabricante (solo contiene este programa)");
+                        AddDir(d.FullName, Loc.T("Carpeta del fabricante (solo contiene este programa)"));
                     else if (subs.Count == 0 && !Directory.EnumerateFiles(d.FullName).Any())
-                        AddDir(d.FullName, "Carpeta del fabricante vacía");
+                        AddDir(d.FullName, Loc.T("Carpeta del fabricante vacía"));
                 }
             }
         }
@@ -369,7 +370,7 @@ public static class UninstallerService
 
         // ---- 4. Registro ----
         ct.ThrowIfCancellationRequested();
-        if (StillInstalledKey(p)) AddKey(p.Hive, p.View, p.KeyPath, null, "Entrada de desinstalación");
+        if (StillInstalledKey(p)) AddKey(p.Hive, p.View, p.KeyPath, null, Loc.T("Entrada de desinstalación"));
 
         var regRoots = new List<(RegistryHive, RegistryView, string)>
         {
@@ -387,15 +388,15 @@ public static class UninstallerService
                 if (sw == null) continue;
                 foreach (var sub in sw.GetSubKeyNames())
                 {
-                    if (Matches(sub, tokens, mode)) { AddKey(hive, view, $"{path}\\{sub}", null, "Clave de configuración"); continue; }
+                    if (Matches(sub, tokens, mode)) { AddKey(hive, view, $"{path}\\{sub}", null, Loc.T("Clave de configuración")); continue; }
                     if (mode >= ScanMode.Moderado && publisher.Length >= 3 && Util.Normalize(sub) == publisher && !GenericWords.Contains(publisher))
                     {
                         using var pub = sw.OpenSubKey(sub);
                         if (pub == null) continue;
                         var names = pub.GetSubKeyNames();
                         foreach (var ps in names)
-                            if (Matches(ps, tokens, mode)) AddKey(hive, view, $"{path}\\{sub}\\{ps}", null, "Clave dentro del fabricante");
-                        if (names.Length == 0 && pub.ValueCount == 0) AddKey(hive, view, $"{path}\\{sub}", null, "Clave de fabricante vacía");
+                            if (Matches(ps, tokens, mode)) AddKey(hive, view, $"{path}\\{sub}\\{ps}", null, Loc.T("Clave dentro del fabricante"));
+                        if (names.Length == 0 && pub.ValueCount == 0) AddKey(hive, view, $"{path}\\{sub}", null, Loc.T("Clave de fabricante vacía"));
                     }
                 }
             }
@@ -419,7 +420,7 @@ public static class UninstallerService
                 {
                     var data = k.GetValue(v) as string ?? "";
                     if (Matches(v, tokens, mode) || (installDir != null && installDir.Length > 3 && data.Contains(installDir, StringComparison.OrdinalIgnoreCase)))
-                        AddKey(hive, view, path, v, "Programa de inicio");
+                        AddKey(hive, view, path, v, Loc.T("Programa de inicio"));
                 }
             }
             catch { }
@@ -439,7 +440,7 @@ public static class UninstallerService
                         var data = sk?.GetValue("") as string ?? "";
                         if ((installDir != null && installDir.Length > 3 && data.Contains(installDir, StringComparison.OrdinalIgnoreCase)) ||
                             Matches(Path.GetFileNameWithoutExtension(sub), tokens, ScanMode.Seguro))
-                            AddKey(RegistryHive.LocalMachine, view, $"{ap}\\{sub}", null, "Ruta de aplicación");
+                            AddKey(RegistryHive.LocalMachine, view, $"{ap}\\{sub}", null, Loc.T("Ruta de aplicación"));
                     }
                 }
                 catch { }
@@ -509,7 +510,7 @@ public static class UninstallerService
     {
         var issues = items.Select(i => new RegistryIssue
         {
-            Category = "Restos",
+            Category = Loc.T("Restos"),
             Hive = i.Hive,
             View = i.View,
             KeyPath = i.Path,

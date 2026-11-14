@@ -1,41 +1,42 @@
 <UserControl x:Class="OpenSweep.Views.UninstallerView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:OpenSweep.Core">
     <DockPanel>
         <StackPanel DockPanel.Dock="Top">
-            <TextBlock Text="Desinstalador" Style="{StaticResource PageTitle}"/>
-            <TextBlock Text="Desinstala programas y elimina los restos que dejan (carpetas, archivos y claves del registro). Usa la desinstalación forzada para programas rotos o parcialmente desinstalados." Style="{StaticResource PageSubtitle}"/>
+            <TextBlock Text="{l:T 'Desinstalador'}" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="{l:T 'Desinstala programas y elimina los restos que dejan (carpetas, archivos y claves del registro). Usa la desinstalación forzada para programas rotos o parcialmente desinstalados.'}" Style="{StaticResource PageSubtitle}"/>
         </StackPanel>
         <TabControl>
             <!-- ================= Programas ================= -->
-            <TabItem Header="Programas instalados">
+            <TabItem Header="{l:T 'Programas instalados'}">
                 <DockPanel Margin="0,12,0,0">
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                             <!-- Modo cazador: arrastrar la mira sobre la ventana de un programa -->
                             <Border x:Name="HunterTarget" Width="36" Height="32" CornerRadius="6" Margin="0,0,12,0" Cursor="Cross"
                                     Background="#262C34" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1"
-                                    ToolTip="Modo cazador: mantén pulsado y suelta sobre la ventana de un programa para desinstalarlo. También puedes arrastrar aquí un acceso directo."
+                                    ToolTip="{l:T 'Modo cazador: mantén pulsado y suelta sobre la ventana de un programa para desinstalarlo. También puedes arrastrar aquí un acceso directo.'}"
                                     MouseLeftButtonDown="Hunter_Down" MouseLeftButtonUp="Hunter_Up">
-                                <TextBlock Text="&#xE7B3;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="{StaticResource AccentBrush}"
+                                <TextBlock Text="{l:T '&#xE7B3;'}" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="{StaticResource AccentBrush}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <CheckBox x:Name="ShowSystem" Content="Mostrar componentes del sistema" VerticalAlignment="Center" Margin="0,0,12,0" Click="Refresh_Click"/>
-                            <Button Content="Actualizar" Click="Refresh_Click"/>
+                            <CheckBox x:Name="ShowSystem" Content="{l:T 'Mostrar componentes del sistema'}" VerticalAlignment="Center" Margin="0,0,12,0" Click="Refresh_Click"/>
+                            <Button Content="{l:T 'Actualizar'}" Click="Refresh_Click"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE721;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource MutedBrush}"/>
-                            <TextBox x:Name="SearchBox" Width="320" TextChanged="Search_Changed" ToolTip="Buscar por nombre o fabricante"/>
+                            <TextBlock Text="{l:T '&#xE721;'}" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource MutedBrush}"/>
+                            <TextBox x:Name="SearchBox" Width="320" TextChanged="Search_Changed" ToolTip="{l:T 'Buscar por nombre o fabricante'}"/>
                         </StackPanel>
                     </DockPanel>
                     <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                         <TextBlock x:Name="CountText" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Abrir carpeta" Click="OpenFolder_Click"/>
-                            <Button Content="Ver en el registro" Margin="6,0,0,0" Click="OpenRegistry_Click"/>
-                            <Button Content="Buscar en Internet" Margin="6,0,0,0" Click="SearchWeb_Click"/>
-                            <Button Content="Desinstalación forzada" Margin="6,0,0,0" Click="Forced_Click"/>
-                            <Button x:Name="UninstallBtn" Content="Desinstalar" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="Uninstall_Click"/>
+                            <Button Content="{l:T 'Abrir carpeta'}" Click="OpenFolder_Click"/>
+                            <Button Content="{l:T 'Ver en el registro'}" Margin="6,0,0,0" Click="OpenRegistry_Click"/>
+                            <Button Content="{l:T 'Buscar en Internet'}" Margin="6,0,0,0" Click="SearchWeb_Click"/>
+                            <Button Content="{l:T 'Desinstalación forzada'}" Margin="6,0,0,0" Click="Forced_Click"/>
+                            <Button x:Name="UninstallBtn" Content="{l:T 'Desinstalar'}" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="Uninstall_Click"/>
                         </StackPanel>
                     </DockPanel>
                     <Grid>
@@ -49,12 +50,12 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="2*"/>
-                                <DataGridTextColumn Header="Fabricante" Binding="{Binding Publisher}" Width="*"/>
-                                <DataGridTextColumn Header="Versión" Binding="{Binding Version}" Width="110"/>
-                                <DataGridTextColumn Header="Tamaño" Binding="{Binding SizeText}" SortMemberPath="SizeBytes" Width="90"/>
-                                <DataGridTextColumn Header="Instalado" Binding="{Binding DateText}" SortMemberPath="InstallDate" Width="95"/>
-                                <DataGridTextColumn Header="Tipo" Binding="{Binding Arch}" Width="75"/>
+                                <DataGridTextColumn Header="{l:T 'Nombre'}" Binding="{Binding Name}" Width="2*"/>
+                                <DataGridTextColumn Header="{l:T 'Fabricante'}" Binding="{Binding Publisher}" Width="*"/>
+                                <DataGridTextColumn Header="{l:T 'Versión'}" Binding="{Binding Version}" Width="110"/>
+                                <DataGridTextColumn Header="{l:T 'Tamaño'}" Binding="{Binding SizeText}" SortMemberPath="SizeBytes" Width="90"/>
+                                <DataGridTextColumn Header="{l:T 'Instalado'}" Binding="{Binding DateText}" SortMemberPath="InstallDate" Width="95"/>
+                                <DataGridTextColumn Header="{l:T 'Tipo'}" Binding="{Binding Arch}" Width="75"/>
                             </DataGrid.Columns>
                         </DataGrid>
                         <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Height="4" VerticalAlignment="Top" Visibility="Collapsed"/>
@@ -63,22 +64,22 @@
             </TabItem>
 
             <!-- ================= Apps de Windows ================= -->
-            <TabItem Header="Apps de Windows (Store)">
+            <TabItem Header="{l:T 'Apps de Windows (Store)'}">
                 <DockPanel Margin="0,12,0,0">
                     <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                         <TextBlock x:Name="StoreCountText" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Cargar / actualizar" Click="LoadStore_Click"/>
-                            <Button x:Name="RemoveStoreBtn" Content="Desinstalar seleccionadas" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="RemoveStore_Click"/>
+                            <Button Content="{l:T 'Cargar / actualizar'}" Click="LoadStore_Click"/>
+                            <Button x:Name="RemoveStoreBtn" Content="{l:T 'Desinstalar seleccionadas'}" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="RemoveStore_Click"/>
                         </StackPanel>
                     </DockPanel>
                     <Grid>
                         <DataGrid x:Name="StoreGrid">
                             <DataGrid.Columns>
                                 <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
-                                <DataGridTextColumn Header="Aplicación" Binding="{Binding Name}" Width="2*" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="Fabricante" Binding="{Binding Publisher}" Width="*" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="Versión" Binding="{Binding Version}" Width="120" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="{l:T 'Aplicación'}" Binding="{Binding Name}" Width="2*" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="{l:T 'Fabricante'}" Binding="{Binding Publisher}" Width="*" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="{l:T 'Versión'}" Binding="{Binding Version}" Width="120" IsReadOnly="True"/>
                             </DataGrid.Columns>
                         </DataGrid>
                         <ProgressBar x:Name="StoreBar" IsIndeterminate="True" Height="4" VerticalAlignment="Top" Visibility="Collapsed"/>
@@ -87,44 +88,44 @@
             </TabItem>
 
             <!-- ================= Monitor de instalaciones ================= -->
-            <TabItem Header="Monitor de instalaciones">
+            <TabItem Header="{l:T 'Monitor de instalaciones'}">
                 <DockPanel Margin="0,12,0,0">
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="0,0,0,10"
-                               Text="Instala programas a través de OpenSweep: se registra todo lo que crea el instalador (carpetas, archivos, claves del registro, servicios e inicio automático). Así podrás desinstalarlo después sin dejar ni un rastro."/>
+                               Text="{l:T 'Instala programas a través de OpenSweep: se registra todo lo que crea el instalador (carpetas, archivos, claves del registro, servicios e inicio automático). Así podrás desinstalarlo después sin dejar ni un rastro.'}"/>
                     <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                         <TextBlock x:Name="TraceStatus" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Eliminar registro" Click="TraceDelete_Click"/>
-                            <Button Content="Desinstalar por completo" Margin="6,0,0,0" Click="TraceUninstall_Click"/>
-                            <Button x:Name="MonitorBtn" Content="Instalar y monitorear…" Padding="20,6" Margin="6,0,0,0"
+                            <Button Content="{l:T 'Eliminar registro'}" Click="TraceDelete_Click"/>
+                            <Button Content="{l:T 'Desinstalar por completo'}" Margin="6,0,0,0" Click="TraceUninstall_Click"/>
+                            <Button x:Name="MonitorBtn" Content="{l:T 'Instalar y monitorear…'}" Padding="20,6" Margin="6,0,0,0"
                                     Style="{DynamicResource AccentButtonStyle}" Click="Monitor_Click"/>
                         </StackPanel>
                     </DockPanel>
                     <ProgressBar x:Name="TraceBar" DockPanel.Dock="Top" IsIndeterminate="True" Height="4" Visibility="Collapsed" Margin="0,0,0,6"/>
                     <DataGrid x:Name="TracesGrid" IsReadOnly="True" SelectionMode="Single">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Programa" Binding="{Binding Name}" Width="*"/>
-                            <DataGridTextColumn Header="Instalador" Binding="{Binding Installer}" Width="*"/>
-                            <DataGridTextColumn Header="Fecha" Binding="{Binding DateText}" Width="140"/>
-                            <DataGridTextColumn Header="Elementos" Binding="{Binding Count}" Width="90"/>
+                            <DataGridTextColumn Header="{l:T 'Programa'}" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="{l:T 'Instalador'}" Binding="{Binding Installer}" Width="*"/>
+                            <DataGridTextColumn Header="{l:T 'Fecha'}" Binding="{Binding DateText}" Width="140"/>
+                            <DataGridTextColumn Header="{l:T 'Elementos'}" Binding="{Binding Count}" Width="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
             </TabItem>
 
             <!-- ================= Desinstalación forzada ================= -->
-            <TabItem Header="Desinstalación forzada">
+            <TabItem Header="{l:T 'Desinstalación forzada'}">
                 <StackPanel Margin="0,16,0,0" MaxWidth="640" HorizontalAlignment="Left">
                     <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,14"
-                               Text="Para programas que no aparecen en la lista o cuyo desinstalador falla. Escribe el nombre exacto del programa y, opcionalmente, la carpeta donde estaba instalado. OpenSweep buscará y eliminará sus restos."/>
-                    <TextBlock Text="Nombre del programa" Margin="0,0,0,4"/>
+                               Text="{l:T 'Para programas que no aparecen en la lista o cuyo desinstalador falla. Escribe el nombre exacto del programa y, opcionalmente, la carpeta donde estaba instalado. OpenSweep buscará y eliminará sus restos.'}"/>
+                    <TextBlock Text="{l:T 'Nombre del programa'}" Margin="0,0,0,4"/>
                     <TextBox x:Name="ForcedName"/>
-                    <TextBlock Text="Carpeta de instalación (opcional)" Margin="0,12,0,4"/>
+                    <TextBlock Text="{l:T 'Carpeta de instalación (opcional)'}" Margin="0,12,0,4"/>
                     <DockPanel>
-                        <Button Content="Examinar..." DockPanel.Dock="Right" Margin="6,0,0,0" Click="BrowseForced_Click"/>
+                        <Button Content="{l:T 'Examinar...'}" DockPanel.Dock="Right" Margin="6,0,0,0" Click="BrowseForced_Click"/>
                         <TextBox x:Name="ForcedFolder"/>
                     </DockPanel>
-                    <Button Content="Buscar restos" Padding="20,8" Margin="0,16,0,0" HorizontalAlignment="Left" Style="{DynamicResource AccentButtonStyle}" Click="ForcedScan_Click"/>
+                    <Button Content="{l:T 'Buscar restos'}" Padding="20,8" Margin="0,16,0,0" HorizontalAlignment="Left" Style="{DynamicResource AccentButtonStyle}" Click="ForcedScan_Click"/>
                 </StackPanel>
             </TabItem>
         </TabControl>

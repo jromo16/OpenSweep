@@ -52,7 +52,7 @@ public static class InstallMonitor
 
     private static IEnumerable<string> FileRoots() => new[]
     {
-        Util.Env("ProgramFiles"), Util.Env("ProgramFiles(x86)"), Util.ProgramData, Util.LocalAppData, Util.RoamingAppData,
+        Util.Env("ProgramFiles"), Util.Env(Loc.T("ProgramFiles(x86)")), Util.ProgramData, Util.LocalAppData, Util.RoamingAppData,
         Path.Combine(Util.UserProfile, @"AppData\LocalLow"),
     }.Where(Directory.Exists).Distinct(StringComparer.OrdinalIgnoreCase);
 

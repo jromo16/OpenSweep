@@ -1,5 +1,6 @@
 package io.github.jromo16.opensweep.background
 
+import io.github.jromo16.opensweep.core.t
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -27,11 +28,12 @@ class StorageWidget : AppWidgetProvider() {
         }
 
         private fun views(ctx: Context): RemoteViews {
+            io.github.jromo16.opensweep.core.I18n.init(ctx)
             val st = DeviceInfo.storage()
             val mem = DeviceInfo.memory(ctx)
             val v = RemoteViews(ctx.packageName, R.layout.widget_storage)
-            v.setTextViewText(R.id.widget_free, "${formatBytes(st.free)} libres")
-            v.setTextViewText(R.id.widget_detail, "Almacenamiento ${(st.percent * 100).toInt()}% · RAM ${(mem.percent * 100).toInt()}%")
+            v.setTextViewText(R.id.widget_free, "${formatBytes(st.free)} ${t("libres")}")
+            v.setTextViewText(R.id.widget_detail, "${t("Almacenamiento")} ${(st.percent * 100).toInt()}% · RAM ${(mem.percent * 100).toInt()}%")
             v.setProgressBar(R.id.widget_bar, 100, (st.percent * 100).toInt(), false)
             val clean = PendingIntent.getActivity(
                 ctx, 2,

@@ -25,10 +25,10 @@ public partial class LeftoversWindow : Window
     {
         InitializeComponent();
         _program = program;
-        TitleText.Text = (forced ? "Desinstalación forzada: " : "Restos de ") + program.Name;
+        TitleText.Text = (forced ? Loc.T("Desinstalación forzada: ") : Loc.T("Restos de ")) + program.Name;
         InfoText.Text = forced
-            ? "Se buscarán los archivos, carpetas y claves del registro del programa. Revisa la lista antes de eliminar."
-            : "El desinstalador terminó. Busca ahora los archivos, carpetas y claves del registro que hayan quedado.";
+            ? Loc.T("Se buscarán los archivos, carpetas y claves del registro del programa. Revisa la lista antes de eliminar.")
+            : Loc.T("El desinstalador terminó. Busca ahora los archivos, carpetas y claves del registro que hayan quedado.");
         Loaded += (_, _) =>
         {
             if (!_preset) { Scan_Click(this, new RoutedEventArgs()); return; }
@@ -44,7 +44,7 @@ public partial class LeftoversWindow : Window
     {
         ScanBtn.IsEnabled = DeleteBtn.IsEnabled = false;
         Progress.Visibility = Visibility.Visible;
-        StatusText.Text = "Buscando...";
+        StatusText.Text = Loc.T("Buscando...");
         var mode = Mode;
         _items = await Task.Run(() => UninstallerService.FindLeftovers(_program, mode, CancellationToken.None));
         _items = _items.OrderBy(i => i.IsRegistry).ThenBy(i => i.Display).ToList();
@@ -53,8 +53,8 @@ public partial class LeftoversWindow : Window
         ScanBtn.IsEnabled = true;
         DeleteBtn.IsEnabled = _items.Count > 0;
         StatusText.Text = _items.Count == 0
-            ? "No se encontraron restos. ¡El programa se eliminó por completo!"
-            : $"{_items.Count} elementos encontrados · {Util.FormatBytes(_items.Sum(i => i.Size))}";
+            ? Loc.T("No se encontraron restos. ¡El programa se eliminó por completo!")
+            : $"{_items.Count} {Loc.T("elementos encontrados")} · {Util.FormatBytes(_items.Sum(i => i.Size))}";
     }
 
     private async void Delete_Click(object sender, RoutedEventArgs e)
@@ -62,8 +62,8 @@ public partial class LeftoversWindow : Window
         Grid.CommitEdit(DataGridEditingUnit.Row, true);
         var sel = _items.Where(i => i.Selected).ToList();
         if (sel.Count == 0) return;
-        if (MessageBox.Show($"Se eliminarán {sel.Count} elementos de forma permanente.\nLas claves del registro se guardan antes en una copia de seguridad.\n\n¿Continuar?",
-                "Eliminar restos", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        if (MessageBox.Show($"{Loc.T("Se eliminarán")} {sel.Count} {Loc.T("elementos de forma permanente.")}\n{Loc.T("Las claves del registro se guardan antes en una copia de seguridad.")}\n\n{Loc.T("¿Continuar?")}",
+                Loc.T("Eliminar restos"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         DeleteBtn.IsEnabled = ScanBtn.IsEnabled = false;
         Progress.Visibility = Visibility.Visible;
         var (ok, failed) = await Task.Run(() => UninstallerService.DeleteLeftovers(sel));
@@ -72,7 +72,7 @@ public partial class LeftoversWindow : Window
         Grid.ItemsSource = _items;
         ScanBtn.IsEnabled = true;
         DeleteBtn.IsEnabled = _items.Count > 0;
-        StatusText.Text = $"Eliminados: {ok}" + (failed > 0 ? $" · No se pudieron eliminar: {failed} (pueden estar en uso; reinicia y vuelve a intentarlo)" : "");
+        StatusText.Text = $"{Loc.T("Eliminados")}: {ok}" + (failed > 0 ? $" · {Loc.T("No se pudieron eliminar")}: {failed} (pueden estar en uso; reinicia y vuelve a intentarlo)" : "");
     }
 
     private void CheckAll_Click(object sender, RoutedEventArgs e) { _items.ForEach(i => i.Selected = true); Grid.Items.Refresh(); }

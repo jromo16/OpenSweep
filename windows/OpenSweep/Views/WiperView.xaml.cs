@@ -21,17 +21,17 @@ public partial class WiperView : UserControl
 
     private void AddFiles_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new OpenFileDialog { Multiselect = true, Title = "Archivos a destruir" };
+        var dlg = new OpenFileDialog { Multiselect = true, Title = Loc.T("Archivos a destruir") };
         if (dlg.ShowDialog() == true) foreach (var f in dlg.FileNames) if (!_targets.Contains(f)) _targets.Add(f);
     }
 
     private void AddFolder_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new OpenFolderDialog { Title = "Carpeta a destruir (con todo su contenido)" };
+        var dlg = new OpenFolderDialog { Title = Loc.T("Carpeta a destruir (con todo su contenido)") };
         if (dlg.ShowDialog() != true) return;
         if (PathHelper.IsProtectedFolder(dlg.FolderName))
         {
-            MessageBox.Show("Esa carpeta es del sistema y no se puede destruir.", "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(Loc.T("Esa carpeta es del sistema y no se puede destruir."), "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (!_targets.Contains(dlg.FolderName)) _targets.Add(dlg.FolderName);
@@ -45,7 +45,7 @@ public partial class WiperView : UserControl
     private async void Shred_Click(object sender, RoutedEventArgs e)
     {
         if (_targets.Count == 0) return;
-        if (MessageBox.Show($"Se destruirán {_targets.Count} elementos de forma IRRECUPERABLE.\n\n¿Estás seguro?", "Destruir archivos",
+        if (MessageBox.Show($"{Loc.T("Se destruirán")} {_targets.Count} {Loc.T("elementos de forma IRRECUPERABLE.")}\n\n{Loc.T("¿Estás seguro?")}", Loc.T("Destruir archivos"),
                 MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         int passes = int.Parse((string)((ComboBoxItem)ShredPasses.SelectedItem).Tag);
         ShredBtn.IsEnabled = false;
@@ -59,7 +59,7 @@ public partial class WiperView : UserControl
                 var files = Directory.Exists(t) ? Util.SafeFiles(t).Select(f => f.FullName).ToList() : [t];
                 foreach (var f in files)
                 {
-                    ((IProgress<string>)progress).Report("Destruyendo " + f);
+                    ((IProgress<string>)progress).Report(Loc.T("Destruyendo ") + f);
                     if (SecureWipe.ShredFile(f, passes)) ok++; else fail++;
                 }
                 if (Directory.Exists(t)) Util.RemoveEmptyDirs(t, removeRoot: true);
@@ -68,14 +68,14 @@ public partial class WiperView : UserControl
         });
         _targets.Clear();
         ShredBtn.IsEnabled = true;
-        ShredStatus.Text = $"{ok} archivos destruidos." + (fail > 0 ? $" {fail} no se pudieron destruir (en uso o sin permisos)." : "");
+        ShredStatus.Text = $"{ok} {Loc.T("archivos destruidos.")}" + (fail > 0 ? $" {fail} {Loc.T("no se pudieron destruir (en uso o sin permisos).")}" : "");
     }
 
     private async void Wipe_Click(object sender, RoutedEventArgs e)
     {
         if (DriveBox.SelectedItem is not string drive) return;
-        if (MessageBox.Show($"Se llenará el espacio libre de {drive} temporalmente. Cierra otros programas y no copies archivos mientras tanto.\n\n¿Continuar?",
-                "Borrar espacio libre", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        if (MessageBox.Show($"{Loc.T("Se llenará el espacio libre de")} {drive} {Loc.T("temporalmente. Cierra otros programas y no copies archivos mientras tanto.")}\n\n{Loc.T("¿Continuar?")}",
+                Loc.T("Borrar espacio libre"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         int passes = int.Parse((string)((ComboBoxItem)WipePasses.SelectedItem).Tag);
         _cts = new CancellationTokenSource();
         WipeBtn.IsEnabled = false;
@@ -83,17 +83,17 @@ public partial class WiperView : UserControl
         var progress = new Progress<(int pass, double percent)>(p =>
         {
             WipeProgress.Value = p.percent;
-            WipeStatus.Text = $"Pasada {p.pass} de {passes}: {p.percent:0.0}%";
+            WipeStatus.Text = $"{Loc.T("Pasada")} {p.pass} de {passes}: {p.percent:0.0}%";
         });
         try
         {
             var ct = _cts.Token;
             await Task.Run(() => SecureWipe.WipeFreeSpace(drive, passes, progress, ct), ct);
-            WipeStatus.Text = "Espacio libre borrado correctamente.";
+            WipeStatus.Text = Loc.T("Espacio libre borrado correctamente.");
             WipeProgress.Value = 100;
         }
-        catch (OperationCanceledException) { WipeStatus.Text = "Cancelado. Se liberó el espacio temporal."; }
-        catch (Exception ex) { WipeStatus.Text = "Error: " + ex.Message; }
+        catch (OperationCanceledException) { WipeStatus.Text = Loc.T("Cancelado. Se liberó el espacio temporal."); }
+        catch (Exception ex) { WipeStatus.Text = Loc.T("Error: ") + ex.Message; }
         finally
         {
             WipeBtn.IsEnabled = true;

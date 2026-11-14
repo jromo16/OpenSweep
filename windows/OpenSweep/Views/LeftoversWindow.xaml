@@ -1,22 +1,23 @@
 <Window x:Class="OpenSweep.Views.LeftoversWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Buscar restos" Height="620" Width="980" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+             xmlns:l="clr-namespace:OpenSweep.Core"
+        Title="{l:T 'Buscar restos'}" Height="620" Width="980" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
     <DockPanel Margin="20">
         <StackPanel DockPanel.Dock="Top">
             <TextBlock x:Name="TitleText" Style="{StaticResource PageTitle}" FontSize="20"/>
             <TextBlock x:Name="InfoText" Style="{StaticResource PageSubtitle}"/>
             <Border Style="{StaticResource Card}" Margin="0,0,0,12">
                 <DockPanel>
-                    <Button x:Name="ScanBtn" DockPanel.Dock="Right" Content="Buscar restos" Padding="20,6" Style="{DynamicResource AccentButtonStyle}" Click="Scan_Click"/>
+                    <Button x:Name="ScanBtn" DockPanel.Dock="Right" Content="{l:T 'Buscar restos'}" Padding="20,6" Style="{DynamicResource AccentButtonStyle}" Click="Scan_Click"/>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Modo de búsqueda:" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                        <RadioButton x:Name="ModeSafe" Content="Seguro" GroupName="mode" Margin="0,0,12,0"
-                                     ToolTip="Solo coincidencias exactas con el nombre del programa."/>
-                        <RadioButton x:Name="ModeModerate" Content="Moderado" GroupName="mode" IsChecked="True" Margin="0,0,12,0"
-                                     ToolTip="Incluye carpetas del fabricante y rutas de aplicación (recomendado)."/>
-                        <RadioButton x:Name="ModeAdvanced" Content="Avanzado" GroupName="mode"
-                                     ToolTip="Búsqueda más amplia. Revisa los resultados antes de eliminar."/>
+                        <TextBlock Text="{l:T 'Modo de búsqueda:'}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <RadioButton x:Name="ModeSafe" Content="{l:T 'Seguro'}" GroupName="mode" Margin="0,0,12,0"
+                                     ToolTip="{l:T 'Solo coincidencias exactas con el nombre del programa.'}"/>
+                        <RadioButton x:Name="ModeModerate" Content="{l:T 'Moderado'}" GroupName="mode" IsChecked="True" Margin="0,0,12,0"
+                                     ToolTip="{l:T 'Incluye carpetas del fabricante y rutas de aplicación (recomendado).'}"/>
+                        <RadioButton x:Name="ModeAdvanced" Content="{l:T 'Avanzado'}" GroupName="mode"
+                                     ToolTip="{l:T 'Búsqueda más amplia. Revisa los resultados antes de eliminar.'}"/>
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -24,23 +25,23 @@
         </StackPanel>
         <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
             <StackPanel Orientation="Horizontal">
-                <Button Content="Marcar todo" Click="CheckAll_Click"/>
-                <Button Content="Desmarcar todo" Margin="6,0,0,0" Click="UncheckAll_Click"/>
+                <Button Content="{l:T 'Marcar todo'}" Click="CheckAll_Click"/>
+                <Button Content="{l:T 'Desmarcar todo'}" Margin="6,0,0,0" Click="UncheckAll_Click"/>
                 <TextBlock x:Name="StatusText" VerticalAlignment="Center" Margin="12,0,0,0" Style="{StaticResource Muted}"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Terminar" Padding="20,6" Click="Close_Click"/>
-                <Button x:Name="DeleteBtn" Content="Eliminar seleccionados" Padding="20,6" Margin="8,0,0,0" IsEnabled="False"
+                <Button Content="{l:T 'Terminar'}" Padding="20,6" Click="Close_Click"/>
+                <Button x:Name="DeleteBtn" Content="{l:T 'Eliminar seleccionados'}" Padding="20,6" Margin="8,0,0,0" IsEnabled="False"
                         Style="{DynamicResource AccentButtonStyle}" Click="Delete_Click"/>
             </StackPanel>
         </DockPanel>
         <DataGrid x:Name="Grid">
             <DataGrid.Columns>
                 <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
-                <DataGridTextColumn Header="Tipo" Binding="{Binding Kind}" Width="130" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Ubicación" Binding="{Binding Display}" Width="*" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Tamaño" Binding="{Binding SizeText}" SortMemberPath="Size" Width="90" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Motivo" Binding="{Binding Reason}" Width="200" IsReadOnly="True"/>
+                <DataGridTextColumn Header="{l:T 'Tipo'}" Binding="{Binding Kind}" Width="130" IsReadOnly="True"/>
+                <DataGridTextColumn Header="{l:T 'Ubicación'}" Binding="{Binding Display}" Width="*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="{l:T 'Tamaño'}" Binding="{Binding SizeText}" SortMemberPath="Size" Width="90" IsReadOnly="True"/>
+                <DataGridTextColumn Header="{l:T 'Motivo'}" Binding="{Binding ReasonText}" Width="200" IsReadOnly="True"/>
             </DataGrid.Columns>
         </DataGrid>
     </DockPanel>

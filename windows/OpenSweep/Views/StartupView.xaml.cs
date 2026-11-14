@@ -19,7 +19,7 @@ public partial class StartupView : UserControl
         bool tasks = ShowTasks.IsChecked == true, ms = ShowMsTasks.IsChecked == true;
         var list = await Task.Run(() => StartupService.GetEntries(tasks, ms));
         EntriesGrid.ItemsSource = list;
-        CountText.Text = $"{list.Count} elementos · {list.Count(e => e.Enabled)} habilitados";
+        CountText.Text = $"{list.Count} {Loc.T("elementos")} · {list.Count(e => e.Enabled)} {Loc.T("habilitados")}";
         Bar.Visibility = Visibility.Collapsed;
     }
 
@@ -39,7 +39,7 @@ public partial class StartupView : UserControl
             MessageBox.Show("Las entradas RunOnce se ejecutan una sola vez y no se pueden deshabilitar; puedes eliminarlas.", "OpenSweep");
         }
         var failed = await Task.Run(() => sel.Count(s => !StartupService.SetEnabled(s, enabled)));
-        if (failed > 0) MessageBox.Show($"{failed} elementos no se pudieron modificar.", "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
+        if (failed > 0) MessageBox.Show($"{failed} {Loc.T("elementos no se pudieron modificar.")}", "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
         await Load();
     }
 
@@ -47,7 +47,7 @@ public partial class StartupView : UserControl
     {
         var sel = Selection();
         if (sel.Count == 0) return;
-        if (MessageBox.Show($"¿Eliminar {sel.Count} elementos del inicio? Esta acción no se puede deshacer.\n\nSi solo quieres que no arranquen, usa «Deshabilitar».",
+        if (MessageBox.Show($"{Loc.T("¿Eliminar")} {sel.Count} {Loc.T("elementos del inicio? Esta acción no se puede deshacer.")}\n\n{Loc.T("Si solo quieres que no arranquen, usa «Deshabilitar».")}",
                 "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         await Task.Run(() => sel.ForEach(s => StartupService.Delete(s)));
         await Load();

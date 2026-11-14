@@ -1,5 +1,6 @@
 package io.github.jromo16.opensweep.ui.screens
 
+import io.github.jromo16.opensweep.core.t
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -70,7 +71,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-private enum class SortBy(val title: String) { NAME("Nombre"), SIZE("Tamaño"), LAST_USED("Sin usar"), INSTALLED("Instalación") }
+private enum class SortBy(val title: String) { NAME(t("Nombre")), SIZE(t("Tamaño")), LAST_USED(t("Sin usar")), INSTALLED(t("Instalación")) }
 
 @Composable
 fun AppsScreen(modifier: Modifier) {
@@ -110,7 +111,7 @@ fun AppsScreen(modifier: Modifier) {
             // Fin de la cola: buscar restos de las apps desinstaladas
             val found = removed.flatMap { AppManager.leftovers(it.packageName, it.label) }.distinct()
             if (removed.isNotEmpty()) {
-                Toast.makeText(ctx, "${removed.size} apps desinstaladas", Toast.LENGTH_SHORT).show()
+                Toast.makeText(ctx, "${removed.size} ${t("apps desinstaladas")}", Toast.LENGTH_SHORT).show()
                 checked.removeAll(removed.map { it.packageName })
                 reloadKey++
             }
@@ -138,21 +139,21 @@ fun AppsScreen(modifier: Modifier) {
 
     Column(modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(16.dp))
-        ScreenTitle("Apps", "${apps.size} apps · ${formatBytes(apps.sumOf { it.totalBytes })}")
+        ScreenTitle(t("Apps"), "${apps.size} ${t("apps")} · ${formatBytes(apps.sumOf { it.totalBytes })}")
         if (!perms.usage) {
-            PermissionCard(Icons.Filled.Lock, "Acceso de uso",
-                "Concédelo para ver cuánto ocupa cada app (datos y caché) y cuándo la usaste por última vez.",
-                "Conceder", perms.requestUsage)
+            PermissionCard(Icons.Filled.Lock, t("Acceso de uso"),
+                t("Concédelo para ver cuánto ocupa cada app (datos y caché) y cuándo la usaste por última vez."),
+                t("Conceder"), perms.requestUsage)
         }
         OutlinedTextField(
             value = query, onValueChange = { query = it },
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Filled.Search, null) },
-            placeholder = { Text("Buscar app") }, singleLine = true,
+            placeholder = { Text(t("Buscar app")) }, singleLine = true,
         )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 8.dp)) {
             items(SortBy.entries) { s -> FilterChip(selected = sort == s, onClick = { sort = s }, label = { Text(s.title) }) }
-            item { FilterChip(selected = showSystem, onClick = { showSystem = !showSystem }, label = { Text("Sistema") }) }
+            item { FilterChip(selected = showSystem, onClick = { showSystem = !showSystem }, label = { Text(t("Sistema")) }) }
         }
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
 
@@ -175,7 +176,7 @@ fun AppsScreen(modifier: Modifier) {
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             ) {
                 val size = apps.filter { it.packageName in checked }.sumOf { it.totalBytes }
-                Text("Desinstalar ${checked.size} apps (${formatBytes(size)})")
+                Text("${t("Desinstalar")} ${checked.size} ${t("apps")} (${formatBytes(size)})")
             }
         }
     }
@@ -186,29 +187,29 @@ fun AppsScreen(modifier: Modifier) {
             title = { Text(app.label) },
             text = {
                 Column {
-                    InfoRow("Paquete", app.packageName)
-                    InfoRow("Versión", app.versionName)
-                    InfoRow("Instalada", formatDate(app.installed))
-                    InfoRow("Actualizada", formatDate(app.updated))
-                    InfoRow("Último uso", if (perms.usage) formatAgo(app.lastUsed) else "Requiere acceso de uso")
+                    InfoRow(t("Paquete"), app.packageName)
+                    InfoRow(t("Versión"), app.versionName)
+                    InfoRow(t("Instalada"), formatDate(app.installed))
+                    InfoRow(t("Actualizada"), formatDate(app.updated))
+                    InfoRow(t("Último uso"), if (perms.usage) formatAgo(app.lastUsed) else t("Requiere acceso de uso"))
                     if (app.appBytes > 0) {
-                        InfoRow("App", formatBytes(app.appBytes))
-                        InfoRow("Datos", formatBytes(app.dataBytes - app.cacheBytes))
-                        InfoRow("Caché", formatBytes(app.cacheBytes))
-                    } else InfoRow("APK", formatBytes(app.apkBytes))
+                        InfoRow(t("App"), formatBytes(app.appBytes))
+                        InfoRow(t("Datos"), formatBytes(app.dataBytes - app.cacheBytes))
+                        InfoRow(t("Caché"), formatBytes(app.cacheBytes))
+                    } else InfoRow(t("APK"), formatBytes(app.apkBytes))
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     details = null
                     queue.clear(); queue.add(app); next(::launchUninstall)
-                }) { Text("Desinstalar") }
+                }) { Text(t("Desinstalar")) }
             },
             dismissButton = {
                 Row {
                     TextButton(onClick = {
                         ctx.packageManager.getLaunchIntentForPackage(app.packageName)?.let { ctx.startActivity(it) }
-                    }) { Text("Abrir") }
+                    }) { Text(t("Abrir")) }
                     TextButton(onClick = { ctx.startActivity(Permissions.appDetailsIntent(app.packageName)) }) { Text("Ajustes") }
                 }
             },
@@ -218,10 +219,10 @@ fun AppsScreen(modifier: Modifier) {
     if (leftovers.isNotEmpty()) {
         AlertDialog(
             onDismissRequest = { leftovers = emptyList() },
-            title = { Text("Restos encontrados") },
+            title = { Text(t("Restos encontrados")) },
             text = {
                 Column {
-                    Text("Estas carpetas pertenecían a las apps desinstaladas:")
+                    Text("${t("Estas carpetas pertenecían a las apps desinstaladas")}:")
                     Spacer(Modifier.height(8.dp))
                     leftovers.forEach { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
@@ -231,10 +232,10 @@ fun AppsScreen(modifier: Modifier) {
                     val list = leftovers
                     leftovers = emptyList()
                     scope.launch(Dispatchers.IO) { list.forEach { File(it).deleteRecursively() } }
-                    Toast.makeText(ctx, "Restos eliminados", Toast.LENGTH_SHORT).show()
-                }) { Text("Eliminar restos") }
+                    Toast.makeText(ctx, t("Restos eliminados"), Toast.LENGTH_SHORT).show()
+                }) { Text(t("Eliminar restos")) }
             },
-            dismissButton = { TextButton(onClick = { leftovers = emptyList() }) { Text("Conservar") } },
+            dismissButton = { TextButton(onClick = { leftovers = emptyList() }) { Text(t("Conservar")) } },
         )
     }
 }
@@ -259,7 +260,7 @@ private fun AppRow(app: AppEntry, checked: Boolean, onChecked: (Boolean) -> Unit
             Column(Modifier.weight(1f)) {
                 Text(app.label, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    if (app.lastUsed > 0) "Usada: ${formatAgo(app.lastUsed)}" else app.versionName,
+                    if (app.lastUsed > 0) "${t("Usada")}: ${formatAgo(app.lastUsed)}" else app.versionName,
                     fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1
                 )
             }

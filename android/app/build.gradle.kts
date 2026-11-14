@@ -46,6 +46,9 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // Traducciones compartidas con la app de Windows (carpeta i18n/ del repositorio)
+    sourceSets.getByName("main").assets.directories.add("../../i18n")
 }
 
 dependencies {

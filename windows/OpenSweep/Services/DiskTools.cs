@@ -67,7 +67,7 @@ public static class DiskTools
     }
 
     public static string CategoryOf(string path) =>
-        Categories.TryGetValue(Path.GetExtension(path), out var c) ? c : "Otros";
+        Loc.T(Categories.TryGetValue(Path.GetExtension(path), out var c) ? c : "Otros");
 
     public static DiskAnalysis Analyze(string root, int topFiles, IProgress<string> progress, CancellationToken ct)
     {

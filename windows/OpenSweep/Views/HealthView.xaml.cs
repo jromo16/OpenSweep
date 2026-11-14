@@ -28,21 +28,21 @@ public partial class HealthView : UserControl
             var build = Environment.OSVersion.Version.Build;
             if (build >= 22000) product = product.Replace("Windows 10", "Windows 11");
             var display = nt?.GetValue("DisplayVersion") as string ?? "";
-            OsText.Text = $"{product} {display} (compilación {build})";
+            OsText.Text = $"{product} {display} ({Loc.T("compilación")} {build})";
             using var cpu = Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
             CpuText.Text = $"Procesador: {(cpu?.GetValue("ProcessorNameString") as string ?? "").Trim()} · {Environment.ProcessorCount} hilos";
         }
         catch { }
         var (total, avail, load) = Native.GetMemory();
-        RamText.Text = $"Memoria: {Util.FormatBytes((long)total)} · en uso {load}% (libre {Util.FormatBytes((long)avail)})";
+        RamText.Text = $"{Loc.T("Memoria")}: {Util.FormatBytes((long)total)} · {Loc.T("en uso")} {load}% (libre {Util.FormatBytes((long)avail)})";
         var up = TimeSpan.FromMilliseconds(Environment.TickCount64);
-        UptimeText.Text = $"Encendido desde hace {(int)up.TotalDays} d {up.Hours} h {up.Minutes} min";
+        UptimeText.Text = $"{Loc.T("Encendido desde hace")} {(int)up.TotalDays} d {up.Hours} h {up.Minutes} {Loc.T("min")}";
 
         DrivesList.ItemsSource = DriveInfo.GetDrives()
             .Where(d => d.IsReady && d.DriveType is DriveType.Fixed or DriveType.Removable)
             .Select(d => new DriveRow(
                 $"{d.Name.TrimEnd('\\')} {d.VolumeLabel}",
-                $"{Util.FormatBytes(d.TotalFreeSpace)} libres de {Util.FormatBytes(d.TotalSize)}",
+                $"{Util.FormatBytes(d.TotalFreeSpace)} {Loc.T("libres de")} {Util.FormatBytes(d.TotalSize)}",
                 d.TotalSize == 0 ? 0 : (d.TotalSize - d.TotalFreeSpace) * 100.0 / d.TotalSize))
             .ToList();
     }
@@ -51,8 +51,8 @@ public partial class HealthView : UserControl
     {
         ScanBtn.IsEnabled = FixBtn.IsEnabled = false;
         Progress.Visibility = Visibility.Visible;
-        ScoreTitle.Text = "Analizando...";
-        ScoreSub.Text = "Esto puede tardar unos segundos.";
+        ScoreTitle.Text = Loc.T("Analizando...");
+        ScoreSub.Text = Loc.T("Esto puede tardar unos segundos.");
         long junk = 0; int startup = 0;
         await Task.Run(() =>
         {
@@ -65,17 +65,17 @@ public partial class HealthView : UserControl
             startup = StartupService.GetEntries(false, false).Count(s => s.Enabled);
         });
         JunkText.Text = Util.FormatBytes(junk);
-        RegText.Text = $"{_regIssues.Count} problemas";
-        StartupText.Text = $"{startup} habilitados";
+        RegText.Text = $"{_regIssues.Count} {Loc.T("problemas")}";
+        StartupText.Text = $"{startup} {Loc.T("habilitados")}";
 
         int problems = (junk > 500L * 1024 * 1024 ? 1 : 0) + (_regIssues.Count > 20 ? 1 : 0) + (startup > 10 ? 1 : 0);
         ScoreTitle.Text = problems switch
         {
-            0 => "Tu PC está en buen estado",
-            1 => "Tu PC necesita un poco de atención",
-            _ => "Tu PC necesita atención"
+            0 => Loc.T("Tu PC está en buen estado"),
+            1 => Loc.T("Tu PC necesita un poco de atención"),
+            _ => Loc.T("Tu PC necesita atención")
         };
-        ScoreSub.Text = $"Se pueden liberar {Util.FormatBytes(junk)} y corregir {_regIssues.Count} entradas del registro.";
+        ScoreSub.Text = $"{Loc.T("Se pueden liberar")} {Util.FormatBytes(junk)} {Loc.T("y corregir")} {_regIssues.Count} {Loc.T("entradas del registro.")}";
         Progress.Visibility = Visibility.Collapsed;
         ScanBtn.IsEnabled = true;
         FixBtn.IsEnabled = junk > 0 || _regIssues.Count > 0;
@@ -85,12 +85,12 @@ public partial class HealthView : UserControl
     {
         var browsersOpen = _junkRules.SelectMany(r => r.Processes).Distinct().Where(p => Util.IsProcessRunning(p)).ToList();
         if (browsersOpen.Count > 0)
-            MessageBox.Show("Algunos programas están abiertos (" + string.Join(", ", browsersOpen) + "). Sus archivos se omitirán; ciérralos para una limpieza completa.",
+            MessageBox.Show(Loc.T("Algunos programas están abiertos (") + string.Join(", ", browsersOpen) + "). Sus archivos se omitirán; ciérralos para una limpieza completa.",
                 "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Information);
 
         ScanBtn.IsEnabled = FixBtn.IsEnabled = false;
         Progress.Visibility = Visibility.Visible;
-        ScoreTitle.Text = "Mejorando...";
+        ScoreTitle.Text = Loc.T("Mejorando...");
         long freed = 0; int regFixed = 0;
         await Task.Run(() =>
         {
@@ -105,9 +105,9 @@ public partial class HealthView : UserControl
             }
         });
         Progress.Visibility = Visibility.Collapsed;
-        ScoreTitle.Text = "¡Listo!";
-        ScoreSub.Text = $"Se liberaron {Util.FormatBytes(freed)} y se corrigieron {regFixed} entradas del registro.";
-        JunkText.Text = "0 B"; RegText.Text = "0 problemas";
+        ScoreTitle.Text = Loc.T("¡Listo!");
+        ScoreSub.Text = $"{Loc.T("Se liberaron")} {Util.FormatBytes(freed)} {Loc.T("y se corrigieron")} {regFixed} {Loc.T("entradas del registro.")}";
+        JunkText.Text = "0 B"; RegText.Text = Loc.T("0 problemas");
         ScanBtn.IsEnabled = true;
         LoadSystemInfo();
     }

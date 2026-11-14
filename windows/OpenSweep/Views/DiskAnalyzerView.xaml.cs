@@ -44,9 +44,9 @@ public partial class DiskAnalyzerView : UserControl
             FoldersList.ItemsSource = result.Folders.Take(25).ToList();
             _files = result.LargestFiles;
             FilesGrid.ItemsSource = _files;
-            StatusText.Text = $"{result.TotalFiles:N0} archivos · {Util.FormatBytes(result.TotalBytes)} en {root}";
+            StatusText.Text = $"{result.TotalFiles:N0} {Loc.T("archivos")} · {Util.FormatBytes(result.TotalBytes)} en {root}";
         }
-        catch (OperationCanceledException) { StatusText.Text = "Análisis cancelado."; }
+        catch (OperationCanceledException) { StatusText.Text = Loc.T("Análisis cancelado."); }
         finally
         {
             AnalyzeBtn.IsEnabled = true;
@@ -65,7 +65,7 @@ public partial class DiskAnalyzerView : UserControl
     {
         var sel = FilesGrid.SelectedItems.OfType<FileEntry>().ToList();
         if (sel.Count == 0) return;
-        if (MessageBox.Show($"¿Enviar {sel.Count} archivos ({Util.FormatBytes(sel.Sum(f => f.Size))}) a la papelera?", "OpenSweep",
+        if (MessageBox.Show($"{Loc.T("¿Enviar")} {sel.Count} {Loc.T("archivos")} ({Util.FormatBytes(sel.Sum(f => f.Size))}) {Loc.T("a la papelera?")}", "OpenSweep",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         foreach (var f in sel)
             if (Native.SendToRecycleBin(f.Path)) _files.Remove(f);

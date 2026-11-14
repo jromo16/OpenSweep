@@ -55,7 +55,7 @@ object MediaAnalyzer {
                 ok.add(m)
                 bmp.recycle()
             }
-            if (i % 20 == 0) onProgress("Analizando ${i + 1} de ${items.size}…")
+            if (i % 20 == 0) onProgress("${t("Analizando")} ${i + 1} ${t("de")} ${items.size}…")
         }
         val photos = ok.filter { !it.isVideo }
         val similar = group(photos, threshold)
