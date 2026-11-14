@@ -15,6 +15,10 @@ public sealed class FileEntry
     public string SizeText => Util.FormatBytes(Size);
     public string DateText => Modified.ToString("dd/MM/yyyy HH:mm");
     public int Group { get; set; }
+    /// <summary>Miniatura bajo demanda (solo fotos y vídeos; enlazar con IsAsync=True).</summary>
+    public System.Windows.Media.ImageSource? Thumb =>
+        PhotoAnalyzer.ImageExt.Contains(System.IO.Path.GetExtension(Path)) || PhotoAnalyzer.VideoExt.Contains(System.IO.Path.GetExtension(Path))
+            ? OpenSweep.Core.Thumbnails.Get(Path, 64) : null;
 }
 
 public sealed class CategoryStat

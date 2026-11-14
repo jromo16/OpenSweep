@@ -1,5 +1,7 @@
 package io.github.jromo16.opensweep.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -30,7 +33,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.jromo16.opensweep.core.DeviceInfo
+import io.github.jromo16.opensweep.core.Prefs
+import io.github.jromo16.opensweep.core.UpdateInfo
+import io.github.jromo16.opensweep.core.Updater
 import io.github.jromo16.opensweep.core.formatBytes
+import io.github.jromo16.opensweep.core.t
 import io.github.jromo16.opensweep.ui.LabeledBar
 import io.github.jromo16.opensweep.ui.PermissionCard
 import io.github.jromo16.opensweep.ui.ScreenTitle
@@ -38,16 +45,30 @@ import io.github.jromo16.opensweep.ui.SectionCard
 import io.github.jromo16.opensweep.ui.UsageRing
 import io.github.jromo16.opensweep.ui.rememberPermissionState
 import io.github.jromo16.opensweep.ui.theme.Brand
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+
+/** Se comprueba una sola vez por sesión. */
+private object UpdateState { var checked = false; var info: UpdateInfo? = null }
 
 @Composable
-fun HomeScreen(modifier: Modifier, onClean: () -> Unit, onApps: () -> Unit) {
+fun HomeScreen(modifier: Modifier, onClean: () -> Unit, onApps: () -> Unit, onPhotos: () -> Unit, onDevice: () -> Unit) {
     val ctx = LocalContext.current
     val perms = rememberPermissionState()
     var storage by remember { mutableStateOf(DeviceInfo.storage()) }
     var memory by remember { mutableStateOf(DeviceInfo.memory(ctx)) }
     var battery by remember { mutableStateOf(DeviceInfo.battery(ctx)) }
+    var update by remember { mutableStateOf(UpdateState.info) }
 
+    LaunchedEffect(Unit) {
+        if (!UpdateState.checked && Prefs.updateCheck(ctx)) {
+            UpdateState.checked = true
+            val version = try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "0" } catch (_: Exception) { "0" }
+            UpdateState.info = withContext(Dispatchers.IO) { Updater.check(version) }
+            update = UpdateState.info
+        }
+    }
     // Actualiza RAM y batería cada pocos segundos
     LaunchedEffect(Unit) {
         while (true) {
@@ -62,13 +83,20 @@ fun HomeScreen(modifier: Modifier, onClean: () -> Unit, onApps: () -> Unit) {
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        ScreenTitle("OpenSweep", "Limpia y optimiza tu teléfono")
+        ScreenTitle("OpenSweep", t("Limpia y optimiza tu teléfono"))
+
+        update?.let { u ->
+            PermissionCard(Icons.Filled.Star, "${t("Nueva versión disponible")}: ${u.version}",
+                t("Descarga la última versión de OpenSweep desde GitHub."), t("Descargar")) {
+                ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u.apkUrl ?: u.pageUrl)))
+            }
+        }
 
         if (!perms.storage) {
             PermissionCard(
-                Icons.Filled.Lock, "Permiso de almacenamiento",
-                "OpenSweep necesita acceso a los archivos para encontrar basura, archivos grandes y duplicados. Nada sale de tu teléfono.",
-                "Conceder acceso", perms.requestStorage
+                Icons.Filled.Lock, t("Permiso de almacenamiento"),
+                t("OpenSweep necesita acceso a los archivos para encontrar basura, archivos grandes y duplicados. Nada sale de tu teléfono."),
+                t("Conceder acceso"), perms.requestStorage
             )
         }
 
@@ -77,42 +105,50 @@ fun HomeScreen(modifier: Modifier, onClean: () -> Unit, onApps: () -> Unit) {
                 UsageRing(storage.percent, 130.dp) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("${(storage.percent * 100).toInt()}%", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                        Text("usado", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                        Text(t("usado"), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     }
                 }
                 Spacer(Modifier.width(20.dp))
                 Column {
-                    Text("Almacenamiento", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-                    Text("${formatBytes(storage.free)} libres", color = Brand)
-                    Text("de ${formatBytes(storage.total)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(t("Almacenamiento"), fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                    Text("${formatBytes(storage.free)} ${t("libres")}", color = Brand)
+                    Text("${t("de")} ${formatBytes(storage.total)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(10.dp))
-                    Button(onClick = onClean) { Text("Analizar y limpiar") }
+                    Button(onClick = onClean) { Text(t("Analizar y limpiar")) }
                 }
             }
         }
 
         SectionCard {
-            Text("Estado del equipo", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            Text(t("Estado del equipo"), fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
             Spacer(Modifier.height(4.dp))
-            LabeledBar("Memoria RAM", "${formatBytes(memory.used)} / ${formatBytes(memory.total)}", memory.percent)
+            LabeledBar(t("Memoria RAM"), "${formatBytes(memory.used)} / ${formatBytes(memory.total)}", memory.percent)
             battery?.let { b ->
                 LabeledBar(
-                    "Batería" + if (b.charging) " (cargando)" else "",
+                    t("Batería") + if (b.charging) " (${t("cargando")})" else "",
                     "${b.level}% · ${b.temperatureC} °C",
                     b.level / 100f,
                     color = if (b.level <= 15) MaterialTheme.colorScheme.error else Brand
                 )
             }
+            Spacer(Modifier.height(6.dp))
+            OutlinedButton(onClick = onDevice, modifier = Modifier.fillMaxWidth()) { Text(t("Información del equipo y ajustes")) }
         }
 
         SectionCard {
-            Text("Apps", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
-            Text(
-                "Desinstala apps que no usas y elimina sus restos. Ordénalas por tamaño o por último uso.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp
-            )
+            Text(t("Fotos"), fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            Text(t("Encuentra fotos parecidas, borrosas y capturas antiguas, y conserva solo la mejor."),
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
             Spacer(Modifier.height(10.dp))
-            OutlinedButton(onClick = onApps, modifier = Modifier.fillMaxWidth()) { Text("Administrar apps") }
+            OutlinedButton(onClick = onPhotos, modifier = Modifier.fillMaxWidth()) { Text(t("Revisar fotos")) }
+        }
+
+        SectionCard {
+            Text(t("Apps"), fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            Text(t("Desinstala apps que no usas y elimina sus restos. Ordénalas por tamaño o por último uso."),
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(onClick = onApps, modifier = Modifier.fillMaxWidth()) { Text(t("Administrar apps")) }
         }
     }
 }

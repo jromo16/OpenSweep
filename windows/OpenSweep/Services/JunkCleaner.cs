@@ -240,16 +240,13 @@ public static class JunkCleaner
                     File1(Path.Combine(p, "Shortcuts")), File1(Path.Combine(p, "Shortcuts-journal")),
                 })
             });
-            rules.Add(new CleanRule
-            {
-                Id = $"br.{b.Name}.cookies", Group = "Navegadores", Section = b.Name, Name = "Cookies", DefaultOn = false, Processes = b.Processes,
-                Warning = "Cerrará la sesión en los sitios web.",
-                Paths = () => ChromiumProfiles(ud).SelectMany(p => new[]
+            rules.Add(CookieRule($"br.{b.Name}.cookies", b.Name, b.Processes,
+                () => ChromiumProfiles(ud).SelectMany(p => new[] { Path.Combine(p, @"Network\Cookies"), Path.Combine(p, "Cookies") }),
+                () => ChromiumProfiles(ud).SelectMany(p => new[]
                 {
                     File1(Path.Combine(p, @"Network\Cookies")), File1(Path.Combine(p, @"Network\Cookies-journal")),
                     File1(Path.Combine(p, "Cookies")), File1(Path.Combine(p, "Cookies-journal")),
-                })
-            });
+                })));
             rules.Add(new CleanRule
             {
                 Id = $"br.{b.Name}.session", Group = "Navegadores", Section = b.Name, Name = "Sesión (pestañas abiertas)", DefaultOn = false, Processes = b.Processes,
@@ -272,12 +269,9 @@ public static class JunkCleaner
                 Paths = () => FirefoxProfiles(true).SelectMany(p => new[] { new PathSpec(Path.Combine(p, "cache2")), new PathSpec(Path.Combine(p, "startupCache")), new PathSpec(Path.Combine(p, "thumbnails")) })
                     .Concat(FirefoxProfiles(false).Select(p => new PathSpec(Path.Combine(p, "shader-cache"))))
             });
-            rules.Add(new CleanRule
-            {
-                Id = "br.firefox.cookies", Group = "Navegadores", Section = "Mozilla Firefox", Name = "Cookies", DefaultOn = false, Processes = ff,
-                Warning = "Cerrará la sesión en los sitios web.",
-                Paths = () => FirefoxProfiles(false).SelectMany(p => new[] { File1(Path.Combine(p, "cookies.sqlite")), File1(Path.Combine(p, "cookies.sqlite-wal")) })
-            });
+            rules.Add(CookieRule("br.firefox.cookies", "Mozilla Firefox", ff,
+                () => FirefoxProfiles(false).Select(p => Path.Combine(p, "cookies.sqlite")),
+                () => FirefoxProfiles(false).SelectMany(p => new[] { File1(Path.Combine(p, "cookies.sqlite")), File1(Path.Combine(p, "cookies.sqlite-wal")) })));
             rules.Add(new CleanRule
             {
                 Id = "br.firefox.session", Group = "Navegadores", Section = "Mozilla Firefox", Name = "Sesión", DefaultOn = false, Processes = ff,
@@ -331,6 +325,26 @@ public static class JunkCleaner
         foreach (var r in rules)
             r.Selected = s.CleanerSelection.TryGetValue(r.Id, out var sel) ? sel : r.DefaultOn;
         return rules;
+    }
+
+    // ----------------- Cookies con lista blanca -----------------
+    private static CleanRule CookieRule(string id, string section, string[] procs, Func<IEnumerable<string>> dbs, Func<IEnumerable<PathSpec>> files)
+    {
+        var keep = AppSettings.Current.CookieWhitelist;
+        if (keep.Count == 0)
+            return new CleanRule
+            {
+                Id = id, Group = "Navegadores", Section = section, Name = "Cookies", DefaultOn = false, Processes = procs,
+                Warning = "Cerrará la sesión en los sitios web. Puedes proteger sitios en Opciones › Cookies a conservar.",
+                Paths = files,
+            };
+        // Con lista blanca: se borran filas dentro de la base de datos en lugar del archivo completo
+        return new CleanRule
+        {
+            Id = id, Group = "Navegadores", Section = section, Name = $"Cookies (se conservan {keep.Count} sitios)", DefaultOn = false, Processes = procs,
+            CustomMeasure = () => (0, dbs().Sum(d => CookieKeeper.Process(d, keep, false))),
+            CustomClean = () => { foreach (var d in dbs()) CookieKeeper.Process(d, keep, true); },
+        };
     }
 
     // ----------------- Registro (privacidad) -----------------

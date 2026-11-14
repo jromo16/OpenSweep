@@ -46,10 +46,17 @@
                 <Button Content="Eliminar marcados" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="Delete_Click"/>
             </StackPanel>
         </DockPanel>
-        <DataGrid x:Name="DupGrid">
+        <DataGrid x:Name="DupGrid" RowHeight="56" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
             <DataGrid.Columns>
                 <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
                 <DataGridTextColumn Header="Grupo" Binding="{Binding Group}" Width="60" IsReadOnly="True"/>
+                <DataGridTemplateColumn Header="Vista" Width="70" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Image Source="{Binding Thumb, IsAsync=True}" Height="48" Width="60" Stretch="Uniform" ToolTip="{Binding Path}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Tamaño" Binding="{Binding SizeText}" SortMemberPath="Size" Width="90" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Modificado" Binding="{Binding DateText}" Width="130" IsReadOnly="True"/>

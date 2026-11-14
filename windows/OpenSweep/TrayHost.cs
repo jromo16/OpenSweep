@@ -1,0 +1,85 @@
+using System.Windows;
+using OpenSweep.Core;
+using OpenSweep.Services;
+using Forms = System.Windows.Forms;
+
+namespace OpenSweep;
+
+/// <summary>
+/// Monitor en la bandeja del sistema: revisa la basura cada pocas horas y avisa
+/// cuando supera el umbral configurado. Desde el menú se puede abrir OpenSweep o limpiar.
+/// </summary>
+public sealed class TrayHost : IDisposable
+{
+    private readonly Forms.NotifyIcon _icon;
+    private readonly System.Windows.Threading.DispatcherTimer _timer;
+    private bool _busy;
+
+    public TrayHost()
+    {
+        var iconStream = Application.GetResourceStream(new Uri("pack://application:,,,/app.ico"))?.Stream;
+        _icon = new Forms.NotifyIcon
+        {
+            Icon = iconStream != null ? new System.Drawing.Icon(iconStream) : System.Drawing.SystemIcons.Application,
+            Text = "OpenSweep",
+            Visible = true,
+        };
+        var menu = new Forms.ContextMenuStrip();
+        menu.Items.Add(Loc.T("Abrir OpenSweep"), null, (_, _) => OpenMain());
+        menu.Items.Add(Loc.T("Analizar ahora"), null, async (_, _) => await Check(alwaysShow: true));
+        menu.Items.Add(Loc.T("Limpiar ahora"), null, async (_, _) => await Clean());
+        menu.Items.Add(new Forms.ToolStripSeparator());
+        menu.Items.Add(Loc.T("Salir del monitor"), null, (_, _) => { Dispose(); Application.Current.Shutdown(); });
+        _icon.ContextMenuStrip = menu;
+        _icon.DoubleClick += (_, _) => OpenMain();
+        _icon.BalloonTipClicked += (_, _) => OpenMain();
+
+        _timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(6) };
+        _timer.Tick += async (_, _) => await Check(alwaysShow: false);
+        _timer.Start();
+        // Primera comprobación unos minutos después de iniciar sesión
+        _ = Task.Delay(TimeSpan.FromMinutes(3)).ContinueWith(_ => Application.Current.Dispatcher.Invoke(async () => await Check(false)));
+    }
+
+    private static void OpenMain()
+    {
+        var w = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault() ?? new MainWindow();
+        w.Show();
+        if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
+        w.Activate();
+    }
+
+    private async Task Check(bool alwaysShow)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            long junk = await Task.Run(Scheduler.MeasureJunk);
+            _icon.Text = $"OpenSweep · {Util.FormatBytes(junk)} {Loc.T("de basura")}";
+            if (alwaysShow || junk >= AppSettings.Current.TrayThresholdMb * 1024L * 1024L)
+                _icon.ShowBalloonTip(8000, "OpenSweep",
+                    $"{Loc.T("Tienes")} {Util.FormatBytes(junk)} {Loc.T("de archivos basura. Haz clic para limpiar.")}", Forms.ToolTipIcon.Info);
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task Clean()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            long freed = await Task.Run(Scheduler.RunAutoClean);
+            _icon.ShowBalloonTip(5000, "OpenSweep", $"{Loc.T("Limpieza completada")}: {Util.FormatBytes(freed)} {Loc.T("liberados")}", Forms.ToolTipIcon.Info);
+        }
+        finally { _busy = false; }
+    }
+
+    public void Dispose()
+    {
+        _timer.Stop();
+        _icon.Visible = false;
+        _icon.Dispose();
+    }
+}

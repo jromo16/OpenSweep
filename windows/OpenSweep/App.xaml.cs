@@ -11,6 +11,31 @@ public partial class App : Application
         DispatcherUnhandledException += OnUnhandled;
         ApplyBrandAccent();
         base.OnStartup(e);
+        Core.Loc.Init();
+
+        if (e.Args.Contains("--auto-clean"))
+        {
+            // Limpieza programada: sin ventana
+            Services.Scheduler.RunAutoClean();
+            Shutdown();
+            return;
+        }
+        if (e.Args.Contains("--tray"))
+        {
+            _tray = new TrayHost();
+            return;
+        }
+        var main = new MainWindow();
+        main.Closed += (_, _) => { if (_tray == null) Shutdown(); };
+        main.Show();
+    }
+
+    private TrayHost? _tray;
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _tray?.Dispose();
+        base.OnExit(e);
     }
 
     /// <summary>

@@ -9,6 +9,17 @@ public partial class LeftoversWindow : Window
 {
     private readonly InstalledProgram _program;
     private List<Leftover> _items = [];
+    private readonly bool _preset;
+
+    /// <summary>Muestra una lista ya conocida (p. ej. del monitor de instalaciones) sin buscar.</summary>
+    public LeftoversWindow(string title, List<Leftover> items) : this(UninstallerService.FakeProgram(title, null), true)
+    {
+        _preset = true;
+        _items = items;
+        TitleText.Text = title;
+        InfoText.Text = Loc.T("Elementos creados por la instalación que todavía existen. Revisa la lista antes de eliminar.");
+        ScanBtn.Visibility = ModeSafe.Visibility = ModeModerate.Visibility = ModeAdvanced.Visibility = Visibility.Collapsed;
+    }
 
     public LeftoversWindow(InstalledProgram program, bool forced)
     {
@@ -18,7 +29,13 @@ public partial class LeftoversWindow : Window
         InfoText.Text = forced
             ? "Se buscarán los archivos, carpetas y claves del registro del programa. Revisa la lista antes de eliminar."
             : "El desinstalador terminó. Busca ahora los archivos, carpetas y claves del registro que hayan quedado.";
-        Loaded += (_, _) => Scan_Click(this, new RoutedEventArgs());
+        Loaded += (_, _) =>
+        {
+            if (!_preset) { Scan_Click(this, new RoutedEventArgs()); return; }
+            Grid.ItemsSource = _items;
+            DeleteBtn.IsEnabled = _items.Count > 0;
+            StatusText.Text = $"{_items.Count} {Loc.T("elementos")} · {Util.FormatBytes(_items.Sum(i => i.Size))}";
+        };
     }
 
     private ScanMode Mode => ModeSafe.IsChecked == true ? ScanMode.Seguro : ModeAdvanced.IsChecked == true ? ScanMode.Avanzado : ScanMode.Moderado;

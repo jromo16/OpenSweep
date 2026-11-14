@@ -11,18 +11,30 @@ android {
         applicationId = "io.github.jromo16.opensweep"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
+    }
+
+    // Firma de publicación: se usa si existen las variables de entorno (por ejemplo, secretos de GitHub).
+    // Si no, el APK se firma con la clave de depuración para poder instalarlo directamente.
+    val releaseKeystore = System.getenv("OPENSWEEP_KEYSTORE")
+    signingConfigs {
+        if (releaseKeystore != null && file(releaseKeystore).exists()) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("OPENSWEEP_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("OPENSWEEP_KEY_ALIAS")
+                keyPassword = System.getenv("OPENSWEEP_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
-            // Se firma con la clave de depuración para que el APK se pueda instalar directamente.
-            // Para publicar en Google Play, crea tu propio keystore y cambia esta línea.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
@@ -47,4 +59,5 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("androidx.work:work-runtime-ktx:2.11.2")
 }

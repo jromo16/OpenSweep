@@ -26,6 +26,64 @@
 
             <Border Style="{StaticResource Card}" Margin="0,0,0,14">
                 <StackPanel>
+                    <TextBlock Text="Cookies a conservar" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,8"
+                               Text="Al limpiar cookies se conservarán las de estos sitios, para que no se cierre tu sesión en ellos. Con la lista vacía se borran todas."/>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Margin="8,0,0,0" Width="210">
+                            <DockPanel>
+                                <Button Content="Añadir" DockPanel.Dock="Right" Margin="6,0,0,0" Click="AddCookie_Click"/>
+                                <TextBox x:Name="CookieBox" ToolTip="ejemplo.com"/>
+                            </DockPanel>
+                            <Button Content="Añadir sitios comunes" Margin="0,6,0,0" HorizontalAlignment="Stretch" Click="CommonCookies_Click"/>
+                            <Button Content="Elegir de mis navegadores…" Margin="0,6,0,0" HorizontalAlignment="Stretch" Click="BrowserCookies_Click"/>
+                            <Button Content="Quitar" Margin="0,6,0,0" HorizontalAlignment="Stretch" Click="RemoveCookie_Click"/>
+                        </StackPanel>
+                        <ListBox x:Name="CookieList" Height="170" SelectionMode="Extended"/>
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="Automático" Style="{StaticResource SectionTitle}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Limpieza automática:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="AutoCleanBox" Width="180" Margin="8,0" SelectionChanged="AutoClean_Changed">
+                            <ComboBoxItem Content="Nunca" Tag="never"/>
+                            <ComboBoxItem Content="Cada día" Tag="daily"/>
+                            <ComboBoxItem Content="Cada semana" Tag="weekly"/>
+                        </ComboBox>
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
+                               Text="Limpia en segundo plano lo que tengas marcado en «Limpieza» (sin privacidad y omitiendo los programas abiertos). El historial se guarda en el registro de actividad."/>
+                    <CheckBox x:Name="TrayBox" Content="Mostrar el monitor en la bandeja al iniciar Windows (avisa cuando hay mucha basura)" Margin="0,10,0,0" Click="Tray_Click"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <TextBlock Text="Avisar a partir de" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="ThresholdBox" Width="110" Margin="8,0" SelectionChanged="Threshold_Changed">
+                            <ComboBoxItem Content="200 MB" Tag="200"/>
+                            <ComboBoxItem Content="500 MB" Tag="500"/>
+                            <ComboBoxItem Content="1 GB" Tag="1024"/>
+                            <ComboBoxItem Content="5 GB" Tag="5120"/>
+                        </ComboBox>
+                        <TextBlock Text="de basura" VerticalAlignment="Center"/>
+                        <Button Content="Ver registro de actividad" Margin="16,0,0,0" Click="Log_Click"/>
+                    </StackPanel>
+                    <CheckBox x:Name="UpdatesBox" Content="Buscar versiones nuevas de OpenSweep al iniciar" Margin="0,10,0,0" Click="Save"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="Idioma:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="LanguageBox" Width="180" Margin="8,0" SelectionChanged="Language_Changed">
+                            <ComboBoxItem Content="Automático" Tag="auto"/>
+                            <ComboBoxItem Content="Español" Tag="es"/>
+                            <ComboBoxItem Content="English" Tag="en"/>
+                        </ComboBox>
+                        <TextBlock Style="{StaticResource Muted}" Text="(se aplica al reiniciar OpenSweep)" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
                     <TextBlock Text="Seguridad" Style="{StaticResource SectionTitle}"/>
                     <CheckBox x:Name="RestorePoint" Content="Crear un punto de restauración del sistema antes de desinstalar" Click="Save"/>
                     <CheckBox x:Name="RegBackup" Content="Ofrecer copia de seguridad antes de reparar el registro" Margin="0,6,0,0" Click="Save"/>

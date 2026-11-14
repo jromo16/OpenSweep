@@ -15,21 +15,65 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
+
+      - name: Versión
+        id: ver
+        shell: pwsh
+        run: |
+          $v = if ("${{ github.ref }}" -like "refs/tags/v*") { "${{ github.ref_name }}".TrimStart("v") } else { ([xml](Get-Content windows/OpenSweep/OpenSweep.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1 }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
       - name: Publicar ejecutable único
         working-directory: windows/OpenSweep
         run: >
           dotnet publish -c Release -r win-x64 --self-contained true
           -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
-          -p:EnableCompressionInSingleFile=true -o ../../dist
-      - name: Renombrar
-        run: Rename-Item dist/OpenSweep.exe OpenSweep-windows.exe
+          -p:EnableCompressionInSingleFile=true -p:Version=${{ steps.ver.outputs.version }}
+          -o ../../dist/windows
+
+      # Firma de código opcional: añade los secretos WINDOWS_CERT_PFX (base64) y WINDOWS_CERT_PASSWORD
+      - name: Firmar ejecutable
+        if: ${{ env.CERT != '' }}
+        env:
+          CERT: ${{ secrets.WINDOWS_CERT_PFX }}
+          CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        shell: pwsh
+        run: |
+          [IO.File]::WriteAllBytes("cert.pfx", [Convert]::FromBase64String($env:CERT))
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" | Select-Object -Last 1
+          & $signtool sign /f cert.pfx /p $env:CERT_PASSWORD /fd sha256 /tr http://timestamp.digicert.com /td sha256 dist/windows/OpenSweep.exe
+          "SIGNTOOL=$($signtool.FullName)" >> $env:GITHUB_ENV
+
+      - name: Crear instalador
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress | Out-Null
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /Q /DAppVersion=${{ steps.ver.outputs.version }} installer/OpenSweep.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Firmar instalador
+        if: ${{ env.CERT != '' }}
+        env:
+          CERT: ${{ secrets.WINDOWS_CERT_PFX }}
+          CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        shell: pwsh
+        run: |
+          & $env:SIGNTOOL sign /f cert.pfx /p $env:CERT_PASSWORD /fd sha256 /tr http://timestamp.digicert.com /td sha256 dist/OpenSweep-Setup.exe
+          Remove-Item cert.pfx
+
+      - name: Preparar archivos
+        shell: pwsh
+        run: Copy-Item dist/windows/OpenSweep.exe dist/OpenSweep-windows.exe
+
       - uses: actions/upload-artifact@v4
         with:
           name: OpenSweep-windows
-          path: dist/OpenSweep-windows.exe
+          path: |
+            dist/OpenSweep-windows.exe
+            dist/OpenSweep-Setup.exe
 
   android:
     runs-on: ubuntu-latest
@@ -44,9 +88,24 @@ jobs:
           SDKM=$(ls -d $ANDROID_HOME/cmdline-tools/*/bin | sort -V | tail -1)/sdkmanager
           yes | $SDKM --licenses > /dev/null || true
           $SDKM "platforms;android-37.0" "build-tools;37.0.0"
+
+      # Firma opcional para publicar: secretos ANDROID_KEYSTORE (base64), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+      - name: Preparar keystore
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+        if: ${{ env.KEYSTORE != '' }}
+        run: |
+          echo "$KEYSTORE" | base64 -d > $RUNNER_TEMP/release.jks
+          echo "OPENSWEEP_KEYSTORE=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV
+
       - name: Compilar APK
         working-directory: android
+        env:
+          OPENSWEEP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          OPENSWEEP_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          OPENSWEEP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon
+
       - name: Renombrar
         run: cp android/app/build/outputs/apk/release/app-release.apk OpenSweep-android.apk
       - uses: actions/upload-artifact@v4
@@ -65,6 +124,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: |
+            OpenSweep-Setup.exe
             OpenSweep-windows.exe
             OpenSweep-android.apk
           generate_release_notes: true

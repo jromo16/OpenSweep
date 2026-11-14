@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
@@ -44,7 +45,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.jromo16.opensweep.background.StorageWidget
 import io.github.jromo16.opensweep.core.AppManager
+import io.github.jromo16.opensweep.core.t
 import io.github.jromo16.opensweep.core.JunkGroup
 import io.github.jromo16.opensweep.core.JunkType
 import io.github.jromo16.opensweep.core.Permissions
@@ -61,7 +64,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun CleanerScreen(modifier: Modifier) {
+fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val perms = rememberPermissionState()
@@ -110,6 +113,7 @@ fun CleanerScreen(modifier: Modifier) {
                 }
             }
             ScanState.invalidate()
+            StorageWidget.updateAll(ctx)
             groups = emptyList()
             status = "Listo: ${formatBytes(bytes)} liberados ($count elementos)"
             busy = false
@@ -144,6 +148,17 @@ fun CleanerScreen(modifier: Modifier) {
         Spacer(Modifier.height(12.dp))
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            item {
+                SectionCard {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable(onClick = onMessengers)) {
+                        Column(Modifier.weight(1f)) {
+                            Text(t("WhatsApp y Telegram"), fontWeight = FontWeight.SemiBold)
+                            Text(t("Vídeos, audios, stickers y estados de tus chats"), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
+                    }
+                }
+            }
             items(if (groups.isEmpty()) JunkType.entries.map { JunkGroup(it) } else groups, key = { it.type.name }) { g ->
                 JunkRow(
                     group = g,

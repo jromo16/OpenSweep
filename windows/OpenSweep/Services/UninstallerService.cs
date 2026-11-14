@@ -519,6 +519,60 @@ public static class UninstallerService
         RegistryCleaner.Backup(issues);
     }
 
+    // ===================== Modo cazador =====================
+
+    /// <summary>Busca a qué programa instalado pertenece un ejecutable o acceso directo.</summary>
+    public static InstalledProgram? FindOwner(string path, IEnumerable<InstalledProgram> programs)
+    {
+        if (path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)) path = ResolveShortcut(path) ?? path;
+        if (string.IsNullOrWhiteSpace(path)) return null;
+        var dir = Path.GetDirectoryName(path) ?? "";
+        InstalledProgram? best = null;
+        int bestLen = 0;
+        foreach (var p in programs)
+        {
+            foreach (var candidate in new[]
+                     {
+                         p.InstallLocation,
+                         Path.GetDirectoryName(PathHelper.ExtractPath(p.DisplayIcon) ?? "") ?? "",
+                         p.IsMsi ? "" : Path.GetDirectoryName(PathHelper.ExtractPath(p.UninstallString) ?? "") ?? "",
+                     })
+            {
+                var c = Environment.ExpandEnvironmentVariables(candidate ?? "").TrimEnd('\\');
+                if (c.Length <= 3 || PathHelper.IsProtectedFolder(c)) continue;
+                if ((dir.Equals(c, StringComparison.OrdinalIgnoreCase) || dir.StartsWith(c + "\\", StringComparison.OrdinalIgnoreCase)) && c.Length > bestLen)
+                {
+                    best = p; bestLen = c.Length;
+                }
+            }
+        }
+        if (best != null) return best;
+        // Último recurso: el nombre del producto del ejecutable
+        try
+        {
+            var info = System.Diagnostics.FileVersionInfo.GetVersionInfo(path);
+            var product = Util.Normalize(info.ProductName ?? "");
+            if (product.Length >= 4)
+                return programs.FirstOrDefault(p => Util.Normalize(p.Name).StartsWith(product) || product.StartsWith(Util.Normalize(p.Name)));
+        }
+        catch { }
+        return null;
+    }
+
+    public static string? ResolveShortcut(string lnk)
+    {
+        try
+        {
+            var type = Type.GetTypeFromProgID("WScript.Shell");
+            if (type == null) return null;
+            dynamic shell = Activator.CreateInstance(type)!;
+            dynamic sc = shell.CreateShortcut(lnk);
+            string target = sc.TargetPath;
+            return string.IsNullOrWhiteSpace(target) ? null : target;
+        }
+        catch { return null; }
+    }
+
     // ===================== Apps de Microsoft Store =====================
 
     public static List<StoreApp> GetStoreApps()

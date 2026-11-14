@@ -42,6 +42,18 @@
         </Border>
 
         <!-- Contenido -->
-        <ContentControl x:Name="PageHost" Grid.Column="1" Margin="28,22,28,20"/>
+        <DockPanel Grid.Column="1">
+            <!-- Aviso de actualización -->
+            <Border x:Name="UpdateBanner" DockPanel.Dock="Top" Visibility="Collapsed" Background="#0B3B2C" Padding="16,10">
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                        <Button Content="Más tarde" Click="UpdateLater_Click"/>
+                        <Button x:Name="UpdateBtn" Content="Actualizar ahora" Margin="8,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="UpdateNow_Click"/>
+                    </StackPanel>
+                    <TextBlock x:Name="UpdateText" VerticalAlignment="Center" Foreground="#B7F5DC"/>
+                </DockPanel>
+            </Border>
+            <ContentControl x:Name="PageHost" Margin="28,22,28,20"/>
+        </DockPanel>
     </Grid>
 </Window>

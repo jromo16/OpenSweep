@@ -143,6 +143,24 @@ public static class Native
         return GlobalMemoryStatusEx(m) ? (m.ullTotalPhys, m.ullAvailPhys, m.dwMemoryLoad) : (0, 0, 0);
     }
 
+    // ----- Ventana bajo el cursor (modo cazador) -----
+    [StructLayout(LayoutKind.Sequential)] private struct POINT { public int X, Y; }
+    [DllImport("user32.dll")] private static extern bool GetCursorPos(out POINT p);
+    [DllImport("user32.dll")] private static extern IntPtr WindowFromPoint(POINT p);
+    [DllImport("user32.dll")] private static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+
+    /// <summary>Id del proceso dueño de la ventana que está bajo el cursor.</summary>
+    public static int ProcessUnderCursor()
+    {
+        if (!GetCursorPos(out var p)) return 0;
+        var h = WindowFromPoint(p);
+        if (h == IntPtr.Zero) return 0;
+        var root = GetAncestor(h, 2); // GA_ROOT
+        GetWindowThreadProcessId(root == IntPtr.Zero ? h : root, out var pid);
+        return (int)pid;
+    }
+
     // ----- Portapapeles -----
     [DllImport("user32.dll")] private static extern bool OpenClipboard(IntPtr hWndNewOwner);
     [DllImport("user32.dll")] private static extern bool EmptyClipboard();

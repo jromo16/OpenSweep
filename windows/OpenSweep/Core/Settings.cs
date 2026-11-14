@@ -12,6 +12,12 @@ public sealed class AppSettings
     public bool BackupRegistryBeforeFix { get; set; } = true;
     public int TempMinAgeHours { get; set; } = 24;
     public Dictionary<string, bool> CleanerSelection { get; set; } = [];
+    public List<string> CookieWhitelist { get; set; } = [];
+    public string AutoClean { get; set; } = "never";      // never | daily | weekly
+    public bool TrayMonitor { get; set; }
+    public int TrayThresholdMb { get; set; } = 500;
+    public bool CheckUpdates { get; set; } = true;
+    public string Language { get; set; } = "auto";        // auto | es | en
 
     public static string Folder => Path.Combine(Util.RoamingAppData, "OpenSweep");
     public static string FilePath => Path.Combine(Folder, "settings.json");
