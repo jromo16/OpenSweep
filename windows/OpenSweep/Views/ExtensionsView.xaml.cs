@@ -46,14 +46,14 @@ public partial class ExtensionsView : UserControl
         var procs = sel.SelectMany(s => s.Processes).Distinct().ToArray();
         if (Util.IsProcessRunning(procs))
         {
-            if (MessageBox.Show(Loc.T("El navegador debe cerrarse para eliminar extensiones. ¿Cerrarlo ahora?"), "OpenSweep",
+            if (Dialogs.Show(Loc.T("El navegador debe cerrarse para eliminar extensiones. ¿Cerrarlo ahora?"), "OpenSweep",
                     MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
             Util.KillProcesses(procs);
         }
-        if (MessageBox.Show($"{Loc.T("¿Eliminar")} {sel.Count} {Loc.T("extensiones?")}\n\nNota: si tienes la sincronización activada, el navegador podría reinstalarlas; en ese caso quítalas también desde el propio navegador.",
+        if (Dialogs.Show($"{Loc.T("¿Eliminar")} {sel.Count} {Loc.T("extensiones?")}\n\nNota: si tienes la sincronización activada, el navegador podría reinstalarlas; en ese caso quítalas también desde el propio navegador.",
                 "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         int ok = await Task.Run(() => sel.Count(BrowserExtensions.Remove));
-        MessageBox.Show($"{Loc.T("Se eliminaron")} {ok} de {sel.Count} {Loc.T("extensiones.")}", "OpenSweep");
+        Dialogs.Show($"{Loc.T("Se eliminaron")} {ok} de {sel.Count} {Loc.T("extensiones.")}", "OpenSweep");
         await Load();
     }
 }

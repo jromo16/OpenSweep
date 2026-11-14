@@ -81,13 +81,23 @@ public partial class DuplicatesView : UserControl
         var fullGroups = _files.GroupBy(f => f.Group).Where(g => g.All(f => f.Selected)).Select(g => g.Key).ToList();
         if (fullGroups.Count > 0)
         {
-            MessageBox.Show($"{Loc.T("Has marcado todas las copias de")} {fullGroups.Count} {Loc.T("grupo(s) (p. ej. grupo")} {fullGroups[0]}). {Loc.T("Deja al menos una copia sin marcar en cada grupo.")}",
+            Dialogs.Show($"{Loc.T("Has marcado todas las copias de")} {fullGroups.Count} {Loc.T("grupo(s) (p. ej. grupo")} {fullGroups[0]}). {Loc.T("Deja al menos una copia sin marcar en cada grupo.")}",
                 "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (MessageBox.Show($"{Loc.T("¿Enviar")} {sel.Count} {Loc.T("archivos duplicados")} ({Util.FormatBytes(sel.Sum(f => f.Size))}) {Loc.T("a la papelera?")}", "OpenSweep",
+        if (Dialogs.Show($"{Loc.T("¿Enviar")} {sel.Count} {Loc.T("archivos duplicados")} ({Util.FormatBytes(sel.Sum(f => f.Size))}) {Loc.T("a la papelera?")}", "OpenSweep",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        var deleted = await Task.Run(() => sel.Where(f => Native.SendToRecycleBin(f.Path)).ToList());
+        var deleted = new List<FileEntry>();
+        long freed = 0;
+        await Dialogs.RunAsync(Loc.T("Enviando archivos a la papelera…"), sel,
+            f =>
+            {
+                if (!Native.SendToRecycleBin(f.Path)) return false;
+                lock (deleted) { deleted.Add(f); freed += f.Size; }
+                return true;
+            },
+            f => f.Name,
+            (ok, failed) => $"{ok} {Loc.T("archivos enviados a la papelera")} · {Util.FormatBytes(freed)}" + (failed > 0 ? $" · {failed} {Loc.T("no se pudieron eliminar")}" : ""));
         _files = _files.Except(deleted).ToList();
         // quitar grupos que ya no tienen duplicados
         var single = _files.GroupBy(f => f.Group).Where(g => g.Count() < 2).SelectMany(g => g).ToList();

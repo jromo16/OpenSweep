@@ -462,48 +462,47 @@ public static class UninstallerService
         KeyName = "__forced__" + Guid.NewGuid().ToString("N"),
     };
 
-    public static (int ok, int failed) DeleteLeftovers(IEnumerable<Leftover> items)
+    /// <summary>Guarda una copia .reg de las claves que se van a borrar (llamar antes de DeleteLeftover).</summary>
+    public static void BackupRegistryLeftovers(IEnumerable<Leftover> items)
     {
-        int ok = 0, fail = 0;
-        var list = items.ToList();
-        // backup de claves del registro
-        var regItems = list.Where(i => i.IsRegistry).ToList();
+        var regItems = items.Where(i => i.IsRegistry).ToList();
         if (regItems.Count > 0) BackupLeftoverKeys(regItems);
+    }
 
-        foreach (var i in list)
+    /// <summary>Elimina un resto (archivo, carpeta, clave o valor del registro). Devuelve true si se eliminó.</summary>
+    public static bool DeleteLeftover(Leftover i)
+    {
+        try
         {
-            try
+            if (i.IsRegistry)
             {
-                if (i.IsRegistry)
+                using var baseKey = RegistryKey.OpenBaseKey(i.Hive, i.View);
+                if (i.ValueName != null)
                 {
-                    using var baseKey = RegistryKey.OpenBaseKey(i.Hive, i.View);
-                    if (i.ValueName != null)
-                    {
-                        using var k = baseKey.OpenSubKey(i.Path, true);
-                        k?.DeleteValue(i.ValueName, false);
-                    }
-                    else
-                    {
-                        var parent = i.Path[..i.Path.LastIndexOf('\\')];
-                        var name = i.Path[(i.Path.LastIndexOf('\\') + 1)..];
-                        using var pk = baseKey.OpenSubKey(parent, true);
-                        pk?.DeleteSubKeyTree(name, false);
-                    }
-                    ok++;
-                }
-                else if (i.IsDirectory)
-                {
-                    if (PathHelper.IsProtectedFolder(i.Path)) { fail++; continue; }
-                    if (Util.TryDeleteDirectory(i.Path)) ok++; else fail++;
+                    using var k = baseKey.OpenSubKey(i.Path, true);
+                    k?.DeleteValue(i.ValueName, false);
                 }
                 else
                 {
-                    if (Util.TryDeleteFile(i.Path)) ok++; else fail++;
+                    var parent = i.Path[..i.Path.LastIndexOf('\\')];
+                    var name = i.Path[(i.Path.LastIndexOf('\\') + 1)..];
+                    using var pk = baseKey.OpenSubKey(parent, true);
+                    pk?.DeleteSubKeyTree(name, false);
                 }
+                return true;
             }
-            catch { fail++; }
+            if (i.IsDirectory) return !PathHelper.IsProtectedFolder(i.Path) && Util.TryDeleteDirectory(i.Path);
+            return Util.TryDeleteFile(i.Path);
         }
-        return (ok, fail);
+        catch { return false; }
+    }
+
+    public static (int ok, int failed) DeleteLeftovers(IEnumerable<Leftover> items)
+    {
+        var list = items.ToList();
+        BackupRegistryLeftovers(list);
+        int ok = list.Count(DeleteLeftover);
+        return (ok, list.Count - ok);
     }
 
     private static void BackupLeftoverKeys(List<Leftover> items)

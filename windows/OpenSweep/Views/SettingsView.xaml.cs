@@ -66,7 +66,7 @@ public partial class SettingsView : UserControl
     {
         if (_loading) return;
         Save();
-        if (MessageBox.Show(Loc.T("¿Reiniciar OpenSweep ahora para aplicar el idioma?"), "OpenSweep", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+        if (Dialogs.Show(Loc.T("¿Reiniciar OpenSweep ahora para aplicar el idioma?"), "OpenSweep", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
         {
             try { Process.Start(new ProcessStartInfo(Environment.ProcessPath!) { UseShellExecute = true }); } catch { }
             Application.Current.Shutdown();
@@ -78,7 +78,7 @@ public partial class SettingsView : UserControl
         if (_loading) return;
         var mode = Tag(AutoCleanBox);
         bool ok = await Task.Run(() => Scheduler.SetAutoClean(mode));
-        if (!ok) { MessageBox.Show(Loc.T("No se pudo crear la tarea programada."), "OpenSweep"); return; }
+        if (!ok) { Dialogs.Show(Loc.T("No se pudo crear la tarea programada."), "OpenSweep"); return; }
         _s.AutoClean = mode;
         _s.Save();
     }
@@ -87,7 +87,7 @@ public partial class SettingsView : UserControl
     {
         bool on = TrayBox.IsChecked == true;
         bool ok = await Task.Run(() => Scheduler.SetTray(on));
-        if (!ok) { MessageBox.Show(Loc.T("No se pudo crear la tarea programada."), "OpenSweep"); TrayBox.IsChecked = !on; return; }
+        if (!ok) { Dialogs.Show(Loc.T("No se pudo crear la tarea programada."), "OpenSweep"); TrayBox.IsChecked = !on; return; }
         _s.TrayMonitor = on;
         _s.Save();
         // Arrancar el monitor ahora mismo, sin esperar al próximo inicio de sesión
@@ -96,7 +96,7 @@ public partial class SettingsView : UserControl
 
     private void Log_Click(object sender, RoutedEventArgs e)
     {
-        if (!File.Exists(Scheduler.LogFile)) { MessageBox.Show(Loc.T("Todavía no hay actividad registrada."), "OpenSweep"); return; }
+        if (!File.Exists(Scheduler.LogFile)) { Dialogs.Show(Loc.T("Todavía no hay actividad registrada."), "OpenSweep"); return; }
         try { Process.Start(new ProcessStartInfo(Scheduler.LogFile) { UseShellExecute = true }); } catch { }
     }
 
@@ -146,7 +146,7 @@ public partial class SettingsView : UserControl
         });
         if (all.Count == 0)
         {
-            MessageBox.Show(Loc.T("No se pudieron leer las cookies. Cierra los navegadores y vuelve a intentarlo."), "OpenSweep");
+            Dialogs.Show(Loc.T("No se pudieron leer las cookies. Cierra los navegadores y vuelve a intentarlo."), "OpenSweep");
             return;
         }
         // Ventana simple de selección múltiple
@@ -180,7 +180,7 @@ public partial class SettingsView : UserControl
         if (f == null) return;
         if (PathHelper.IsProtectedFolder(f))
         {
-            MessageBox.Show(Loc.T("No se puede incluir una carpeta del sistema o del perfil de usuario completa."), "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Dialogs.Show(Loc.T("No se puede incluir una carpeta del sistema o del perfil de usuario completa."), "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (!_s.CustomFolders.Contains(f)) _s.CustomFolders.Add(f);

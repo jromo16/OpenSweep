@@ -47,7 +47,7 @@ public partial class CleanerView : UserControl
     {
         // Solo avisar cuando el cambio lo hace el usuario (no al refrescar la lista)
         if (sender is CheckBox { DataContext: CleanRule r, IsChecked: true } cb && r.Warning != null && (cb.IsMouseOver || cb.IsKeyboardFocused))
-            MessageBox.Show(r.DisplayWarning, $"{r.DisplaySection} - {r.DisplayName}", MessageBoxButton.OK, MessageBoxImage.Information);
+            Dialogs.Show(r.DisplayWarning, $"{r.DisplaySection} - {r.DisplayName}", MessageBoxButton.OK, MessageBoxImage.Information);
         SaveSelection();
     }
 
@@ -67,7 +67,7 @@ public partial class CleanerView : UserControl
     {
         var selected = _rules.Where(r => r.Selected).ToList();
         if (selected.Count == 0) return;
-        if (MessageBox.Show(Loc.T("Se eliminarán de forma permanente los archivos seleccionados. ¿Continuar?"), "OpenSweep",
+        if (Dialogs.Show(Loc.T("Se eliminarán de forma permanente los archivos seleccionados. ¿Continuar?"), "OpenSweep",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         await Run(clean: true);
     }
@@ -94,7 +94,7 @@ public partial class CleanerView : UserControl
                 bool close = AppSettings.Current.CloseBrowsersAutomatically;
                 if (!close)
                 {
-                    var answer = MessageBox.Show($"{Loc.T("Estos programas están abiertos")}: {names}.\n\n{Loc.T("¿Quieres cerrarlos para limpiarlos?")}\n\nSí = cerrarlos · No = omitirlos",
+                    var answer = Dialogs.Show($"{Loc.T("Estos programas están abiertos")}: {names}.\n\n{Loc.T("¿Quieres cerrarlos para limpiarlos?")}\n\nSí = cerrarlos · No = omitirlos",
                         Loc.T("Programas abiertos"), MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
                     if (answer == MessageBoxResult.Cancel) return;
                     close = answer == MessageBoxResult.Yes;
@@ -126,6 +126,7 @@ public partial class CleanerView : UserControl
             long files = results.Where(r => r.Rule.CustomMeasure == null).Sum(r => r.Count);
             long failed = results.Sum(r => r.Failed);
             SummaryTitle.Text = clean ? $"{Loc.T("Limpieza completada")}: {Util.FormatBytes(total)} {Loc.T("liberados")}" : $"{Loc.T("Se pueden liberar")} {Util.FormatBytes(total)}";
+            if (clean) Dialogs.Toast(SummaryTitle.Text);
             SummaryText.Text = clean
                 ? $"{files:N0} {Loc.T("archivos eliminados.")}" + (failed > 0 ? $" {failed:N0} {Loc.T("archivos en uso no se pudieron eliminar.")}" : "") + (skip.Count > 0 ? Loc.T(" Se omitieron programas abiertos.") : "")
                 : $"{files:N0} {Loc.T("archivos encontrados. Pulsa «Ejecutar limpieza» para eliminarlos.")}";

@@ -71,17 +71,17 @@ public partial class BackupsView : UserControl
     private void RestoreReg_Click(object sender, RoutedEventArgs e)
     {
         if (RegGrid.SelectedItem is not RegBackup b) return;
-        if (MessageBox.Show($"{Loc.T("¿Restaurar en el registro el contenido de")} {b.Name}?", "OpenSweep",
+        if (Dialogs.Show($"{Loc.T("¿Restaurar en el registro el contenido de")} {b.Name}?", "OpenSweep",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         var (code, output) = Util.Run("reg.exe", $"import \"{b.Path}\"");
-        MessageBox.Show(code == 0 ? Loc.T("Copia restaurada correctamente.") : Loc.T("No se pudo restaurar la copia:") + "\n" + output, "OpenSweep");
+        Dialogs.Show(code == 0 ? Loc.T("Copia restaurada correctamente.") : Loc.T("No se pudo restaurar la copia:") + "\n" + output, "OpenSweep");
     }
 
     private void DeleteReg_Click(object sender, RoutedEventArgs e)
     {
         var sel = RegGrid.SelectedItems.OfType<RegBackup>().ToList();
         if (sel.Count == 0) return;
-        if (MessageBox.Show($"{Loc.T("¿Eliminar")} {sel.Count} {Loc.T("copias de seguridad?")}", "OpenSweep", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+        if (Dialogs.Show($"{Loc.T("¿Eliminar")} {sel.Count} {Loc.T("copias de seguridad?")}", "OpenSweep", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
         foreach (var b in sel) Util.TryDeleteFile(b.Path);
         LoadRegs();
     }
@@ -92,7 +92,7 @@ public partial class BackupsView : UserControl
         PointsStatus.Text = Loc.T("Creando punto de restauración…");
         bool ok = await Task.Run(() => UninstallerService.CreateRestorePoint("OpenSweep: " + Loc.T("punto manual")));
         CreateBtn.IsEnabled = true;
-        if (!ok) MessageBox.Show(Loc.T("Windows no permitió crear el punto. Solo se permite uno cada 24 horas, o la Protección del sistema está desactivada."), "OpenSweep");
+        if (!ok) Dialogs.Show(Loc.T("Windows no permitió crear el punto. Solo se permite uno cada 24 horas, o la Protección del sistema está desactivada."), "OpenSweep");
         await LoadPoints();
     }
 

@@ -112,5 +112,20 @@
                 <ContentControl x:Name="PageHost" Margin="32,24,32,24"/>
             </DockPanel>
         </Border>
+
+        <!-- Aviso breve (toast) -->
+        <Border x:Name="ToastHost" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Margin="0,0,0,26" Padding="16,10" CornerRadius="20" Background="#E61C1C1E" Opacity="0" IsHitTestVisible="False">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.3" Direction="270"/>
+            </Border.Effect>
+            <StackPanel Orientation="Horizontal">
+                <Border Width="20" Height="20" CornerRadius="10" Background="#34D399">
+                    <TextBlock Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="11" Foreground="Black"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock x:Name="ToastText" Foreground="White" FontSize="13.5" Margin="10,0,4,0" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

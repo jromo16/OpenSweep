@@ -49,23 +49,33 @@ public partial class RegistryCleanerView : UserControl
         string? backup = null;
         if (AppSettings.Current.BackupRegistryBeforeFix)
         {
-            var ask = MessageBox.Show(Loc.T("¿Deseas guardar una copia de seguridad de los cambios en el registro?\n(Recomendado)"), "OpenSweep",
+            var ask = Dialogs.Show(Loc.T("¿Deseas guardar una copia de seguridad de los cambios en el registro?\n(Recomendado)"), "OpenSweep",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
             if (ask == MessageBoxResult.Cancel) return;
             if (ask == MessageBoxResult.Yes)
             {
                 backup = await Task.Run(() => RegistryCleaner.Backup(selected));
                 if (backup == null &&
-                    MessageBox.Show(Loc.T("No se pudo crear la copia de seguridad. ¿Continuar igualmente?"), "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                    Dialogs.Show(Loc.T("No se pudo crear la copia de seguridad. ¿Continuar igualmente?"), "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                     return;
             }
         }
 
         ScanBtn.IsEnabled = FixBtn.IsEnabled = false;
         Progress.Visibility = Visibility.Visible;
-        var (ok, failed) = await Task.Run(() => RegistryCleaner.Fix(selected));
+        var fixedIssues = new List<RegistryIssue>();
+        int ok = await Dialogs.RunAsync(Loc.T("Reparando el registro…"), selected,
+            i =>
+            {
+                if (RegistryCleaner.Fix([i]).fixedCount == 0) return false;
+                lock (fixedIssues) fixedIssues.Add(i);
+                return true;
+            },
+            i => i.ProblemText,
+            (done, bad) => $"{done} {Loc.T("problemas reparados")}" + (bad > 0 ? $" · {bad} {Loc.T("no se pudieron reparar")}" : ""));
+        int failed = selected.Count - ok;
         Progress.Visibility = Visibility.Collapsed;
-        _issues = _issues.Except(selected).ToList();
+        _issues = _issues.Except(fixedIssues).ToList();
         Bind();
         ScanBtn.IsEnabled = true;
         SummaryTitle.Text = $"{Loc.T("Se repararon")} {ok} {Loc.T("problemas")}";

@@ -85,7 +85,7 @@ public partial class HealthView : UserControl
     {
         var browsersOpen = _junkRules.SelectMany(r => r.Processes).Distinct().Where(p => Util.IsProcessRunning(p)).ToList();
         if (browsersOpen.Count > 0)
-            MessageBox.Show(Loc.T("Algunos programas están abiertos (") + string.Join(", ", browsersOpen) + "). Sus archivos se omitirán; ciérralos para una limpieza completa.",
+            Dialogs.Show(Loc.T("Algunos programas están abiertos (") + string.Join(", ", browsersOpen) + "). Sus archivos se omitirán; ciérralos para una limpieza completa.",
                 "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Information);
 
         ScanBtn.IsEnabled = FixBtn.IsEnabled = false;
@@ -108,6 +108,7 @@ public partial class HealthView : UserControl
         ScoreTitle.Text = Loc.T("¡Listo!");
         ScoreSub.Text = $"{Loc.T("Se liberaron")} {Util.FormatBytes(freed)} {Loc.T("y se corrigieron")} {regFixed} {Loc.T("entradas del registro.")}";
         JunkText.Text = "0 B"; RegText.Text = Loc.T("0 problemas");
+        Dialogs.Toast(ScoreSub.Text);
         ScanBtn.IsEnabled = true;
         LoadSystemInfo();
     }

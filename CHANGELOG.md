@@ -13,6 +13,10 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
   iconos de colores, barra de título integrada, títulos grandes y listas limpias con esquinas redondeadas.
 - **Modo claro y oscuro** en Windows y Android: automático según el sistema (cambia en vivo) o a elección en Opciones / Ajustes.
 - Argumento `--theme light|dark` para probar los temas en Windows.
+- **Diálogos modernos** en lugar de los cuadros clásicos de Windows: icono de color, botón principal con la acción
+  («Enviar a la papelera», «Eliminar»…) y rojo cuando se borra algo.
+- **Progreso al eliminar**: barra con porcentaje y archivo actual, resumen final con marca verde y aviso breve
+  en la parte inferior (fotos, duplicados, analizador de disco, restos, registro y destructor de archivos).
 
 ### Corregido
 - Windows: el menú lateral no cambiaba de sección al hacer clic.

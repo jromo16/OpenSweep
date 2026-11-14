@@ -25,7 +25,7 @@ public partial class UpdaterView : UserControl
             Bar.Visibility = Visibility.Collapsed;
             CheckBtn.IsEnabled = true;
             StatusText.Text = Loc.T("winget no está instalado.");
-            if (MessageBox.Show(Loc.T("El Administrador de paquetes de Windows (winget) no está disponible. ¿Abrir la Microsoft Store para instalar «Instalador de aplicación»?"),
+            if (Dialogs.Show(Loc.T("El Administrador de paquetes de Windows (winget) no está disponible. ¿Abrir la Microsoft Store para instalar «Instalador de aplicación»?"),
                     "OpenSweep", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                 Util.OpenUrl("ms-windows-store://pdp/?productid=9NBLGGH4NNS1");
             return;

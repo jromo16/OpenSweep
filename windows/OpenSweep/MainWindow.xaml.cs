@@ -73,6 +73,18 @@ public partial class MainWindow : Window
     protected override async void OnContentRendered(EventArgs e)
     {
         base.OnContentRendered(e);
+#if DEBUG
+        // Solo en desarrollo: OpenSweep.exe --demo muestra los diálogos sin borrar nada
+        if (Environment.GetCommandLineArgs().Contains("--demo"))
+        {
+            if (Dialogs.Show($"{Loc.T("¿Enviar")} 2 {Loc.T("archivos")} (7.97 MB) {Loc.T("a la papelera?")}\n{Loc.T("Podrás recuperarlos desde la papelera de reciclaje.")}",
+                    "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                await Dialogs.RunAsync(Loc.T("Enviando archivos a la papelera…"), Enumerable.Range(1, 40).ToList(),
+                    i => { Thread.Sleep(150); return true; }, i => $"IMG_{i:000}.jpg",
+                    (ok, bad) => $"{ok} {Loc.T("archivos enviados a la papelera")} · 7.97 MB");
+            return;
+        }
+#endif
         if (!AppSettings.Current.CheckUpdates) return;
         _update = await AppUpdater.CheckAsync();
         if (_update == null) return;
@@ -89,6 +101,19 @@ public partial class MainWindow : Window
         var progress = new Progress<int>(p => UpdateText.Text = $"{Loc.T("Descargando actualización")}… {p}%");
         if (await AppUpdater.InstallAsync(_update, progress)) Application.Current.Shutdown();
         else UpdateBtn.IsEnabled = true;
+    }
+
+    private int _toastId;
+
+    /// <summary>Muestra un aviso breve en la parte inferior que desaparece solo.</summary>
+    public async void ShowToast(string text)
+    {
+        var id = ++_toastId;
+        ToastText.Text = text;
+        ToastHost.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(1, TimeSpan.FromMilliseconds(180)));
+        await Task.Delay(3500);
+        if (id != _toastId) return;   // llegó otro aviso mientras tanto
+        ToastHost.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, TimeSpan.FromMilliseconds(400)));
     }
 
     /// <summary>Abre la sección de un tipo de página concreto.</summary>

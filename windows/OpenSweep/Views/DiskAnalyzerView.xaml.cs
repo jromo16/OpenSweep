@@ -61,14 +61,24 @@ public partial class DiskAnalyzerView : UserControl
         if (FilesGrid.SelectedItem is FileEntry f) Util.OpenInExplorer(f.Path);
     }
 
-    private void Delete_Click(object sender, RoutedEventArgs e)
+    private async void Delete_Click(object sender, RoutedEventArgs e)
     {
         var sel = FilesGrid.SelectedItems.OfType<FileEntry>().ToList();
         if (sel.Count == 0) return;
-        if (MessageBox.Show($"{Loc.T("¿Enviar")} {sel.Count} {Loc.T("archivos")} ({Util.FormatBytes(sel.Sum(f => f.Size))}) {Loc.T("a la papelera?")}", "OpenSweep",
+        if (Dialogs.Show($"{Loc.T("¿Enviar")} {sel.Count} {Loc.T("archivos")} ({Util.FormatBytes(sel.Sum(f => f.Size))}) {Loc.T("a la papelera?")}", "OpenSweep",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        foreach (var f in sel)
-            if (Native.SendToRecycleBin(f.Path)) _files.Remove(f);
+        var deleted = new List<FileEntry>();
+        long freed = 0;
+        await Dialogs.RunAsync(Loc.T("Enviando archivos a la papelera…"), sel,
+            f =>
+            {
+                if (!Native.SendToRecycleBin(f.Path)) return false;
+                lock (deleted) { deleted.Add(f); freed += f.Size; }
+                return true;
+            },
+            f => f.Name,
+            (ok, failed) => $"{ok} {Loc.T("archivos enviados a la papelera")} · {Util.FormatBytes(freed)}" + (failed > 0 ? $" · {failed} {Loc.T("no se pudieron eliminar")}" : ""));
+        foreach (var f in deleted) _files.Remove(f);
         FilesGrid.Items.Refresh();
     }
 }

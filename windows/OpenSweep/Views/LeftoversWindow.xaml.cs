@@ -62,13 +62,24 @@ public partial class LeftoversWindow : Window
         Grid.CommitEdit(DataGridEditingUnit.Row, true);
         var sel = _items.Where(i => i.Selected).ToList();
         if (sel.Count == 0) return;
-        if (MessageBox.Show($"{Loc.T("Se eliminarán")} {sel.Count} {Loc.T("elementos de forma permanente.")}\n{Loc.T("Las claves del registro se guardan antes en una copia de seguridad.")}\n\n{Loc.T("¿Continuar?")}",
+        if (Dialogs.Show($"{Loc.T("Se eliminarán")} {sel.Count} {Loc.T("elementos de forma permanente.")}\n{Loc.T("Las claves del registro se guardan antes en una copia de seguridad.")}\n\n{Loc.T("¿Continuar?")}",
                 Loc.T("Eliminar restos"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         DeleteBtn.IsEnabled = ScanBtn.IsEnabled = false;
         Progress.Visibility = Visibility.Visible;
-        var (ok, failed) = await Task.Run(() => UninstallerService.DeleteLeftovers(sel));
+        await Task.Run(() => UninstallerService.BackupRegistryLeftovers(sel));
+        var removed = new List<Leftover>();
+        int ok = await Dialogs.RunAsync(Loc.T("Eliminando restos…"), sel,
+            i =>
+            {
+                if (!UninstallerService.DeleteLeftover(i)) return false;
+                lock (removed) removed.Add(i);
+                return true;
+            },
+            i => System.IO.Path.GetFileName(i.Path),
+            (done, bad) => $"{done} {Loc.T("restos eliminados")}" + (bad > 0 ? $" · {bad} {Loc.T("no se pudieron eliminar")}" : ""));
+        int failed = sel.Count - ok;
         Progress.Visibility = Visibility.Collapsed;
-        _items = _items.Except(sel).ToList();
+        _items = _items.Except(removed).ToList();
         Grid.ItemsSource = _items;
         ScanBtn.IsEnabled = true;
         DeleteBtn.IsEnabled = _items.Count > 0;

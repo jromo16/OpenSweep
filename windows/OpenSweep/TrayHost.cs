@@ -1,6 +1,7 @@
 using System.Windows;
 using OpenSweep.Core;
 using OpenSweep.Services;
+using OpenSweep.Views;
 using Forms = System.Windows.Forms;
 
 namespace OpenSweep;

@@ -161,15 +161,24 @@ public partial class PhotosView : UserControl
         bool isSimilar = Tabs.SelectedItem == TabSimilar || Tabs.SelectedItem == TabVideos;
         if (isSimilar && groups.Any(g => g.Items.All(i => i.Selected)))
         {
-            MessageBox.Show(Loc.T("Has marcado todas las fotos de algún grupo. Deja al menos una sin marcar en cada grupo."), "OpenSweep",
+            Dialogs.Show(Loc.T("Has marcado todas las fotos de algún grupo. Deja al menos una sin marcar en cada grupo."), "OpenSweep",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (MessageBox.Show($"{Loc.T("¿Enviar")} {sel.Count} {Loc.T("archivos")} ({Util.FormatBytes(sel.Sum(i => i.Size))}) {Loc.T("a la papelera?")}\n{Loc.T("Podrás recuperarlos desde la papelera de reciclaje.")}",
+        if (Dialogs.Show($"{Loc.T("¿Enviar")} {sel.Count} {Loc.T("archivos")} ({Util.FormatBytes(sel.Sum(i => i.Size))}) {Loc.T("a la papelera?")}\n{Loc.T("Podrás recuperarlos desde la papelera de reciclaje.")}",
                 "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
 
-        var deleted = await Task.Run(() => sel.Where(i => Native.SendToRecycleBin(i.Path))
-            .Select(i => i.Path).ToHashSet(StringComparer.OrdinalIgnoreCase));
+        var deleted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        long freed = 0;
+        await Dialogs.RunAsync(Loc.T("Enviando archivos a la papelera…"), sel,
+            i =>
+            {
+                if (!Native.SendToRecycleBin(i.Path)) return false;
+                lock (deleted) { deleted.Add(i.Path); freed += i.Size; }
+                return true;
+            },
+            i => i.Name,
+            (ok, failed) => $"{ok} {Loc.T("archivos enviados a la papelera")} · {Util.FormatBytes(freed)}" + (failed > 0 ? $" · {failed} {Loc.T("no se pudieron eliminar")}" : ""));
         void Remove(List<MediaItem> l) => l.RemoveAll(i => deleted.Contains(i.Path));
         Remove(_result.Blurry); Remove(_result.Dark); Remove(_result.Screenshots);
         foreach (var g in _result.Similar.Concat(_result.SimilarVideos)) Remove(g.Items);
