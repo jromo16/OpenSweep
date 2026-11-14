@@ -7,8 +7,13 @@ using OpenSweep.Views;
 
 namespace OpenSweep;
 
-public sealed record NavItem(string Icon, string Title, Func<UserControl> Factory)
+// Clase (no record): la lista necesita comparar por referencia. Con un record, al guardar la página
+// en Instance cambiaba su hash y el ListBox ya no podía cambiar la selección.
+public sealed class NavItem(string icon, string title, Func<UserControl> factory)
 {
+    public string Icon { get; } = icon;
+    public string Title { get; } = title;
+    public Func<UserControl> Factory { get; } = factory;
     public string DisplayTitle => Loc.T(Title);
     public UserControl? Instance { get; set; }
 }
