@@ -37,10 +37,10 @@
                                 <DataTemplate>
                                     <StackPanel Margin="0,0,0,10">
                                         <DockPanel>
-                                            <TextBlock Text="{Binding SizeText}" DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}"/>
+                                            <TextBlock Text="{Binding SizeText}" DockPanel.Dock="Right" Foreground="{DynamicResource MutedBrush}"/>
                                             <TextBlock>
                                                 <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold"/>
-                                                <Run Text="{Binding Count, StringFormat=' ({0:N0})', Mode=OneWay}" Foreground="{StaticResource MutedBrush}"/>
+                                                <Run Text="{Binding Count, StringFormat=' ({0:N0})', Mode=OneWay}" Foreground="{DynamicResource MutedBrush}"/>
                                             </TextBlock>
                                         </DockPanel>
                                         <ProgressBar Value="{Binding Percent, Mode=OneWay}" Maximum="100" Height="6" Margin="0,4,0,0"/>
@@ -54,7 +54,7 @@
                                 <DataTemplate>
                                     <StackPanel Margin="0,0,0,10">
                                         <DockPanel>
-                                            <TextBlock Text="{Binding SizeText}" DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}"/>
+                                            <TextBlock Text="{Binding SizeText}" DockPanel.Dock="Right" Foreground="{DynamicResource MutedBrush}"/>
                                             <TextBlock Text="{Binding Path}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}"/>
                                         </DockPanel>
                                         <ProgressBar Value="{Binding Percent, Mode=OneWay}" Maximum="100" Height="6" Margin="0,4,0,0"/>

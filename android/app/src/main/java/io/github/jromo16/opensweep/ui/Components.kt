@@ -54,6 +54,7 @@ fun ScreenTitle(title: String, subtitle: String? = null) {
     }
 }
 
+@Composable
 fun usageColor(p: Float): Color = when {
     p >= 0.9f -> Danger
     p >= 0.75f -> Warn

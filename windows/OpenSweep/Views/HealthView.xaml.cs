@@ -112,5 +112,5 @@ public partial class HealthView : UserControl
         LoadSystemInfo();
     }
 
-    private void Startup_Click(object sender, RoutedEventArgs e) => MainWindow.Current?.Navigate(4);
+    private void Startup_Click(object sender, RoutedEventArgs e) => MainWindow.Current?.Navigate<StartupView>();
 }

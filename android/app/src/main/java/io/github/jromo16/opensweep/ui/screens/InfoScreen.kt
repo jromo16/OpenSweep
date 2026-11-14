@@ -33,13 +33,14 @@ import io.github.jromo16.opensweep.ui.SectionCard
 import kotlinx.coroutines.delay
 
 @Composable
-fun InfoScreen(modifier: Modifier, onBack: () -> Unit, onLanguageChanged: () -> Unit) {
+fun InfoScreen(modifier: Modifier, onBack: () -> Unit, onLanguageChanged: () -> Unit, onThemeChanged: () -> Unit) {
     val ctx = LocalContext.current
     var rows by remember { mutableStateOf(DeviceInfo.rows(ctx)) }
     var battery by remember { mutableStateOf(DeviceInfo.battery(ctx)) }
     var alerts by remember { mutableStateOf(Prefs.junkAlerts(ctx)) }
     var updates by remember { mutableStateOf(Prefs.updateCheck(ctx)) }
     var language by remember { mutableStateOf(Prefs.language(ctx)) }
+    var theme by remember { mutableStateOf(Prefs.theme(ctx)) }
     LaunchedEffect(Unit) {
         while (true) {
             delay(5000)
@@ -72,6 +73,14 @@ fun InfoScreen(modifier: Modifier, onBack: () -> Unit, onLanguageChanged: () -> 
             Text(t("Ajustes"), fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
             SettingSwitch(t("Avisarme cuando haya mucha basura"), alerts) { alerts = it; Prefs.setJunkAlerts(ctx, it) }
             SettingSwitch(t("Buscar versiones nuevas de OpenSweep"), updates) { updates = it; Prefs.setUpdateCheck(ctx, it) }
+            Text(t("Tema"), modifier = Modifier.padding(top = 8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("auto" to t("Automático"), "light" to t("Claro"), "dark" to t("Oscuro")).forEach { (code, label) ->
+                    FilterChip(selected = theme == code, onClick = {
+                        theme = code; Prefs.setTheme(ctx, code); onThemeChanged()
+                    }, label = { Text(label) })
+                }
+            }
             Text(t("Idioma"), modifier = Modifier.padding(top = 8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("auto" to t("Automático"), "es" to "Español", "en" to "English").forEach { (code, label) ->

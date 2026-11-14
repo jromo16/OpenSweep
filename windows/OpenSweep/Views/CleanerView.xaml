@@ -31,7 +31,7 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Margin="0,4,0,4">
-                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,2"/>
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,2"/>
                                                         <ItemsControl ItemsSource="{Binding Rules}">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>

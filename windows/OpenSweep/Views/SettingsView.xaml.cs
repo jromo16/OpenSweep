@@ -25,6 +25,7 @@ public partial class SettingsView : UserControl
         Select(AutoCleanBox, _s.AutoClean, 0);
         Select(ThresholdBox, _s.TrayThresholdMb.ToString(), 1);
         Select(LanguageBox, _s.Language, 0);
+        Select(ThemeBox, _s.Theme, 0);
         IncludeList.ItemsSource = _s.CustomFolders;
         ExcludeList.ItemsSource = _s.Exclusions;
         CookieList.ItemsSource = _s.CookieWhitelist;
@@ -48,6 +49,14 @@ public partial class SettingsView : UserControl
         _s.TrayThresholdMb = int.Parse(Tag(ThresholdBox));
         _s.Language = Tag(LanguageBox);
         _s.Save();
+    }
+
+    private void Theme_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading) return;
+        _s.Theme = Tag(ThemeBox);
+        _s.Save();
+        ThemeManager.Apply(_s.Theme);   // se aplica al instante
     }
 
     private void TempAge_Changed(object sender, SelectionChangedEventArgs e) => Save();

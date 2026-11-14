@@ -39,7 +39,9 @@ import io.github.jromo16.opensweep.ui.screens.HomeScreen
 import io.github.jromo16.opensweep.ui.screens.InfoScreen
 import io.github.jromo16.opensweep.ui.screens.MessengersScreen
 import io.github.jromo16.opensweep.ui.screens.PhotosScreen
+import io.github.jromo16.opensweep.core.Prefs
 import io.github.jromo16.opensweep.ui.theme.OpenSweepTheme
+import io.github.jromo16.opensweep.ui.theme.isDarkTheme
 
 private data class Tab(val title: String, val icon: ImageVector)
 
@@ -51,10 +53,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         I18n.init(this)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-        )
         JunkWorker.schedule(this)
         if (Build.VERSION.SDK_INT >= 33 && savedInstanceState == null) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 10)
@@ -69,7 +67,14 @@ class MainActivity : ComponentActivity() {
             Tab(t("Archivos"), Icons.Filled.Search),
         )
         setContent {
-            OpenSweepTheme {
+            val dark = isDarkTheme(Prefs.theme(this))
+            // Iconos de la barra de estado claros u oscuros según el tema
+            androidx.compose.runtime.LaunchedEffect(dark) {
+                val style = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+            }
+            OpenSweepTheme(dark) {
                 var selected by rememberSaveable { mutableIntStateOf(0) }
                 var sub by rememberSaveable { mutableStateOf<String?>(null) }
                 if (requestedTab >= 0) { selected = requestedTab; sub = null; requestedTab = -1 }
@@ -92,7 +97,7 @@ class MainActivity : ComponentActivity() {
                 ) { padding ->
                     val m = Modifier.padding(padding)
                     when (sub) {
-                        "device" -> InfoScreen(m, onBack = { sub = null }, onLanguageChanged = { recreate() })
+                        "device" -> InfoScreen(m, onBack = { sub = null }, onLanguageChanged = { recreate() }, onThemeChanged = { recreate() })
                         "messengers" -> MessengersScreen(m, onBack = { sub = null })
                         else -> when (selected) {
                             0 -> HomeScreen(m, onClean = { selected = 1 }, onApps = { selected = 3 }, onPhotos = { selected = 2 },

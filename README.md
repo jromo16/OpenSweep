@@ -24,6 +24,8 @@ Ve a [**Releases**](https://github.com/jromo16/OpenSweep/releases) y descarga:
 
 ## Funciones
 
+Diseño moderno inspirado en macOS, con **modo claro y oscuro** automático. Novedades de cada versión en el [historial de cambios](CHANGELOG.md).
+
 ### Windows
 
 | Módulo | Qué hace |

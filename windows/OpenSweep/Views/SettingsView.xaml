@@ -72,7 +72,15 @@
                     </StackPanel>
                     <CheckBox x:Name="UpdatesBox" Content="{l:T 'Buscar versiones nuevas de OpenSweep al iniciar'}" Margin="0,10,0,0" Click="Save"/>
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                        <TextBlock Text="{l:T 'Idioma:'}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{l:T 'Tema:'}" VerticalAlignment="Center" Width="60"/>
+                        <ComboBox x:Name="ThemeBox" Width="180" Margin="8,0" SelectionChanged="Theme_Changed">
+                            <ComboBoxItem Content="{l:T 'Automático (como Windows)'}" Tag="auto"/>
+                            <ComboBoxItem Content="{l:T 'Claro'}" Tag="light"/>
+                            <ComboBoxItem Content="{l:T 'Oscuro'}" Tag="dark"/>
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="{l:T 'Idioma:'}" VerticalAlignment="Center" Width="60"/>
                         <ComboBox x:Name="LanguageBox" Width="180" Margin="8,0" SelectionChanged="Language_Changed">
                             <ComboBoxItem Content="{l:T 'Automático'}" Tag="auto"/>
                             <ComboBoxItem Content="Español" Tag="es"/>

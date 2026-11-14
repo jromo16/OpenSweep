@@ -15,17 +15,17 @@
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                             <!-- Modo cazador: arrastrar la mira sobre la ventana de un programa -->
                             <Border x:Name="HunterTarget" Width="36" Height="32" CornerRadius="6" Margin="0,0,12,0" Cursor="Cross"
-                                    Background="#262C34" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1"
+                                    Background="{DynamicResource TileBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
                                     ToolTip="{l:T 'Modo cazador: mantén pulsado y suelta sobre la ventana de un programa para desinstalarlo. También puedes arrastrar aquí un acceso directo.'}"
                                     MouseLeftButtonDown="Hunter_Down" MouseLeftButtonUp="Hunter_Up">
-                                <TextBlock Text="{l:T '&#xE7B3;'}" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="{StaticResource AccentBrush}"
+                                <TextBlock Text="{l:T '&#xE7B3;'}" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="{DynamicResource AccentBrush}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <CheckBox x:Name="ShowSystem" Content="{l:T 'Mostrar componentes del sistema'}" VerticalAlignment="Center" Margin="0,0,12,0" Click="Refresh_Click"/>
                             <Button Content="{l:T 'Actualizar'}" Click="Refresh_Click"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{l:T '&#xE721;'}" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource MutedBrush}"/>
+                            <TextBlock Text="{l:T '&#xE721;'}" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource MutedBrush}"/>
                             <TextBox x:Name="SearchBox" Width="320" TextChanged="Search_Changed" ToolTip="{l:T 'Buscar por nombre o fabricante'}"/>
                         </StackPanel>
                     </DockPanel>

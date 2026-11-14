@@ -26,7 +26,7 @@
                                 <StackPanel Margin="0,0,0,8">
                                     <DockPanel>
                                         <TextBlock Text="{Binding Label}" FontWeight="SemiBold"/>
-                                        <TextBlock Text="{Binding Detail}" HorizontalAlignment="Right" Foreground="{StaticResource MutedBrush}"/>
+                                        <TextBlock Text="{Binding Detail}" HorizontalAlignment="Right" Foreground="{DynamicResource MutedBrush}"/>
                                     </DockPanel>
                                     <ProgressBar Value="{Binding Percent, Mode=OneWay}" Maximum="100" Height="6" Margin="0,4,0,0"/>
                                 </StackPanel>
@@ -55,7 +55,7 @@
                     <UniformGrid Columns="3" Margin="0,16,0,0">
                         <Border Style="{StaticResource Card}" Margin="0,0,8,0">
                             <StackPanel>
-                                <TextBlock Text="{l:T '&#xE74D;'}" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{l:T '&#xE74D;'}" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{DynamicResource AccentBrush}"/>
                                 <TextBlock Text="{l:T 'Archivos basura'}" FontWeight="SemiBold" Margin="0,8,0,0"/>
                                 <TextBlock x:Name="JunkText" Text="—" FontSize="20"/>
                                 <TextBlock Text="{l:T 'Temporales, caché y papelera'}" Style="{StaticResource Muted}"/>
@@ -63,7 +63,7 @@
                         </Border>
                         <Border Style="{StaticResource Card}" Margin="4,0">
                             <StackPanel>
-                                <TextBlock Text="{l:T '&#xE9F5;'}" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{l:T '&#xE9F5;'}" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{DynamicResource AccentBrush}"/>
                                 <TextBlock Text="{l:T 'Registro'}" FontWeight="SemiBold" Margin="0,8,0,0"/>
                                 <TextBlock x:Name="RegText" Text="—" FontSize="20"/>
                                 <TextBlock Text="{l:T 'Entradas inválidas u obsoletas'}" Style="{StaticResource Muted}"/>
@@ -71,7 +71,7 @@
                         </Border>
                         <Border Style="{StaticResource Card}" Margin="8,0,0,0">
                             <StackPanel>
-                                <TextBlock Text="{l:T '&#xE7B5;'}" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{l:T '&#xE7B5;'}" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{DynamicResource AccentBrush}"/>
                                 <TextBlock Text="{l:T 'Programas de inicio'}" FontWeight="SemiBold" Margin="0,8,0,0"/>
                                 <TextBlock x:Name="StartupText" Text="—" FontSize="20"/>
                                 <TextBlock Text="{l:T 'Se abren al iniciar Windows'}" Style="{StaticResource Muted}"/>

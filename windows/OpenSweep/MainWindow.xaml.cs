@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
 using OpenSweep.Core;
 using OpenSweep.Services;
 using OpenSweep.Views;
@@ -9,11 +11,13 @@ namespace OpenSweep;
 
 // Clase (no record): la lista necesita comparar por referencia. Con un record, al guardar la página
 // en Instance cambiaba su hash y el ListBox ya no podía cambiar la selección.
-public sealed class NavItem(string icon, string title, Func<UserControl> factory)
+public sealed class NavItem(string group, string icon, string color, string title, Type page)
 {
+    public Type Page { get; } = page;
+    public string Group { get; } = Loc.T(group);
     public string Icon { get; } = icon;
+    public Brush Color { get; } = (Brush)new BrushConverter().ConvertFromString(color)!;
     public string Title { get; } = title;
-    public Func<UserControl> Factory { get; } = factory;
     public string DisplayTitle => Loc.T(Title);
     public UserControl? Instance { get; set; }
 }
@@ -22,21 +26,22 @@ public partial class MainWindow : Window
 {
     public static MainWindow? Current { get; private set; }
 
+    // Orden del menú = índice usado por --page
     private readonly List<NavItem> _items =
     [
-        new("", Loc.T("Panel de salud"), () => new HealthView()),
-        new("", Loc.T("Limpieza"), () => new CleanerView()),
-        new("", Loc.T("Registro"), () => new RegistryCleanerView()),
-        new("", Loc.T("Desinstalador"), () => new UninstallerView()),
-        new("", Loc.T("Inicio de Windows"), () => new StartupView()),
-        new("", Loc.T("Extensiones"), () => new ExtensionsView()),
-        new("", Loc.T("Analizador de disco"), () => new DiskAnalyzerView()),
-        new("", Loc.T("Archivos duplicados"), () => new DuplicatesView()),
-        new("", Loc.T("Fotos y vídeos"), () => new PhotosView()),
-        new("", Loc.T("Borrado seguro"), () => new WiperView()),
-        new("", Loc.T("Actualizar programas"), () => new UpdaterView()),
-        new("", Loc.T("Copias de seguridad"), () => new BackupsView()),
-        new("", Loc.T("Opciones"), () => new SettingsView()),
+        new("General", "", "#10B981", "Panel de salud", typeof(HealthView)),
+        new("Limpieza", "", "#0A84FF", "Limpieza", typeof(CleanerView)),
+        new("Limpieza", "", "#5E5CE6", "Registro", typeof(RegistryCleanerView)),
+        new("Programas", "", "#BF5AF2", "Desinstalador", typeof(UninstallerView)),
+        new("Programas", "", "#FF9F0A", "Inicio de Windows", typeof(StartupView)),
+        new("Programas", "", "#30B0C7", "Extensiones", typeof(ExtensionsView)),
+        new("Archivos", "", "#64A0FF", "Analizador de disco", typeof(DiskAnalyzerView)),
+        new("Archivos", "", "#FF375F", "Archivos duplicados", typeof(DuplicatesView)),
+        new("Archivos", "", "#FF9500", "Fotos y vídeos", typeof(PhotosView)),
+        new("Archivos", "", "#FF453A", "Borrado seguro", typeof(WiperView)),
+        new("Programas", "", "#32B65A", "Actualizar programas", typeof(UpdaterView)),
+        new("OpenSweep", "", "#8E8E93", "Copias de seguridad", typeof(BackupsView)),
+        new("OpenSweep", "", "#8E8E93", "Opciones", typeof(SettingsView)),
     ];
 
     public MainWindow()
@@ -45,11 +50,22 @@ public partial class MainWindow : Window
         Current = this;
         var v = Assembly.GetExecutingAssembly().GetName().Version;
         VersionText.Text = $"v{v?.Major}.{v?.Minor}.{v?.Build}";
-        Nav.ItemsSource = _items;
+
+        // Agrupar el menú por secciones (General, Limpieza, Programas, Archivos, OpenSweep)
+        var order = new[] { "General", "Limpieza", "Programas", "Archivos", "OpenSweep" }.Select(Loc.T).ToList();
+        var view = new ListCollectionView(_items.OrderBy(i => order.IndexOf(i.Group)).ToList());
+        view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(NavItem.Group)));
+        Nav.ItemsSource = view;
+
         // Permite abrir una sección concreta: OpenSweep.exe --page 3
         var args = Environment.GetCommandLineArgs();
         var idx = Array.IndexOf(args, "--page");
-        Nav.SelectedIndex = idx > 0 && idx + 1 < args.Length && int.TryParse(args[idx + 1], out var page) && page >= 0 && page < _items.Count ? page : 0;
+        var start = idx > 0 && idx + 1 < args.Length && int.TryParse(args[idx + 1], out var page) && page >= 0 && page < _items.Count ? page : 0;
+        Nav.SelectedItem = _items[start];
+
+        // Sin Mica (Windows 10): fondo sólido
+        if (!ThemeManager.SupportsMica) FallbackBackground.Visibility = Visibility.Visible;
+        ThemeManager.ApplyToWindow(this);
     }
 
     private AppUpdate? _update;
@@ -75,12 +91,17 @@ public partial class MainWindow : Window
         else UpdateBtn.IsEnabled = true;
     }
 
-    public void Navigate(int index) => Nav.SelectedIndex = index;
+    /// <summary>Abre la sección de un tipo de página concreto.</summary>
+    public void Navigate<T>() where T : UserControl
+    {
+        var item = _items.FirstOrDefault(i => i.Page == typeof(T));
+        if (item != null) Nav.SelectedItem = item;
+    }
 
     private void Nav_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (Nav.SelectedItem is not NavItem item) return;
-        item.Instance ??= item.Factory();
+        item.Instance ??= (UserControl)Activator.CreateInstance(item.Page)!;
         PageHost.Content = item.Instance;
     }
 }

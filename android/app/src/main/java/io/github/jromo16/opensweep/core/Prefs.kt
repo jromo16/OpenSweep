@@ -14,4 +14,7 @@ object Prefs {
 
     fun language(ctx: Context) = sp(ctx).getString("language", "auto") ?: "auto"
     fun setLanguage(ctx: Context, v: String) = sp(ctx).edit().putString("language", v).apply()
+
+    fun theme(ctx: Context) = sp(ctx).getString("theme", "auto") ?: "auto"
+    fun setTheme(ctx: Context, v: String) = sp(ctx).edit().putString("theme", v).apply()
 }

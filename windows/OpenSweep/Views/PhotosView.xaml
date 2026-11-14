@@ -5,25 +5,25 @@
     <UserControl.Resources>
         <!-- Tarjeta de una foto o vídeo -->
         <DataTemplate x:Key="Tile">
-            <Border Width="164" Margin="0,0,10,10" CornerRadius="8" Background="#262C34" Padding="6"
+            <Border Width="164" Margin="0,0,10,10" CornerRadius="8" Background="{DynamicResource TileBrush}" Padding="6"
                     BorderThickness="2">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="BorderBrush" Value="Transparent"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsBest}" Value="True">
-                                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
                 <StackPanel>
-                    <Grid Height="120" Background="#1A1E24">
+                    <Grid Height="120" Background="{DynamicResource TileBrush}">
                         <Image Source="{Binding Thumb, IsAsync=True}" Stretch="Uniform" MouseLeftButtonDown="Thumb_Click" Cursor="Hand"
                                ToolTip="{Binding Path}"/>
                         <CheckBox IsChecked="{Binding Selected, Mode=TwoWay}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4,2,0,0"
                                   Click="Check_Click"/>
-                        <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0" Background="{StaticResource AccentBrush}"
+                        <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,4,4,0" Background="{DynamicResource AccentBrush}"
                                 CornerRadius="4" Padding="6,1">
                             <Border.Style>
                                 <Style TargetType="Border">
@@ -52,7 +52,7 @@
                         </TextBlock>
                     </Grid>
                     <TextBlock Text="{Binding Name}" FontSize="12" Margin="0,6,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}"/>
-                    <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}">
+                    <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}">
                         <Run Text="{Binding SizeText, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding DateText, Mode=OneWay}"/>
                     </TextBlock>
                 </StackPanel>
@@ -63,9 +63,9 @@
         <DataTemplate x:Key="GroupTemplate">
             <StackPanel Margin="0,0,0,14">
                 <TextBlock Margin="0,0,0,8">
-                    <Run Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
+                    <Run Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
                     <Run Text="  "/>
-                    <Run Text="{Binding Subtitle, Mode=OneWay}" Foreground="{StaticResource MutedBrush}"/>
+                    <Run Text="{Binding Subtitle, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}"/>
                 </TextBlock>
                 <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource Tile}">
                     <ItemsControl.ItemsPanel>

@@ -1,60 +1,116 @@
 <Window x:Class="OpenSweep.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:l="clr-namespace:OpenSweep.Core"
-        Title="OpenSweep" Height="760" Width="1200" MinHeight="560" MinWidth="900"
-        WindowStartupLocation="CenterScreen" Icon="app.ico">
+        xmlns:l="clr-namespace:OpenSweep.Core"
+        Title="OpenSweep" Height="780" Width="1240" MinHeight="580" MinWidth="960"
+        WindowStartupLocation="CenterScreen" Icon="app.ico"
+        Background="Transparent" FontFamily="{StaticResource UiFont}">
+
+    <!-- Barra de título integrada: el contenido llega hasta arriba y el sistema dibuja los botones -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="46" GlassFrameThickness="-1" ResizeBorderThickness="6"
+                      UseAeroCaptionButtons="True" CornerRadius="0"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <!-- Elemento del menú lateral: sin la "píldora" de Fluent, selección redondeada estilo macOS -->
+        <Style x:Key="NavItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" CornerRadius="8" Padding="8,5" Background="Transparent">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource NavSelectionBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="230"/>
+            <ColumnDefinition Width="244"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="46"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Fondo de la ventana: translúcido (Mica) en Windows 11; color sólido en Windows 10 -->
+        <Border x:Name="FallbackBackground" Grid.RowSpan="2" Grid.ColumnSpan="2" Background="{DynamicResource SidebarBrush}" Visibility="Collapsed"/>
+
+        <!-- Marca en la barra de título -->
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="18,6,0,0">
+            <Image Source="app.ico" Width="22" Height="22"/>
+            <TextBlock Text="OpenSweep" FontFamily="{StaticResource DisplayFont}" FontSize="15" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextBrush}" Margin="9,0,0,0" VerticalAlignment="Center"/>
+            <TextBlock x:Name="VersionText" Text="v1.0" FontSize="11" Foreground="{DynamicResource MutedBrush}"
+                       Margin="7,2,0,0" VerticalAlignment="Center"/>
+        </StackPanel>
 
         <!-- Barra lateral -->
-        <Border Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,0,1,0">
+        <DockPanel Grid.Row="1">
+            <TextBlock DockPanel.Dock="Bottom" Margin="20,8,16,16" FontSize="11" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
+                       Text="{l:T 'Software libre y de código abierto.'}"/>
+            <ListBox x:Name="Nav" Background="Transparent" BorderThickness="0" Margin="10,0,10,0" Padding="0"
+                     SelectionChanged="Nav_SelectionChanged" ItemContainerStyle="{StaticResource NavItemStyle}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Name}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}"
+                                           Margin="10,12,0,4"/>
+                            </DataTemplate>
+                        </GroupStyle.HeaderTemplate>
+                    </GroupStyle>
+                </ListBox.GroupStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Icono blanco sobre un cuadrado de color, como en Ajustes del Sistema -->
+                            <Border Width="26" Height="26" CornerRadius="7" Background="{Binding Color}">
+                                <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource IconFont}" FontSize="14" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="{Binding DisplayTitle}" FontSize="13.5" Margin="11,0,0,0" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
+
+        <!-- Contenido: hoja con la esquina redondeada -->
+        <Border Grid.Column="1" Grid.Row="1" Background="{DynamicResource ContentBrush}" CornerRadius="12,0,0,0"
+                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1,1,0,0">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="18,20,18,20">
-                    <Image Source="app.ico" Width="32" Height="32"/>
-                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="OpenSweep" FontSize="18" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="VersionText" Text="v1.0" FontSize="11" Foreground="{StaticResource MutedBrush}"/>
-                    </StackPanel>
-                </StackPanel>
-                <TextBlock DockPanel.Dock="Bottom" Margin="18,10,18,16" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
-                           Text="{l:T 'Software libre y de código abierto.'}"/>
-                <ListBox x:Name="Nav" Background="Transparent" BorderThickness="0" Margin="8,0" SelectionChanged="Nav_SelectionChanged"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                            <Setter Property="Padding" Value="10,2"/>
-                            <Setter Property="MinHeight" Value="38"/>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Margin="2,0">
-                                <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource IconFont}" FontSize="16" Width="26" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding DisplayTitle}" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                <!-- Aviso de actualización -->
+                <Border x:Name="UpdateBanner" DockPanel.Dock="Top" Visibility="Collapsed" Background="{DynamicResource BannerBrush}"
+                        CornerRadius="10" Margin="24,16,24,0" Padding="16,10">
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                            <Button Content="{l:T 'Más tarde'}" Click="UpdateLater_Click"/>
+                            <Button x:Name="UpdateBtn" Content="{l:T 'Actualizar ahora'}" Margin="8,0,0,0"
+                                    Style="{DynamicResource AccentButtonStyle}" Click="UpdateNow_Click"/>
+                        </StackPanel>
+                        <TextBlock x:Name="UpdateText" VerticalAlignment="Center" Foreground="{DynamicResource BannerTextBrush}" FontWeight="SemiBold"/>
+                    </DockPanel>
+                </Border>
+                <ContentControl x:Name="PageHost" Margin="32,24,32,24"/>
             </DockPanel>
         </Border>
-
-        <!-- Contenido -->
-        <DockPanel Grid.Column="1">
-            <!-- Aviso de actualización -->
-            <Border x:Name="UpdateBanner" DockPanel.Dock="Top" Visibility="Collapsed" Background="#0B3B2C" Padding="16,10">
-                <DockPanel>
-                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                        <Button Content="{l:T 'Más tarde'}" Click="UpdateLater_Click"/>
-                        <Button x:Name="UpdateBtn" Content="{l:T 'Actualizar ahora'}" Margin="8,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="UpdateNow_Click"/>
-                    </StackPanel>
-                    <TextBlock x:Name="UpdateText" VerticalAlignment="Center" Foreground="#B7F5DC"/>
-                </DockPanel>
-            </Border>
-            <ContentControl x:Name="PageHost" Margin="28,22,28,20"/>
-        </DockPanel>
     </Grid>
 </Window>

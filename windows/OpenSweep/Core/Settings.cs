@@ -17,7 +17,8 @@ public sealed class AppSettings
     public bool TrayMonitor { get; set; }
     public int TrayThresholdMb { get; set; } = 500;
     public bool CheckUpdates { get; set; } = true;
-    public string Language { get; set; } = "auto";        // auto | es | en
+    public string Language { get; set; } = "auto";
+    public string Theme { get; set; } = "auto";           // auto | light | dark        // auto | es | en
 
     public static string Folder => Path.Combine(Util.RoamingAppData, "OpenSweep");
     public static string FilePath => Path.Combine(Folder, "settings.json");
