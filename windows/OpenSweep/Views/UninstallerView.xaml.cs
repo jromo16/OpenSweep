@@ -60,8 +60,17 @@ public partial class UninstallerView : UserControl
         if (ProgramsGrid.SelectedItem is InstalledProgram) Uninstall_Click(sender, e);
     }
 
+    /// <summary>El botón indica cuántos programas se desinstalarán (Ctrl o Mayús + clic para elegir varios).</summary>
+    private void ProgramsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        int n = ProgramsGrid.SelectedItems.Count;
+        UninstallBtn.Content = n > 1 ? $"{Loc.T("Desinstalar")} ({n})" : Loc.T("Desinstalar");
+    }
+
     private async void Uninstall_Click(object sender, RoutedEventArgs e)
     {
+        var many = ProgramsGrid.SelectedItems.OfType<InstalledProgram>().ToList();
+        if (many.Count > 1) { await BatchUninstall(many); return; }
         var p = Selected();
         if (p == null) return;
         if (Dialogs.Show($"{Loc.T("¿Desinstalar «")}{p.Name}»?\n\n{Loc.T("Se ejecutará su desinstalador y después podrás buscar los restos.")}", Loc.T("Desinstalar"),
@@ -94,6 +103,63 @@ public partial class UninstallerView : UserControl
         }
 
         new LeftoversWindow(p, forced: false) { Owner = Window.GetWindow(this) }.ShowDialog();
+        await LoadPrograms();
+    }
+
+    /// <summary>
+    /// Desinstalación por lotes: un solo punto de restauración, los desinstaladores uno tras otro
+    /// y al final una sola búsqueda de restos de todos los programas.
+    /// </summary>
+    private async Task BatchUninstall(List<InstalledProgram> programs)
+    {
+        var names = string.Join("\n", programs.Take(8).Select(p => "• " + p.Name)) +
+                    (programs.Count > 8 ? $"\n… {Loc.T("y")} {programs.Count - 8} {Loc.T("más")}" : "");
+        if (Dialogs.Show($"{Loc.T("¿Desinstalar")} {programs.Count} {Loc.T("programas?")}\n\n{names}\n\n{Loc.T("Se ejecutarán sus desinstaladores uno tras otro y al final podrás eliminar los restos de todos.")}",
+                Loc.T("Desinstalar"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+
+        UninstallBtn.IsEnabled = false;
+        LoadingBar.Visibility = Visibility.Visible;
+        var removed = new List<InstalledProgram>();
+        try
+        {
+            if (AppSettings.Current.CreateRestorePointBeforeUninstall)
+            {
+                CountText.Text = Loc.T("Creando punto de restauración del sistema...");
+                await Task.Run(() => UninstallerService.CreateRestorePoint($"{Loc.T("OpenSweep: antes de desinstalar")} {programs.Count} {Loc.T("programas")}"));
+            }
+            for (int i = 0; i < programs.Count; i++)
+            {
+                var p = programs[i];
+                CountText.Text = $"{Loc.T("Desinstalando")} {i + 1} {Loc.T("de")} {programs.Count}: {p.Name}…";
+                try { await UninstallerService.RunUninstallerAsync(p, quiet: false); } catch { }
+                if (!UninstallerService.StillInstalled(p)) removed.Add(p);
+            }
+
+            // Restos de todos (también de los que el usuario canceló, por si quedaron a medias)
+            CountText.Text = Loc.T("Buscando restos de los programas desinstalados…");
+            var leftovers = await Task.Run(() =>
+            {
+                var all = new List<Leftover>();
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var p in programs)
+                    foreach (var l in UninstallerService.FindLeftovers(p, ScanMode.Moderado, CancellationToken.None))
+                        if (seen.Add(l.Display))
+                            all.Add(new Leftover
+                            {
+                                Path = l.Path, IsRegistry = l.IsRegistry, IsDirectory = l.IsDirectory, Hive = l.Hive, View = l.View,
+                                ValueName = l.ValueName, Size = l.Size, Reason = $"{p.Name}: {l.Reason}", Selected = l.Selected, Shared = l.Shared,
+                            });
+                return all;
+            });
+            Dialogs.Toast($"{removed.Count} {Loc.T("de")} {programs.Count} {Loc.T("programas desinstalados")}");
+            if (leftovers.Count > 0)
+                new LeftoversWindow($"{Loc.T("Restos de")} {programs.Count} {Loc.T("programas")}", leftovers) { Owner = Window.GetWindow(this) }.ShowDialog();
+        }
+        finally
+        {
+            LoadingBar.Visibility = Visibility.Collapsed;
+            UninstallBtn.IsEnabled = true;
+        }
         await LoadPrograms();
     }
 

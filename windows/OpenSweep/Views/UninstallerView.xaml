@@ -40,7 +40,7 @@
                         </WrapPanel>
                     </DockPanel>
                     <Grid>
-                        <DataGrid x:Name="ProgramsGrid" IsReadOnly="True" SelectionMode="Single" MouseDoubleClick="ProgramsGrid_DoubleClick"
+                        <DataGrid x:Name="ProgramsGrid" IsReadOnly="True" SelectionMode="Extended" MouseDoubleClick="ProgramsGrid_DoubleClick" SelectionChanged="ProgramsGrid_SelectionChanged"
                                   AllowDrop="True" Drop="Programs_Drop">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="" Width="40" CanUserSort="False">

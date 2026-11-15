@@ -62,6 +62,8 @@ class StorageScanner(private val ctx: Context) {
             for (c in children) {
                 if (c.isDirectory) {
                     // Android/data y Android/obb no son accesibles desde Android 11
+                    // La papelera de OpenSweep no se analiza (si no, aparecería como duplicados o archivos grandes)
+                    if (depth == 0 && c.name == ".OpenSweepTrash") { allEmpty = false; continue }
                     if (depth == 0 && c.name == "Android") {
                         walk(File(c, "media"), depth + 2)
                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) walk(File(c, "data"), depth + 2)
@@ -199,17 +201,30 @@ class StorageScanner(private val ctx: Context) {
 
     companion object {
         /** Borra archivos y carpetas. Devuelve (bytes liberados, elementos borrados). */
-        /** @param recursive true solo para restos de apps desinstaladas; las carpetas vacías se borran solo si siguen vacías. */
-        fun delete(files: List<FileRec>, folders: List<String> = emptyList(), recursive: Boolean = false): Pair<Long, Int> {
+        /**
+         * Borra archivos y carpetas.
+         * @param trashCtx si no es null, se mueven a la papelera de OpenSweep (recuperables 30 días) en lugar de borrarse.
+         * @param recursive true solo para restos de apps; las carpetas vacías se borran solo si siguen vacías.
+         */
+        fun delete(
+            files: List<FileRec>, folders: List<String> = emptyList(), recursive: Boolean = false,
+            trashCtx: Context? = null,
+        ): Pair<Long, Int> {
             var bytes = 0L; var count = 0
             for (f in files) {
                 val file = File(f.path)
-                if (file.exists() && file.delete()) { bytes += f.size; count++ }
+                if (!file.exists()) continue
+                val ok = if (trashCtx != null) Trash.move(trashCtx, f.path) else file.delete()
+                if (ok) { bytes += f.size; count++ }
             }
             for (d in folders.sortedByDescending { it.length }) {
                 val dir = File(d)
                 if (!dir.exists()) continue
-                val ok = if (recursive) dir.deleteRecursively() else (dir.list()?.isEmpty() == true && dir.delete())
+                val ok = when {
+                    trashCtx != null && recursive -> Trash.move(trashCtx, d)
+                    recursive -> dir.deleteRecursively()
+                    else -> dir.list()?.isEmpty() == true && dir.delete()
+                }
                 if (ok) count++
             }
             return bytes to count

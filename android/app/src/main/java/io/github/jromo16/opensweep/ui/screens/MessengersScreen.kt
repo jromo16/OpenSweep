@@ -142,7 +142,7 @@ fun MessengersScreen(modifier: Modifier, onBack: () -> Unit) {
                     confirm = false
                     val list = toDelete
                     scope.launch {
-                        withContext(Dispatchers.IO) { StorageScanner.delete(list) }
+                        withContext(Dispatchers.IO) { StorageScanner.delete(list, trashCtx = ctx) }
                         ScanState.invalidate()
                         load()
                     }

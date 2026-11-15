@@ -38,7 +38,14 @@ import io.github.jromo16.opensweep.core.UpdateInfo
 import io.github.jromo16.opensweep.core.Updater
 import io.github.jromo16.opensweep.core.formatBytes
 import io.github.jromo16.opensweep.core.t
+import io.github.jromo16.opensweep.core.JunkType
+import io.github.jromo16.opensweep.core.Trash
 import io.github.jromo16.opensweep.ui.LabeledBar
+import io.github.jromo16.opensweep.ui.NavHints
+import io.github.jromo16.opensweep.ui.ScanState
+import io.github.jromo16.opensweep.ui.Suggestion
+import io.github.jromo16.opensweep.ui.SuggestionTarget
+import io.github.jromo16.opensweep.ui.Suggestions
 import io.github.jromo16.opensweep.ui.PermissionCard
 import io.github.jromo16.opensweep.ui.ScreenTitle
 import io.github.jromo16.opensweep.ui.SectionCard
@@ -53,13 +60,24 @@ import kotlinx.coroutines.withContext
 private object UpdateState { var checked = false; var info: UpdateInfo? = null }
 
 @Composable
-fun HomeScreen(modifier: Modifier, onClean: () -> Unit, onApps: () -> Unit, onPhotos: () -> Unit, onDevice: () -> Unit) {
+fun HomeScreen(
+    modifier: Modifier, onClean: () -> Unit, onApps: () -> Unit, onPhotos: () -> Unit, onDevice: () -> Unit,
+    onFiles: () -> Unit, onTrash: () -> Unit,
+) {
     val ctx = LocalContext.current
     val perms = rememberPermissionState()
     var storage by remember { mutableStateOf(DeviceInfo.storage()) }
     var memory by remember { mutableStateOf(DeviceInfo.memory(ctx)) }
     var battery by remember { mutableStateOf(DeviceInfo.battery(ctx)) }
     var update by remember { mutableStateOf(UpdateState.info) }
+    var suggestions by remember { mutableStateOf<List<Suggestion>>(emptyList()) }
+
+    // Sugerencias: se analiza el almacenamiento en segundo plano (una vez por sesión) y se calculan
+    LaunchedEffect(perms.storage, perms.usage) {
+        withContext(Dispatchers.IO) { Trash.purgeExpired() }
+        if (perms.storage && ScanState.scanner == null && !ScanState.scanning) ScanState.scan(ctx)
+        suggestions = withContext(Dispatchers.IO) { Suggestions.compute(ctx) }
+    }
 
     LaunchedEffect(Unit) {
         if (!UpdateState.checked && Prefs.updateCheck(ctx)) {
@@ -115,6 +133,25 @@ fun HomeScreen(modifier: Modifier, onClean: () -> Unit, onApps: () -> Unit, onPh
                     Text("${t("de")} ${formatBytes(storage.total)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(10.dp))
                     Button(onClick = onClean) { Text(t("Analizar y limpiar")) }
+                }
+            }
+        }
+
+        if (suggestions.isNotEmpty()) {
+            Text(t("Sugerencias"), fontWeight = FontWeight.SemiBold, fontSize = 18.sp, modifier = Modifier.padding(top = 4.dp))
+            suggestions.forEach { s ->
+                SectionCard {
+                    Text(s.title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Text(s.detail, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(onClick = {
+                        when (s.target) {
+                            SuggestionTarget.APPS -> { NavHints.appsSortUnused = true; onApps() }
+                            SuggestionTarget.FILES -> { NavHints.filesTab = 1; NavHints.filesMinMb = 100; onFiles() }
+                            SuggestionTarget.CLEANER -> { NavHints.cleanerSelect = JunkType.DOWNLOADS; onClean() }
+                            SuggestionTarget.TRASH -> onTrash()
+                        }
+                    }) { Text(s.button) }
                 }
             }
         }

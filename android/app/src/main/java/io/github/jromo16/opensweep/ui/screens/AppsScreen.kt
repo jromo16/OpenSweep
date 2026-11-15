@@ -57,11 +57,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.jromo16.opensweep.core.AppEntry
 import io.github.jromo16.opensweep.core.AppManager
+import io.github.jromo16.opensweep.core.Trash
 import io.github.jromo16.opensweep.core.Permissions
 import io.github.jromo16.opensweep.core.formatAgo
 import io.github.jromo16.opensweep.core.formatBytes
 import io.github.jromo16.opensweep.core.formatDate
 import io.github.jromo16.opensweep.ui.InfoRow
+import io.github.jromo16.opensweep.ui.NavHints
 import io.github.jromo16.opensweep.ui.PermissionCard
 import io.github.jromo16.opensweep.ui.ScreenTitle
 import io.github.jromo16.opensweep.ui.rememberPermissionState
@@ -81,7 +83,7 @@ fun AppsScreen(modifier: Modifier) {
     var apps by remember { mutableStateOf<List<AppEntry>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var query by remember { mutableStateOf("") }
-    var sort by remember { mutableStateOf(SortBy.SIZE) }
+    var sort by remember { mutableStateOf(if (NavHints.appsSortUnused) SortBy.LAST_USED else SortBy.SIZE).also { NavHints.appsSortUnused = false } }
     var showSystem by remember { mutableStateOf(false) }
     val checked = remember { mutableStateListOf<String>() }
     var details by remember { mutableStateOf<AppEntry?>(null) }
@@ -231,7 +233,7 @@ fun AppsScreen(modifier: Modifier) {
                 TextButton(onClick = {
                     val list = leftovers
                     leftovers = emptyList()
-                    scope.launch(Dispatchers.IO) { list.forEach { File(it).deleteRecursively() } }
+                    scope.launch(Dispatchers.IO) { list.forEach { Trash.move(ctx, it) } }
                     Toast.makeText(ctx, t("Restos eliminados"), Toast.LENGTH_SHORT).show()
                 }) { Text(t("Eliminar restos")) }
             },

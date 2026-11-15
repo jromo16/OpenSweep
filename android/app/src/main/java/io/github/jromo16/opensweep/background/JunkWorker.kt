@@ -34,6 +34,7 @@ class JunkWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, 
         val ctx = applicationContext
         io.github.jromo16.opensweep.core.I18n.init(ctx)
         StorageWidget.updateAll(ctx)
+        if (Permissions.hasStorage(ctx)) io.github.jromo16.opensweep.core.Trash.purgeExpired()
         if (!Prefs.junkAlerts(ctx) || !Permissions.hasStorage(ctx)) return Result.success()
         val scanner = StorageScanner(ctx).apply { scan { } }
         val groups = scanner.junkGroups(AppManager.totalCacheBytes(ctx))

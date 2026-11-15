@@ -39,6 +39,7 @@ import io.github.jromo16.opensweep.ui.screens.HomeScreen
 import io.github.jromo16.opensweep.ui.screens.InfoScreen
 import io.github.jromo16.opensweep.ui.screens.MessengersScreen
 import io.github.jromo16.opensweep.ui.screens.PhotosScreen
+import io.github.jromo16.opensweep.ui.screens.TrashScreen
 import io.github.jromo16.opensweep.core.Prefs
 import io.github.jromo16.opensweep.ui.theme.OpenSweepTheme
 import io.github.jromo16.opensweep.ui.theme.isDarkTheme
@@ -99,9 +100,10 @@ class MainActivity : ComponentActivity() {
                     when (sub) {
                         "device" -> InfoScreen(m, onBack = { sub = null }, onLanguageChanged = { recreate() }, onThemeChanged = { recreate() })
                         "messengers" -> MessengersScreen(m, onBack = { sub = null })
+                        "trash" -> TrashScreen(m, onBack = { sub = null })
                         else -> when (selected) {
                             0 -> HomeScreen(m, onClean = { selected = 1 }, onApps = { selected = 3 }, onPhotos = { selected = 2 },
-                                onDevice = { sub = "device" })
+                                onDevice = { sub = "device" }, onFiles = { selected = 4 }, onTrash = { sub = "trash" })
                             1 -> CleanerScreen(m, onMessengers = { sub = "messengers" })
                             2 -> PhotosScreen(m)
                             3 -> AppsScreen(m)

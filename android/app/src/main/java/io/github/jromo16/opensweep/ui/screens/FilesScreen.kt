@@ -50,6 +50,7 @@ import io.github.jromo16.opensweep.core.StorageScanner
 import io.github.jromo16.opensweep.core.formatBytes
 import io.github.jromo16.opensweep.core.formatDate
 import io.github.jromo16.opensweep.ui.LabeledBar
+import io.github.jromo16.opensweep.ui.NavHints
 import io.github.jromo16.opensweep.ui.PermissionCard
 import io.github.jromo16.opensweep.ui.ScanState
 import io.github.jromo16.opensweep.ui.ScreenTitle
@@ -67,11 +68,11 @@ fun FilesScreen(modifier: Modifier) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val perms = rememberPermissionState()
-    var tab by remember { mutableIntStateOf(0) }
+    var tab by remember { mutableIntStateOf(NavHints.filesTab ?: 0).also { NavHints.filesTab = null } }
     var stats by remember { mutableStateOf<List<MediaStats>>(emptyList()) }
     var large by remember { mutableStateOf<List<FileRec>>(emptyList()) }
     var dups by remember { mutableStateOf<List<List<FileRec>>>(emptyList()) }
-    var minLarge by remember { mutableLongStateOf(50 * MB) }
+    var minLarge by remember { mutableLongStateOf((NavHints.filesMinMb ?: 50) * MB).also { NavHints.filesMinMb = null } }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
     val checked = remember { mutableStateListOf<String>() }
@@ -184,7 +185,7 @@ fun FilesScreen(modifier: Modifier) {
                     confirm = false
                     scope.launch {
                         busy = true
-                        val (bytes, _) = withContext(Dispatchers.IO) { StorageScanner.delete(all) }
+                        val (bytes, _) = withContext(Dispatchers.IO) { StorageScanner.delete(all, trashCtx = ctx) }
                         ScanState.invalidate()
                         status = "${t("Se liberaron")} ${formatBytes(bytes)}"
                         busy = false

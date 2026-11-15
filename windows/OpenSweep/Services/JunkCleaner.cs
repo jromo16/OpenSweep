@@ -35,7 +35,9 @@ public sealed class RuleResult
     public long Failed { get; set; }
     public List<string> Files { get; } = [];
     public string Display => $"{Rule.DisplaySection} - {Rule.DisplayName}";
-    public string SizeText => Util.FormatBytes(Bytes);
+    /// <summary>El tamaño solo se conoce al limpiar (lo calcula Windows).</summary>
+    public bool Unknown { get; set; }
+    public string SizeText => Unknown ? Loc.T("se calcula al limpiar") : Util.FormatBytes(Bytes);
 }
 
 public static class JunkCleaner
@@ -175,6 +177,34 @@ public static class JunkCleaner
         {
             Id = "win.fonts", Group = "Windows", Section = "Sistema", Name = "Caché de fuentes", DefaultOn = false,
             Paths = () => [new PathSpec(Path.Combine(win, @"ServiceProfiles\LocalService\AppData\Local\FontCache"), "*.dat", true, 0, false)]
+        });
+
+        // ===== Actualizaciones de Windows (con las herramientas del sistema; desmarcadas por defecto) =====
+        if (SystemCleanup.HasPreviousInstallation)
+            rules.Add(new CleanRule
+            {
+                Id = "win.old", Group = "Windows", Section = "Actualizaciones de Windows", Name = "Instalación anterior de Windows (Windows.old)",
+                DefaultOn = false,
+                Warning = "Después ya no podrás volver a la versión anterior de Windows desde Configuración › Recuperación.",
+                CustomMeasure = () => (SystemCleanup.PreviousInstallationBytes(), 1),
+                CustomClean = () => SystemCleanup.RunCleanmgr("Previous Installations", "Temporary Setup Files", "Windows Upgrade Log Files",
+                    "Upgrade Discarded Files", "Windows ESD installation files"),
+            });
+        rules.Add(new CleanRule
+        {
+            Id = "win.drivers", Group = "Windows", Section = "Actualizaciones de Windows", Name = "Paquetes de controladores antiguos",
+            DefaultOn = false,
+            Warning = "Elimina versiones antiguas de controladores que Windows ya no usa. Después no podrás volver a esas versiones.",
+            CustomMeasure = () => (-1, 1),   // el tamaño solo lo conoce Windows al limpiar
+            CustomClean = () => SystemCleanup.RunCleanmgr("Device Driver Packages"),
+        });
+        rules.Add(new CleanRule
+        {
+            Id = "win.winsxs", Group = "Windows", Section = "Actualizaciones de Windows", Name = "Componentes de actualizaciones reemplazados (WinSxS)",
+            DefaultOn = false,
+            Warning = "Elimina las versiones antiguas de los componentes que ya fueron actualizados. Puede tardar varios minutos.",
+            CustomMeasure = () => (-1, 1),
+            CustomClean = () => SystemCleanup.ComponentCleanup(),
         });
 
         // ================= PRIVACIDAD =================
@@ -381,7 +411,8 @@ public static class JunkCleaner
         if (rule.CustomMeasure != null)
         {
             var (b, c) = rule.CustomMeasure();
-            res.Bytes = b; res.Count = c;
+            res.Unknown = b < 0;
+            res.Bytes = Math.Max(0, b); res.Count = c;
             return res;
         }
         if (rule.Paths == null) return res;

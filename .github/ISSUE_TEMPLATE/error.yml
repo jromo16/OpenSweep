@@ -1,0 +1,45 @@
+name: Informar de un error
+description: Algo no funciona como debería
+labels: [error]
+body:
+  - type: markdown
+    attributes:
+      value: Gracias por ayudar a mejorar OpenSweep. Cuantos más detalles, antes se podrá corregir.
+  - type: dropdown
+    id: plataforma
+    attributes:
+      label: Plataforma
+      options: [Windows, Android]
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes:
+      label: Versión de OpenSweep
+      description: Aparece junto al logotipo (Windows) o en Equipo y ajustes (Android)
+      placeholder: "1.2.0"
+    validations: { required: true }
+  - type: input
+    id: sistema
+    attributes:
+      label: Versión del sistema
+      placeholder: "Windows 11 24H2 / Android 14"
+  - type: textarea
+    id: pasos
+    attributes:
+      label: ¿Qué hiciste?
+      description: Pasos para que el error vuelva a ocurrir
+      placeholder: |
+        1. Abrí «Fotos y vídeos»
+        2. Pulsé «Analizar»
+        3. ...
+    validations: { required: true }
+  - type: textarea
+    id: esperado
+    attributes:
+      label: ¿Qué esperabas y qué pasó?
+    validations: { required: true }
+  - type: textarea
+    id: capturas
+    attributes:
+      label: Capturas de pantalla o mensaje de error
+      description: Puedes arrastrar imágenes aquí. No incluyas datos personales.

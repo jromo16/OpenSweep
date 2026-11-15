@@ -53,6 +53,7 @@ import io.github.jromo16.opensweep.core.JunkType
 import io.github.jromo16.opensweep.core.Permissions
 import io.github.jromo16.opensweep.core.StorageScanner
 import io.github.jromo16.opensweep.core.formatBytes
+import io.github.jromo16.opensweep.ui.NavHints
 import io.github.jromo16.opensweep.ui.PermissionCard
 import io.github.jromo16.opensweep.ui.ScanState
 import io.github.jromo16.opensweep.ui.ScreenTitle
@@ -69,7 +70,13 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
     val scope = rememberCoroutineScope()
     val perms = rememberPermissionState()
     var groups by remember { mutableStateOf<List<JunkGroup>>(emptyList()) }
-    val selected = remember { mutableStateListOf<JunkType>().apply { addAll(JunkType.entries.filter { it.defaultOn }) } }
+    val selected = remember {
+        mutableStateListOf<JunkType>().apply {
+            addAll(JunkType.entries.filter { it.defaultOn })
+            NavHints.cleanerSelect?.let { if (it !in this) add(it) }
+            NavHints.cleanerSelect = null
+        }
+    }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf(false) }
@@ -97,7 +104,9 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
             val (bytes, count) = withContext(Dispatchers.IO) {
                 var b = 0L; var c = 0
                 toClean.forEach { g ->
-                    val (bb, cc) = StorageScanner.delete(g.files, g.folders, recursive = g.type == JunkType.LEFTOVERS)
+                    val toTrash = g.type in setOf(JunkType.APKS, JunkType.DOWNLOADS, JunkType.LEFTOVERS)
+                    val (bb, cc) = StorageScanner.delete(g.files, g.folders, recursive = g.type == JunkType.LEFTOVERS,
+                        trashCtx = if (toTrash) ctx else null)
                     b += bb; c += cc
                 }
                 b to c

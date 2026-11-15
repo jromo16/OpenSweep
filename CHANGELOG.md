@@ -15,6 +15,14 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
 - Argumento `--theme light|dark` para probar los temas en Windows.
 - **Diálogos modernos** en lugar de los cuadros clásicos de Windows: icono de color, botón principal con la acción
   («Enviar a la papelera», «Eliminar»…) y rojo cuando se borra algo.
+- **Desinstalación por lotes** (Windows): selecciona varios programas con Ctrl o Mayús, se desinstalan seguidos con un solo
+  punto de restauración y al final se buscan los restos de todos.
+- **Actualizaciones de Windows** (Windows): eliminar `Windows.old`, paquetes de controladores antiguos y componentes de Windows Update
+  reemplazados, con el Liberador de espacio y DISM del propio Windows. Desmarcadas por defecto.
+- **Papelera de 30 días** (Android): lo que se elimina de tu contenido se puede restaurar durante 30 días.
+- **Sugerencias en Inicio** (Android): apps que no usas desde hace 3 meses, vídeos de más de 100 MB y descargas antiguas.
+- **Pruebas automáticas** (32) en Windows y Android, ejecutadas en GitHub con cada cambio.
+- Plantillas para informar errores y proponer ideas en GitHub; capturas de pantalla en el README.
 - **Progreso al eliminar**: barra con porcentaje y archivo actual, resumen final con marca verde y aviso breve
   en la parte inferior (fotos, duplicados, analizador de disco, restos, registro y destructor de archivos).
 

@@ -1,0 +1,20 @@
+name: Proponer una idea
+description: Una función nueva o una mejora
+labels: [idea]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué problema resolvería?
+      placeholder: "Cuando limpio X tengo que hacer Y a mano..."
+    validations: { required: true }
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: ¿Cómo te imaginas que funcione?
+    validations: { required: true }
+  - type: dropdown
+    id: plataforma
+    attributes:
+      label: Plataforma
+      options: [Windows, Android, Ambas]
