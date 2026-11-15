@@ -105,9 +105,9 @@ fun HomeScreen(
 
         update?.let { u ->
             PermissionCard(Icons.Filled.Star, "${t("Nueva versión disponible")}: ${u.version}",
-                t("Descarga la última versión de OpenSweep desde GitHub."), t("Descargar")) {
+                t("Descarga la última versión de OpenSweep desde GitHub."), t("Descargar"), onClick = {
                 ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u.apkUrl ?: u.pageUrl)))
-            }
+            })
         }
 
         if (!perms.storage) {

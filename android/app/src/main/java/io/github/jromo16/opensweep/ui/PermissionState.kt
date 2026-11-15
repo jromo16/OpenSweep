@@ -16,6 +16,8 @@ class PermissionState(
     val usage: Boolean,
     val requestStorage: () -> Unit,
     val requestUsage: () -> Unit,
+    /** Abre la ficha de OpenSweep en Ajustes (para «Permitir ajustes restringidos»). */
+    val openAppDetails: () -> Unit,
 )
 
 /** Estado de los permisos especiales; se vuelve a comprobar al volver de Ajustes. */
@@ -35,5 +37,6 @@ fun rememberPermissionState(): PermissionState {
             else legacyLauncher.launch(Permissions.legacyStoragePermissions)
         },
         requestUsage = { settingsLauncher.launch(Permissions.usageSettingsIntent(ctx)) },
+        openAppDetails = { settingsLauncher.launch(Permissions.appDetailsIntent(ctx.packageName)) },
     )
 }

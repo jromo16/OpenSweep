@@ -145,7 +145,7 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
         }
         if (!perms.usage) {
             PermissionCard(Icons.Filled.Lock, "${t("Acceso de uso (opcional")})",
-                t("Permite medir la caché de todas las apps instaladas."), t("Conceder"), perms.requestUsage)
+                t("Permite medir la caché de todas las apps instaladas."), t("Conceder"), perms.requestUsage, onRestricted = perms.openAppDetails)
         }
 
         SectionCard {

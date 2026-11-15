@@ -20,6 +20,7 @@
   "Abrir carpeta de copias": "Open backups folder",
   "Abrir copias de seguridad": "Open backups",
   "Abrir en el Explorador": "Open in File Explorer",
+  "Abrir la ficha de OpenSweep": "Open OpenSweep's app info",
   "Abrir OpenSweep": "Open OpenSweep",
   "Abrir papelera": "Open trash",
   "Abrir Restaurar sistema": "Open System Restore",
@@ -800,6 +801,7 @@
   "¿Reiniciar OpenSweep ahora para aplicar el idioma?": "Restart OpenSweep now to apply the language?",
   "¿Restaurar en el registro el contenido de": "Restore into the registry the contents of",
   "¿Restaurar los valores originales de": "Restore the original values of",
+  "¿Sale «Controlada por configuración restringida»? Abre la ficha de OpenSweep, toca ⋮ (arriba a la derecha) › «Permitir ajustes restringidos» y vuelve a intentarlo.": "Does it say “Controlled by Restricted Setting”? Open OpenSweep's app info, tap ⋮ (top right) › “Allow restricted settings” and try again.",
   "¿Vaciar la papelera?": "Empty the trash?",
   "Último uso": "Last used",
   "↑ Subir": "↑ Up"

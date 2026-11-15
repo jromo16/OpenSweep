@@ -21,6 +21,8 @@ data class MediaRec(
     val bucket: String,
 ) {
     var hash: Long = 0
+    /** Miniatura en gris de 32×32 para confirmar el parecido (ver [Similarity]). */
+    var fine: ByteArray? = null
     var sharpness = 0.0
     var brightness = 0.0
     var isScreenshot = false
@@ -49,6 +51,7 @@ object MediaAnalyzer {
                 val g9 = gray(bmp, 9, 8)
                 val g64 = gray(bmp, 64, 64)
                 m.hash = dHash(g9)
+                m.fine = gray(bmp, Similarity.FINE, Similarity.FINE).let { g -> ByteArray(g.size) { i -> g[i].toByte() } }
                 val (s, b) = metrics(g64, 64)
                 m.sharpness = s; m.brightness = b
                 m.isScreenshot = !m.isVideo && looksLikeScreenshot(m)
@@ -164,7 +167,9 @@ object MediaAnalyzer {
                 if (assigned[b]) continue
                 // Vídeos: además de la miniatura parecida, tamaño similar (evita juntar vídeos con la misma portada)
                 if (ordered[a].isVideo && minOf(ordered[a].size, ordered[b].size) < maxOf(ordered[a].size, ordered[b].size) * 0.85) continue
-                if (java.lang.Long.bitCount(ordered[a].hash xor ordered[b].hash) <= threshold) {
+                // Una captura de pantalla solo se agrupa con otra captura, y con un criterio mucho más estricto
+                if (ordered[a].isScreenshot != ordered[b].isScreenshot) continue
+                if (Similarity.similar(ordered[a].hash, ordered[b].hash, ordered[a].fine, ordered[b].fine, ordered[a].isScreenshot, threshold)) {
                     g.add(ordered[b]); assigned[b] = true
                 }
             }

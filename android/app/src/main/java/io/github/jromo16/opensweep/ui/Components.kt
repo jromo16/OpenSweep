@@ -1,5 +1,7 @@
 package io.github.jromo16.opensweep.ui
 
+import io.github.jromo16.opensweep.core.t
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -99,7 +101,7 @@ fun LabeledBar(label: String, value: String, percent: Float, color: Color = usag
 }
 
 @Composable
-fun PermissionCard(icon: ImageVector, title: String, text: String, button: String, onClick: () -> Unit) {
+fun PermissionCard(icon: ImageVector, title: String, text: String, button: String, onClick: () -> Unit, onRestricted: (() -> Unit)? = null) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
         shape = RoundedCornerShape(16.dp),
@@ -115,6 +117,13 @@ fun PermissionCard(icon: ImageVector, title: String, text: String, button: Strin
             Text(text, fontSize = 14.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
             Spacer(Modifier.height(10.dp))
             Button(onClick = onClick) { Text(button) }
+            // Android 13+: los permisos especiales de las apps instaladas desde un APK salen bloqueados
+            if (onRestricted != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                Spacer(Modifier.height(8.dp))
+                Text(t("¿Sale «Controlada por configuración restringida»? Abre la ficha de OpenSweep, toca ⋮ (arriba a la derecha) › «Permitir ajustes restringidos» y vuelve a intentarlo."),
+                    fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                androidx.compose.material3.TextButton(onClick = onRestricted) { Text(t("Abrir la ficha de OpenSweep")) }
+            }
         }
     }
 }

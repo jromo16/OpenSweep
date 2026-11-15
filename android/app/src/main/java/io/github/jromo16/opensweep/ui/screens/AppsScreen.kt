@@ -145,7 +145,7 @@ fun AppsScreen(modifier: Modifier) {
         if (!perms.usage) {
             PermissionCard(Icons.Filled.Lock, t("Acceso de uso"),
                 t("Concédelo para ver cuánto ocupa cada app (datos y caché) y cuándo la usaste por última vez."),
-                t("Conceder"), perms.requestUsage)
+                t("Conceder"), perms.requestUsage, onRestricted = perms.openAppDetails)
         }
         OutlinedTextField(
             value = query, onValueChange = { query = it },

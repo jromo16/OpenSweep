@@ -21,6 +21,12 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
 ### Corregido
 - Android: «Caché de aplicaciones» usaba el diálogo oficial de Android, que en la práctica no liberaba nada.
 - Windows: el monitor de la bandeja ya no se abre dos veces.
+- Android, fotos similares: dos capturas de apps distintas (casi todo fondo blanco) podían salir como «similares» y venir
+  marcadas para borrar. Ahora se compara también la imagen en detalle, una captura solo se agrupa con otra casi idéntica,
+  nunca con una foto, y los grupos de capturas no se premarcan.
+- Android: el botón «Eliminar» de Fotos se partía en varias líneas en pantallas estrechas.
+- Android: si un permiso sale «Controlada por configuración restringida» (APK instalado fuera de la tienda), la app explica
+  cómo permitirlo y abre la ficha de OpenSweep.
 
 ## [1.2.0] - 2026-11-14
 
