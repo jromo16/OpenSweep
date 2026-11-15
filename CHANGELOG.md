@@ -6,6 +6,13 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
 - **MENOR** (1.**3**.0): funciones nuevas o cambios grandes.
 - **MAYOR** (**2**.0.0): cambios enormes que lo transforman todo.
 
+## [1.3.1] - 2026-11-15
+
+### Cambiado
+- Android: compilación para F-Droid (`-Pfdroid`): sin buscar versiones nuevas en GitHub (F-Droid se encarga de actualizar)
+  y sin firma de depuración. La versión de GitHub no cambia.
+- La ficha de la tienda (fastlane) pasa a la raíz del repositorio, donde la busca F-Droid.
+
 ## [1.3.0] - 2026-11-15
 
 ### Nuevo

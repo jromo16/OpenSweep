@@ -147,7 +147,7 @@ windows/OpenSweep.Tests/   pruebas automáticas (xUnit)
 android/app/src/main/java/io/github/jromo16/opensweep/
   core/        permisos, información del equipo, escáner de almacenamiento, gestor de apps
   ui/          tema, componentes y pantallas en Jetpack Compose
-android/fastlane/          ficha de la tienda (F-Droid)
+fastlane/                   ficha de la tienda (F-Droid)
 packaging/                 winget y F-Droid
 tools/sandbox/             prueba completa en Windows Sandbox
 ```
@@ -165,6 +165,7 @@ tools/sandbox/             prueba completa en Windows Sandbox
 Al crear una etiqueta `vX.Y.Z`, GitHub Actions compila el instalador, el `.exe` portable y el `.apk`, y los publica en *Releases*.
 Si se configuran certificados como secretos del repositorio, los firma automáticamente. Ver [docs/FIRMA.md](docs/FIRMA.md).
 Para llevarla a winget y F-Droid, ver [packaging/README.md](packaging/README.md).
+Política de firma de código y privacidad: [docs/CODE_SIGNING.md](docs/CODE_SIGNING.md).
 
 ## Licencia
 

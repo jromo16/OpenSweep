@@ -13,7 +13,7 @@
     <RootNamespace>OpenSweep</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>1.3.0</Version>
+    <Version>1.3.1</Version>
     <Product>OpenSweep</Product>
     <Description>Limpiador y desinstalador para Windows</Description>
     <Copyright>OpenSweep</Copyright>

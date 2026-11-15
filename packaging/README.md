@@ -30,7 +30,7 @@ F-Droid compila la app desde el código fuente, por eso solo acepta apps sin com
 3. Comprueba la receta con `fdroid lint` y `fdroid build -v -l io.github.jromo16.opensweep`
    (o deja que lo haga su integración continua) y abre un Merge Request.
 
-La descripción, el icono y las capturas de la ficha están en `android/fastlane/metadata/android/`.
+La descripción, el icono y las capturas de la ficha están en `fastlane/metadata/android/`.
 Las notas de cada versión van en `changelogs/<versionCode>.txt`.
 
 Si F-Droid todavía no admite la versión de Android Gradle Plugin del proyecto, la revisión lo indicará;

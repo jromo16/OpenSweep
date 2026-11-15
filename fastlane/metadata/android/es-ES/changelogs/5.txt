@@ -1,0 +1,2 @@
+• Versión preparada para F-Droid (se actualiza desde F-Droid).
+• Correcciones.

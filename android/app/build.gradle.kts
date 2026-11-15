@@ -11,8 +11,10 @@ android {
         applicationId = "io.github.jromo16.opensweep"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.3.0"
+        versionCode = 5
+        versionName = "1.3.1"
+        // Compilación para F-Droid («-Pfdroid»): sin buscar versiones nuevas en GitHub (se actualiza desde F-Droid)
+        buildConfigField("boolean", "UPDATE_CHECK", (!project.hasProperty("fdroid")).toString())
     }
 
     // Firma de publicación: se usa si existen las variables de entorno (por ejemplo, secretos de GitHub).
@@ -34,7 +36,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            // F-Droid firma con su propia clave: su compilación sale sin firmar
+            signingConfig = if (project.hasProperty("fdroid")) null
+                else signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
@@ -45,6 +49,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     // Traducciones compartidas con la app de Windows (carpeta i18n/ del repositorio)

@@ -72,7 +72,8 @@ fun InfoScreen(modifier: Modifier, onBack: () -> Unit, onLanguageChanged: () -> 
         SectionCard {
             Text(t("Ajustes"), fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
             SettingSwitch(t("Avisarme cuando haya mucha basura"), alerts) { alerts = it; Prefs.setJunkAlerts(ctx, it) }
-            SettingSwitch(t("Buscar versiones nuevas de OpenSweep"), updates) { updates = it; Prefs.setUpdateCheck(ctx, it) }
+            if (io.github.jromo16.opensweep.BuildConfig.UPDATE_CHECK)
+                SettingSwitch(t("Buscar versiones nuevas de OpenSweep"), updates) { updates = it; Prefs.setUpdateCheck(ctx, it) }
             Text(t("Tema"), modifier = Modifier.padding(top = 8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("auto" to t("Automático"), "light" to t("Claro"), "dark" to t("Oscuro")).forEach { (code, label) ->

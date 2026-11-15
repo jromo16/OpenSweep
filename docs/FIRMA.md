@@ -19,7 +19,13 @@ Para codificarlo en base64 (PowerShell):
 
 Opciones para conseguir un certificado:
 
-- **SignPath Foundation**: firma gratuita para proyectos de código abierto (hay que solicitarla y usar su acción de GitHub en lugar de `signtool`).
+- **SignPath Foundation**: firma gratuita para proyectos de código abierto. Pasos:
+  1. Activa la verificación en dos pasos en tu cuenta de GitHub (la piden).
+  2. Rellena la solicitud en https://signpath.org/apply con: nombre «OpenSweep», repositorio https://github.com/jromo16/OpenSweep,
+     licencia MIT, compilación en GitHub Actions y la política de firma de [CODE_SIGNING.md](CODE_SIGNING.md).
+  3. Cuando la aprueben, te darán el identificador de organización, el del proyecto y un token: guarda el token como secreto
+     `SIGNPATH_API_TOKEN` y en la compilación se sustituye `signtool` por la acción `signpath/github-action-submit-signing-request`.
+  4. Quita «(cuando se apruebe la solicitud)» de CODE_SIGNING.md.
 - **Azure Trusted Signing**: económico (unos pocos dólares al mes) y sin hardware.
 - Un certificado comercial de firma de código (Sectigo, DigiCert, etc.).
 

@@ -9,7 +9,8 @@ object Prefs {
     fun junkAlerts(ctx: Context) = sp(ctx).getBoolean("junk_alerts", true)
     fun setJunkAlerts(ctx: Context, v: Boolean) = sp(ctx).edit().putBoolean("junk_alerts", v).apply()
 
-    fun updateCheck(ctx: Context) = sp(ctx).getBoolean("update_check", true)
+    /** En la compilación de F-Droid nunca se buscan versiones en GitHub (F-Droid se encarga de actualizar). */
+    fun updateCheck(ctx: Context) = io.github.jromo16.opensweep.BuildConfig.UPDATE_CHECK && sp(ctx).getBoolean("update_check", true)
     fun setUpdateCheck(ctx: Context, v: Boolean) = sp(ctx).edit().putBoolean("update_check", v).apply()
 
     fun language(ctx: Context) = sp(ctx).getString("language", "auto") ?: "auto"
