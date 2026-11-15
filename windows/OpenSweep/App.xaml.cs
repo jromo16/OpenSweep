@@ -33,6 +33,9 @@ public partial class App : Application
         }
         if (e.Args.Contains("--tray"))
         {
+            // Un solo monitor en la bandeja aunque se lance varias veces
+            _trayMutex = new Mutex(true, @"Local\OpenSweepTray", out bool first);
+            if (!first) { Shutdown(); return; }
             _tray = new TrayHost();
             return;
         }
@@ -42,6 +45,7 @@ public partial class App : Application
     }
 
     private TrayHost? _tray;
+    private Mutex? _trayMutex;
 
     protected override void OnExit(ExitEventArgs e)
     {

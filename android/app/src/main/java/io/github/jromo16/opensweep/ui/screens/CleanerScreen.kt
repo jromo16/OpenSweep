@@ -1,12 +1,5 @@
 package io.github.jromo16.opensweep.ui.screens
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.os.Build
-import android.os.storage.StorageManager
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -45,6 +38,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.jromo16.opensweep.background.CacheCleaner
+import io.github.jromo16.opensweep.background.CacheCleanerService
 import io.github.jromo16.opensweep.background.StorageWidget
 import io.github.jromo16.opensweep.core.AppManager
 import io.github.jromo16.opensweep.core.t
@@ -80,8 +75,25 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf(false) }
+    var askAccessibility by remember { mutableStateOf(false) }
 
-    val clearCacheLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
+    /** Borra la caché de las demás apps pulsando «Borrar caché» en sus ajustes (servicio de accesibilidad). */
+    fun clearAppCaches(filesMsg: String) {
+        scope.launch {
+            val before = withContext(Dispatchers.IO) { AppManager.appsWithCache(ctx, 256 * 1024) }
+            if (before.isEmpty()) return@launch
+            val beforeBytes = before.sumOf { it.third }
+            CacheCleaner.start(ctx, before.map { it.first to it.second }) { n ->
+                scope.launch {
+                    val after = withContext(Dispatchers.IO) { AppManager.totalCacheBytes(ctx) ?: 0L }
+                    val freed = (beforeBytes - after).coerceAtLeast(0)
+                    status = "$filesMsg · ${t("Caché de")} $n ${t("apps borrada")}" + (if (freed > 0) ": ${formatBytes(freed)}" else "")
+                    ScanState.invalidate()
+                    StorageWidget.updateAll(ctx)
+                }
+            }
+        }
+    }
 
     fun analyze() {
         scope.launch {
@@ -111,21 +123,16 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
                 }
                 b to c
             }
-            // La caché de las demás apps solo se puede limpiar con el diálogo del sistema (Android 11+)
-            if (JunkType.APP_CACHE in selected && (groups.firstOrNull { it.type == JunkType.APP_CACHE }?.extraBytes ?: 0) > 0) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Permissions.hasStorage(ctx)) {
-                    try { clearCacheLauncher.launch(Intent(StorageManager.ACTION_CLEAR_APP_CACHE)) }
-                    catch (_: ActivityNotFoundException) { }
-                    catch (_: SecurityException) { }
-                } else {
-                    Toast.makeText(ctx, t("Limpia la caché de las apps desde Ajustes › Almacenamiento"), Toast.LENGTH_LONG).show()
-                }
-            }
             ScanState.invalidate()
             StorageWidget.updateAll(ctx)
+            val otherCache = JunkType.APP_CACHE in selected && (groups.firstOrNull { it.type == JunkType.APP_CACHE }?.extraBytes ?: 0) > 0
             groups = emptyList()
             status = "${t("Listo")}: ${formatBytes(bytes)} ${t("liberados")} ($count ${t("elementos")})"
             busy = false
+            // La caché de las demás apps: desde Android 11 solo se puede borrar desde los ajustes de cada app
+            if (otherCache) {
+                if (CacheCleanerService.instance != null) clearAppCaches(status) else askAccessibility = true
+            }
         }
     }
 
@@ -143,6 +150,12 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
 
         SectionCard {
             Text(if (status.isEmpty()) t("Pulsa «Analizar» para empezar") else status, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            if (CacheCleaner.running) {
+                Spacer(Modifier.height(8.dp))
+                LinearProgressIndicator(progress = { if (CacheCleaner.total == 0) 0f else CacheCleaner.done.toFloat() / CacheCleaner.total }, modifier = Modifier.fillMaxWidth())
+                Text("${t("Borrando caché")}: ${CacheCleaner.done} / ${CacheCleaner.total} · ${CacheCleaner.current}", fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             if (busy) {
                 Spacer(Modifier.height(8.dp))
                 LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -150,8 +163,8 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { analyze() }, enabled = !busy) { Text(t("Analizar")) }
-                Button(onClick = { confirm = true }, enabled = !busy && groups.isNotEmpty() && selected.isNotEmpty()) { Text(t("Limpiar")) }
+                Button(onClick = { analyze() }, enabled = !busy && !CacheCleaner.running) { Text(t("Analizar")) }
+                Button(onClick = { confirm = true }, enabled = !busy && !CacheCleaner.running && groups.isNotEmpty() && selected.isNotEmpty()) { Text(t("Limpiar")) }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -178,6 +191,25 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
             }
             item { Spacer(Modifier.height(16.dp)) }
         }
+    }
+
+    if (askAccessibility) {
+        AlertDialog(
+            onDismissRequest = { askAccessibility = false },
+            title = { Text(t("Borrar la caché de todas las apps")) },
+            text = {
+                Text(t("Android no deja que una app borre la caché de otras. OpenSweep puede hacerlo por ti abriendo los ajustes de cada app y pulsando «Borrar caché», con el servicio de accesibilidad.") + "\n\n" +
+                    t("Solo lo usa mientras limpias: no lee nada más, no guarda nada y no se conecta a internet.") + "\n\n" +
+                    t("Activa «OpenSweep» en la lista y vuelve a pulsar «Limpiar». Si Android dice «Ajuste restringido», ve a Ajustes › Apps › OpenSweep › ⋮ › Permitir ajustes restringidos."))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    askAccessibility = false
+                    try { ctx.startActivity(CacheCleanerService.settingsIntent()) } catch (_: Exception) { }
+                }) { Text(t("Activar")) }
+            },
+            dismissButton = { TextButton(onClick = { askAccessibility = false }) { Text(t("Ahora no")) } },
+        )
     }
 
     if (confirm) {

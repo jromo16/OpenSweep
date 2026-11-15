@@ -1,0 +1,2 @@
+• Borra la caché de todas las apps de un toque (servicio de accesibilidad, opcional).
+• Correcciones.

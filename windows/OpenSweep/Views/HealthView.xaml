@@ -36,6 +36,39 @@
                 </Grid>
             </Border>
 
+            <!-- Salud de los discos (S.M.A.R.T.) -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="{l:T 'Salud de los discos'}" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock x:Name="DiskStatus" Text="{l:T 'Leyendo el estado de los discos…'}" Style="{StaticResource Muted}"/>
+                    <ItemsControl x:Name="DiskList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="0,6,0,6">
+                                    <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="{Binding Color}"
+                                               VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                                        <TextBlock Text="{Binding Summary}" Foreground="{Binding Color}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Details}" FontSize="12">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Details}" Value="">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
             <!-- Resultado del análisis -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
@@ -79,6 +112,28 @@
                             </StackPanel>
                         </Border>
                     </UniformGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- Reparar Windows: DISM + SFC -->
+            <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+                <StackPanel>
+                    <DockPanel>
+                        <Button x:Name="RepairBtn" DockPanel.Dock="Right" Content="{l:T 'Reparar Windows'}" Padding="18,8" VerticalAlignment="Top" Click="Repair_Click"/>
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Text="{l:T 'Reparar Windows'}" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap"
+                                       Text="{l:T 'Si Windows da errores, se cuelga o alguna función dejó de ir, busca y repara archivos del sistema dañados con las herramientas de Microsoft (DISM y SFC). Tarda entre 10 y 30 minutos y necesita internet.'}"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <StackPanel x:Name="RepairPanel" Visibility="Collapsed" Margin="0,12,0,0">
+                        <DockPanel>
+                            <TextBlock x:Name="RepairPercent" DockPanel.Dock="Right" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="RepairStep" Foreground="{DynamicResource TextBrush}"/>
+                        </DockPanel>
+                        <ProgressBar x:Name="RepairBar" Height="6" Maximum="100" Margin="0,6,0,0"/>
+                    </StackPanel>
+                    <TextBlock x:Name="RepairResult" TextWrapping="Wrap" Margin="0,10,0,0" Visibility="Collapsed"/>
                 </StackPanel>
             </Border>
         </StackPanel>

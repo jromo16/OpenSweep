@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Servicio de accesibilidad: solo para pulsar «Borrar caché» en los ajustes de cada app cuando el usuario lo pide.
+     isAccessibilityTool: desde Android 14, Ajustes oculta sus botones de borrado a los servicios que no lo declaran
+     (accessibilityDataSensitive). Sin él, el servicio no ve «Borrar caché». Google Play no lo permite para apps que
+     no son de accesibilidad; OpenSweep se distribuye por GitHub y F-Droid. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeWindowsChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagReportViewIds|flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="true"
+    android:isAccessibilityTool="true"
+    android:canPerformGestures="false"
+    android:notificationTimeout="100"
+    android:description="@string/cache_service_description"
+    android:summary="@string/cache_service_summary" />

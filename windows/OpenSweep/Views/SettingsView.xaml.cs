@@ -21,6 +21,7 @@ public partial class SettingsView : UserControl
         RegBackup.IsChecked = _s.BackupRegistryBeforeFix;
         UpdatesBox.IsChecked = _s.CheckUpdates;
         TrayBox.IsChecked = _s.TrayMonitor;
+        BrowserCloseBox.IsChecked = _s.CleanBrowsersOnClose;
         Select(TempAge, _s.TempMinAgeHours.ToString(), 1);
         Select(AutoCleanBox, _s.AutoClean, 0);
         Select(ThresholdBox, _s.TrayThresholdMb.ToString(), 1);
@@ -93,6 +94,27 @@ public partial class SettingsView : UserControl
         _s.Save();
         // Arrancar el monitor ahora mismo, sin esperar al próximo inicio de sesión
         if (on) try { Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--tray") { UseShellExecute = true }); } catch { }
+    }
+
+    private async void BrowserClose_Click(object sender, RoutedEventArgs e)
+    {
+        bool on = BrowserCloseBox.IsChecked == true;
+        if (on && !_s.TrayMonitor)
+        {
+            // La vigilancia la hace el monitor de la bandeja: se activa también
+            if (!await Task.Run(() => Scheduler.SetTray(true)))
+            {
+                Dialogs.Show(Loc.T("No se pudo crear la tarea programada."), "OpenSweep");
+                BrowserCloseBox.IsChecked = false;
+                return;
+            }
+            _s.TrayMonitor = true;
+            TrayBox.IsChecked = true;
+        }
+        _s.CleanBrowsersOnClose = on;
+        _s.Save();
+        if (on) try { Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--tray") { UseShellExecute = true }); } catch { }
+        if (on) Dialogs.Toast(Loc.T("Listo: los navegadores se limpiarán al cerrarlos"));
     }
 
     private void Log_Click(object sender, RoutedEventArgs e)

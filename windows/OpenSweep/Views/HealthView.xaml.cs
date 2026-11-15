@@ -17,6 +17,45 @@ public partial class HealthView : UserControl
     {
         InitializeComponent();
         LoadSystemInfo();
+        Loaded += async (_, _) =>
+        {
+            WindowsRepair.Changed += OnRepairChanged;
+            ShowRepair();
+            var disks = await Task.Run(DiskHealth.Read);
+            DiskList.ItemsSource = disks;
+            DiskStatus.Text = disks.Count == 0 ? Loc.T("No se pudo leer el estado de los discos.")
+                : disks.Any(d => d.State is DiskState.Bad or DiskState.Warning) ? Loc.T("Revisa los avisos de abajo.")
+                : Loc.T("Datos que informa cada disco sobre su propio estado.");
+        };
+        Unloaded += (_, _) => WindowsRepair.Changed -= OnRepairChanged;
+    }
+
+    // ---------- Reparar Windows ----------
+    private void OnRepairChanged() => Dispatcher.BeginInvoke(ShowRepair);
+
+    private void ShowRepair()
+    {
+        RepairBtn.IsEnabled = !WindowsRepair.Running;
+        RepairPanel.Visibility = WindowsRepair.Running ? Visibility.Visible : Visibility.Collapsed;
+        RepairStep.Text = WindowsRepair.StepText;
+        RepairPercent.Text = $"{WindowsRepair.Percent:0} %";
+        RepairBar.Value = WindowsRepair.Percent;
+        RepairBar.IsIndeterminate = WindowsRepair.Running && WindowsRepair.Percent <= 0;
+        if (WindowsRepair.Result != null)
+        {
+            RepairResult.Visibility = Visibility.Visible;
+            RepairResult.Text = WindowsRepair.Result;
+            RepairResult.Foreground = (System.Windows.Media.Brush)FindResource(WindowsRepair.Success == true ? "AccentBrush" : "TextBrush");
+        }
+    }
+
+    private async void Repair_Click(object sender, RoutedEventArgs e)
+    {
+        if (Dialogs.Show(Loc.T("La reparación tarda entre 10 y 30 minutos. Puedes seguir usando el PC y OpenSweep, pero no lo cierres hasta que termine.") + "\n\n" + Loc.T("¿Empezar ahora?"),
+                "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        RepairResult.Visibility = Visibility.Collapsed;
+        await Task.Run(WindowsRepair.RunAsync);
+        Dialogs.Toast(Loc.T("Reparación de Windows terminada"));
     }
 
     private void LoadSystemInfo()

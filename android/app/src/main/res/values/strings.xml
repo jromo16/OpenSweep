@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">OpenSweep</string>
     <string name="widget_description">Espacio libre y limpieza rápida</string>
+    <string name="cache_service_summary">Borra la caché de todas las apps de un toque</string>
+    <string name="cache_service_description">OpenSweep usa este servicio solo cuando pulsas «Limpiar» con «Caché de aplicaciones» marcada: abre los ajustes de cada app y pulsa «Borrar caché» por ti. No lee el contenido de tu pantalla en ningún otro momento, no guarda nada y no se conecta a internet.</string>
 </resources>

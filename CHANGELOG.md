@@ -6,6 +6,22 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
 - **MENOR** (1.**3**.0): funciones nuevas o cambios grandes.
 - **MAYOR** (**2**.0.0): cambios enormes que lo transforman todo.
 
+## [1.3.0] - 2026-11-15
+
+### Nuevo
+- **Caché de todas las apps de un toque** (Android): OpenSweep abre los ajustes de cada app y pulsa «Borrar caché»
+  por ti, con el servicio de accesibilidad (como SD Maid o CCleaner). Lo activas tú y solo actúa mientras limpias.
+  Nunca pulsa «Borrar almacenamiento»: si no está seguro de qué botón es, no pulsa nada.
+- **Salud de los discos** (Windows): en el Panel de salud, el estado que informa cada disco (S.M.A.R.T./NVMe),
+  con temperatura, vida útil restante del SSD y avisos claros si conviene hacer una copia de seguridad.
+- **Reparar Windows** (Windows): repara archivos del sistema dañados con DISM y SFC, con progreso y el resultado en tu idioma.
+- **Limpiar el navegador al cerrarlo** (Windows): el monitor de la bandeja limpia Chrome, Edge, Firefox… en cuanto los cierras,
+  según lo que tengas marcado en «Limpieza».
+
+### Corregido
+- Android: «Caché de aplicaciones» usaba el diálogo oficial de Android, que en la práctica no liberaba nada.
+- Windows: el monitor de la bandeja ya no se abre dos veces.
+
 ## [1.2.0] - 2026-11-14
 
 ### Nuevo

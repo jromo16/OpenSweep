@@ -1,0 +1,2 @@
+• Clear the cache of all apps in one tap (optional accessibility service).
+• Fixes.

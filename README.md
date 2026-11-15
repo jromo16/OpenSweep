@@ -42,7 +42,7 @@ Diseño moderno inspirado en macOS, con **modo claro y oscuro** automático. Nov
 
 | Módulo | Qué hace |
 |---|---|
-| **Panel de salud** | Análisis en un clic: basura, registro y programas de inicio, con botón «Mejorarlo ahora». Muestra sistema, CPU, RAM y discos. |
+| **Panel de salud** | Análisis en un clic: basura, registro y programas de inicio, con botón «Mejorarlo ahora». Muestra sistema, CPU, RAM, discos y la **salud de cada disco** (S.M.A.R.T.: estado, temperatura y vida útil del SSD). Incluye **Reparar Windows** (DISM + SFC). |
 | **Limpieza** | Temporales de usuario y de Windows, papelera, miniaturas, informes de errores, volcados de memoria, logs, caché de Windows Update y de Optimización de distribución, prefetch, caché de sombreadores DirectX/NVIDIA/AMD, caché DNS. Navegadores: Chrome, Edge, Brave, Vivaldi, Opera, Opera GX y Firefox (caché, historial, cookies, sesión y formularios). Apps: Discord, Spotify, Teams, VS Code, Steam, Zoom, Slack, WhatsApp, Office, Epic Games, Adobe, npm, pip, NuGet y Java. Privacidad: documentos recientes, Jump Lists, historial de Ejecutar y portapapeles. Permite añadir carpetas propias y exclusiones. Opcionalmente, las **reglas de la comunidad winapp2** (más de 2.000 programas y juegos). |
 | **Registro** | Detecta DLL compartidas que faltan, entradas de desinstalación huérfanas, rutas de aplicaciones inválidas, caché MUI, programas de inicio rotos, carpetas del instalador, archivos de ayuda y extensiones sin asociación. **Guarda una copia `.reg` antes de reparar.** |
 | **Desinstalador** | Lista todos los programas (64/32 bits, por usuario y para todos) con icono, tamaño y fecha. Ejecuta el desinstalador oficial y después **busca restos** (carpetas, accesos directos, claves del registro, inicio automático, App Paths, servicios, tareas programadas, reglas del firewall, menús contextuales y asociaciones de archivos) en modo Seguro, Moderado o Avanzado. Incluye **desinstalación forzada** para programas rotos, desinstalación de **apps de la Microsoft Store**, **punto de restauración** automático, **modo cazador** (suelta la mira sobre la ventana de un programa o arrastra un acceso directo) y **monitor de instalaciones** (registra todo lo que crea un instalador para desinstalarlo después sin dejar rastro) y **desinstalación por lotes** (varios programas seguidos, con una sola búsqueda de restos al final). |
@@ -56,7 +56,7 @@ Diseño moderno inspirado en macOS, con **modo claro y oscuro** automático. Nov
 | **Actualizar programas** | Encuentra versiones nuevas e instala las actualizaciones en silencio con `winget`. |
 | **Actualizaciones de Windows** | Elimina la instalación anterior (`Windows.old`, a veces 20-30 GB), los paquetes de controladores antiguos y los componentes de Windows Update reemplazados, usando las herramientas del propio Windows. |
 | **Copias de seguridad** | Restaura las copias `.reg` que se guardan antes de cada cambio y gestiona los puntos de restauración del sistema. |
-| **Automático** | Limpieza programada (diaria o semanal) y monitor en la bandeja del sistema que avisa cuando hay mucha basura. |
+| **Automático** | Limpieza programada (diaria o semanal), monitor en la bandeja del sistema que avisa cuando hay mucha basura y **limpieza de cada navegador al cerrarlo**. |
 | **Cookies a conservar** | Limpia las cookies sin cerrar tu sesión en los sitios que elijas (Gmail, el banco…). |
 
 ### Android
@@ -68,12 +68,12 @@ Diseño moderno inspirado en macOS, con **modo claro y oscuro** automático. Nov
 | **Fotos** | Fotos similares, borrosas, oscuras, capturas y vídeos similares, en cuadrícula. Conserva siempre la mejor. |
 | **WhatsApp y Telegram** | Vídeos, audios, notas de voz, stickers, GIF y estados por categoría, con filtro por antigüedad y opción de excluir lo que enviaste. |
 | **Avisos y widget** | Notificación diaria si hay mucha basura y widget de escritorio con el espacio libre y un botón «Limpiar». |
-| **Limpieza** | Caché de apps (con el diálogo oficial de Android 11+), temporales y logs, miniaturas, APK descargados, **restos de apps desinstaladas**, carpetas vacías y descargas antiguas. |
+| **Limpieza** | **Caché de todas las apps de un toque** (con el servicio de accesibilidad, que activas tú), temporales y logs, miniaturas, APK descargados, **restos de apps desinstaladas**, carpetas vacías y descargas antiguas. |
 | **Apps** | Gestor y desinstalador por lotes. Ordena por tamaño, por último uso («Sin usar») o por fecha de instalación. Después de desinstalar, **busca restos** y ofrece borrarlos. |
 | **Archivos** | Uso por tipo de archivo, archivos grandes y duplicados (MD5). |
 | **Equipo** | Modelo, Android, parche de seguridad, CPU, RAM, almacenamiento y estado de la batería. |
 
-**Permisos de Android:** «Acceso a todos los archivos» (para buscar basura y duplicados), «Acceso de uso» (opcional, para el tamaño y el último uso de cada app) y «Solicitar desinstalación de paquetes». OpenSweep solo usa Internet para comprobar si hay versiones nuevas en GitHub (se puede desactivar en Ajustes). Tus archivos nunca salen del teléfono.
+**Permisos de Android:** «Acceso a todos los archivos» (para buscar basura y duplicados), «Acceso de uso» (opcional, para el tamaño y el último uso de cada app), «Solicitar desinstalación de paquetes» y, si quieres borrar la caché de todas las apps, el **servicio de accesibilidad** (solo pulsa «Borrar caché» en los ajustes de cada app mientras limpias; no lee nada más). OpenSweep solo usa Internet para comprobar si hay versiones nuevas en GitHub (se puede desactivar en Ajustes). Tus archivos nunca salen del teléfono.
 
 ## Seguridad
 

@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.jromo16.opensweep"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
     }
 
     // Firma de publicación: se usa si existen las variables de entorno (por ejemplo, secretos de GitHub).

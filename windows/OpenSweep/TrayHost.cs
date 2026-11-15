@@ -38,6 +38,11 @@ public sealed class TrayHost : IDisposable
         _timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(6) };
         _timer.Tick += async (_, _) => await Check(alwaysShow: false);
         _timer.Start();
+
+        // Limpieza al cerrar el navegador: comprobación ligera cada 5 segundos
+        _browserTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+        _browserTimer.Tick += async (_, _) => await WatchBrowsers();
+        _browserTimer.Start();
         // Primera comprobación unos minutos después de iniciar sesión
         _ = Task.Delay(TimeSpan.FromMinutes(3)).ContinueWith(_ => Application.Current.Dispatcher.Invoke(async () => await Check(false)));
     }
@@ -77,8 +82,35 @@ public sealed class TrayHost : IDisposable
         finally { _busy = false; }
     }
 
+    private readonly System.Windows.Threading.DispatcherTimer _browserTimer;
+    private BrowserWatcher? _watcher;
+    private bool _watching;
+
+    private async Task WatchBrowsers()
+    {
+        if (_watching) return;
+        _watching = true;
+        try
+        {
+            AppSettings.ReloadIfChanged();
+            if (!AppSettings.Current.CleanBrowsersOnClose) { _watcher = null; return; }
+            var watcher = _watcher ??= await Task.Run(() => new BrowserWatcher());
+            var closed = await Task.Run(watcher.Poll);
+            foreach (var browser in closed)
+            {
+                await Task.Delay(3000);   // el navegador termina de guardar sus archivos al salir
+                long freed = await Task.Run(() => BrowserWatcher.Clean(browser));
+                if (freed > 1024 * 1024)
+                    _icon.ShowBalloonTip(4000, "OpenSweep", $"{browser}: {Util.FormatBytes(freed)} {Loc.T("liberados al cerrarlo")}", Forms.ToolTipIcon.Info);
+            }
+        }
+        catch { }
+        finally { _watching = false; }
+    }
+
     public void Dispose()
     {
+        _browserTimer.Stop();
         _timer.Stop();
         _icon.Visible = false;
         _icon.Dispose();

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Free space and quick cleaning</string>
+    <string name="cache_service_summary">Clears the cache of all apps in one tap</string>
+    <string name="cache_service_description">OpenSweep uses this service only when you tap “Clean” with “App cache” checked: it opens each app’s settings and taps “Clear cache” for you. It doesn’t read your screen at any other time, stores nothing and never connects to the internet.</string>
+</resources>

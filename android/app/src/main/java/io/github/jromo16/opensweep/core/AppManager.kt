@@ -75,6 +75,20 @@ object AppManager {
         }
     }
 
+    /** Apps con caché (paquete, nombre, bytes), de mayor a menor. Incluye las del sistema; excluye OpenSweep. */
+    fun appsWithCache(ctx: Context, minBytes: Long = 1): List<Triple<String, String, Long>> {
+        if (!Permissions.hasUsageAccess(ctx)) return emptyList()
+        val pm = ctx.packageManager
+        val ssm = ctx.getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
+        val user = Process.myUserHandle()
+        return pm.getInstalledApplications(0).mapNotNull { ai ->
+            if (ai.packageName == ctx.packageName) return@mapNotNull null
+            if ((ai.flags and ApplicationInfo.FLAG_HAS_CODE) == 0 || !ai.enabled) return@mapNotNull null   // overlays y apps desactivadas
+            val cache = try { ssm.queryStatsForPackage(StorageManager.UUID_DEFAULT, ai.packageName, user).cacheBytes } catch (_: Exception) { 0L }
+            if (cache < minBytes) null else Triple(ai.packageName, ai.loadLabel(pm).toString(), cache)
+        }.sortedByDescending { it.third }
+    }
+
     private fun lastUsedMap(ctx: Context): Map<String, Long> {
         val usm = ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val end = System.currentTimeMillis()
