@@ -41,11 +41,11 @@
         </Border>
         <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
             <TextBlock x:Name="StatusText" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <WrapPanel HorizontalAlignment="Right">
                 <Button Content="{l:T 'Abrir ubicación'}" Click="Open_Click"/>
                 <Button Content="{l:T 'Desmarcar todo'}" Margin="6,0,0,0" Click="Uncheck_Click"/>
                 <Button Content="{l:T 'Eliminar marcados'}" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="Delete_Click"/>
-            </StackPanel>
+            </WrapPanel>
         </DockPanel>
         <DataGrid x:Name="DupGrid" RowHeight="56" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
             <DataGrid.Columns>

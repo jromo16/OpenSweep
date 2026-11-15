@@ -39,10 +39,10 @@
                         <Button Content="{l:T 'Marcar todo'}" Click="CheckAll_Click"/>
                         <Button Content="{l:T 'Desmarcar todo'}" Margin="6,0,0,0" Click="UncheckAll_Click"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <WrapPanel HorizontalAlignment="Right">
                         <Button x:Name="ScanBtn" Content="{l:T 'Buscar problemas'}" Padding="20,8" Click="Scan_Click"/>
                         <Button x:Name="FixBtn" Content="{l:T 'Reparar seleccionados'}" Padding="20,8" Margin="8,0,0,0" IsEnabled="False" Style="{DynamicResource AccentButtonStyle}" Click="Fix_Click"/>
-                    </StackPanel>
+                    </WrapPanel>
                 </DockPanel>
                 <DataGrid x:Name="IssuesGrid">
                     <DataGrid.Columns>

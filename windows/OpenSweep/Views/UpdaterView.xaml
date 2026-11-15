@@ -9,11 +9,11 @@
         </StackPanel>
         <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
             <TextBlock x:Name="StatusText" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <WrapPanel HorizontalAlignment="Right">
                 <Button x:Name="CheckBtn" Content="{l:T 'Buscar actualizaciones'}" Click="Check_Click"/>
                 <Button x:Name="UpdateBtn" Content="{l:T 'Actualizar seleccionados'}" Padding="20,6" Margin="6,0,0,0" IsEnabled="False"
                         Style="{DynamicResource AccentButtonStyle}" Click="Update_Click"/>
-            </StackPanel>
+            </WrapPanel>
         </DockPanel>
         <Grid>
             <DataGrid x:Name="UpdatesGrid">

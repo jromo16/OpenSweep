@@ -17,11 +17,11 @@
             <DockPanel>
                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                     <TextBlock Text="{l:T 'Copias del registro'}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="0"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <WrapPanel HorizontalAlignment="Right">
                         <Button Content="{l:T 'Abrir carpeta'}" Click="OpenFolder_Click"/>
                         <Button Content="{l:T 'Eliminar'}" Margin="6,0,0,0" Click="DeleteReg_Click"/>
                         <Button Content="{l:T 'Restaurar'}" Padding="18,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="RestoreReg_Click"/>
-                    </StackPanel>
+                    </WrapPanel>
                 </DockPanel>
                 <DataGrid x:Name="RegGrid" IsReadOnly="True">
                     <DataGrid.Columns>
@@ -35,10 +35,10 @@
             <DockPanel Grid.Row="2">
                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                     <TextBlock Text="{l:T 'Puntos de restauración del sistema'}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="0"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <WrapPanel HorizontalAlignment="Right">
                         <Button x:Name="CreateBtn" Content="{l:T 'Crear punto ahora'}" Click="CreatePoint_Click"/>
                         <Button Content="{l:T 'Abrir Restaurar sistema'}" Padding="18,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="OpenRstrui_Click"/>
-                    </StackPanel>
+                    </WrapPanel>
                 </DockPanel>
                 <TextBlock x:Name="PointsStatus" DockPanel.Dock="Bottom" Style="{StaticResource Muted}" Margin="0,6,0,0"/>
                 <DataGrid x:Name="PointsGrid" IsReadOnly="True">

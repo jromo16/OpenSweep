@@ -48,6 +48,10 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         Current = this;
+        // Nunca más grande que la pantalla (portátiles y escalado de Windows)
+        WindowFit.FitToWorkArea(this, 1240, 780, 760, 500);
+        StateChanged += (_, _) => RootGrid.Margin = WindowState == WindowState.Maximized ? WindowFit.MaximizedMargin(this) : new Thickness(0);
+        SizeChanged += (_, _) => AdaptLayout();
         var v = Assembly.GetExecutingAssembly().GetName().Version;
         VersionText.Text = $"v{v?.Major}.{v?.Minor}.{v?.Build}";
 
@@ -101,6 +105,14 @@ public partial class MainWindow : Window
         var progress = new Progress<int>(p => UpdateText.Text = $"{Loc.T("Descargando actualización")}… {p}%");
         if (await AppUpdater.InstallAsync(_update, progress)) Application.Current.Shutdown();
         else UpdateBtn.IsEnabled = true;
+    }
+
+    /// <summary>En ventanas estrechas: menú lateral más angosto y márgenes más pequeños.</summary>
+    private void AdaptLayout()
+    {
+        bool narrow = ActualWidth < 1080;
+        SidebarColumn.Width = new GridLength(narrow ? 206 : 244);
+        PageHost.Margin = narrow ? new Thickness(20, 16, 20, 16) : new Thickness(32, 24, 32, 24);
     }
 
     private int _toastId;

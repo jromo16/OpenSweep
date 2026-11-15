@@ -9,12 +9,12 @@
         </StackPanel>
         <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
             <TextBlock x:Name="CountText" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <WrapPanel HorizontalAlignment="Right">
                 <Button Content="{l:T 'Actualizar'}" Click="Refresh_Click"/>
                 <Button Content="{l:T 'Abrir carpeta'}" Margin="6,0,0,0" Click="Open_Click"/>
                 <Button Content="{l:T 'Buscar en la tienda'}" Margin="6,0,0,0" Click="Store_Click"/>
                 <Button Content="{l:T 'Eliminar'}" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="Remove_Click"/>
-            </StackPanel>
+            </WrapPanel>
         </DockPanel>
         <DataGrid x:Name="ExtGrid" IsReadOnly="True">
             <DataGrid.Columns>

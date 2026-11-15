@@ -26,18 +26,18 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{l:T '&#xE721;'}" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource MutedBrush}"/>
-                            <TextBox x:Name="SearchBox" Width="320" TextChanged="Search_Changed" ToolTip="{l:T 'Buscar por nombre o fabricante'}"/>
+                            <TextBox x:Name="SearchBox" Width="300" MinWidth="140" TextChanged="Search_Changed" ToolTip="{l:T 'Buscar por nombre o fabricante'}"/>
                         </StackPanel>
                     </DockPanel>
                     <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                         <TextBlock x:Name="CountText" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <WrapPanel HorizontalAlignment="Right">
                             <Button Content="{l:T 'Abrir carpeta'}" Click="OpenFolder_Click"/>
                             <Button Content="{l:T 'Ver en el registro'}" Margin="6,0,0,0" Click="OpenRegistry_Click"/>
                             <Button Content="{l:T 'Buscar en Internet'}" Margin="6,0,0,0" Click="SearchWeb_Click"/>
                             <Button Content="{l:T 'Desinstalación forzada'}" Margin="6,0,0,0" Click="Forced_Click"/>
                             <Button x:Name="UninstallBtn" Content="{l:T 'Desinstalar'}" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="Uninstall_Click"/>
-                        </StackPanel>
+                        </WrapPanel>
                     </DockPanel>
                     <Grid>
                         <DataGrid x:Name="ProgramsGrid" IsReadOnly="True" SelectionMode="Single" MouseDoubleClick="ProgramsGrid_DoubleClick"
@@ -75,10 +75,10 @@
                 <DockPanel Margin="0,12,0,0">
                     <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                         <TextBlock x:Name="StoreCountText" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <WrapPanel HorizontalAlignment="Right">
                             <Button Content="{l:T 'Cargar / actualizar'}" Click="LoadStore_Click"/>
                             <Button x:Name="RemoveStoreBtn" Content="{l:T 'Desinstalar seleccionadas'}" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="RemoveStore_Click"/>
-                        </StackPanel>
+                        </WrapPanel>
                     </DockPanel>
                     <Grid>
                         <DataGrid x:Name="StoreGrid">
@@ -101,12 +101,12 @@
                                Text="{l:T 'Instala programas a través de OpenSweep: se registra todo lo que crea el instalador (carpetas, archivos, claves del registro, servicios e inicio automático). Así podrás desinstalarlo después sin dejar ni un rastro.'}"/>
                     <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                         <TextBlock x:Name="TraceStatus" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <WrapPanel HorizontalAlignment="Right">
                             <Button Content="{l:T 'Eliminar registro'}" Click="TraceDelete_Click"/>
                             <Button Content="{l:T 'Desinstalar por completo'}" Margin="6,0,0,0" Click="TraceUninstall_Click"/>
                             <Button x:Name="MonitorBtn" Content="{l:T 'Instalar y monitorear…'}" Padding="20,6" Margin="6,0,0,0"
                                     Style="{DynamicResource AccentButtonStyle}" Click="Monitor_Click"/>
-                        </StackPanel>
+                        </WrapPanel>
                     </DockPanel>
                     <ProgressBar x:Name="TraceBar" DockPanel.Dock="Top" IsIndeterminate="True" Height="4" Visibility="Collapsed" Margin="0,0,0,6"/>
                     <DataGrid x:Name="TracesGrid" IsReadOnly="True" SelectionMode="Single">

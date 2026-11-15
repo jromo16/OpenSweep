@@ -24,6 +24,7 @@ public partial class LeftoversWindow : Window
     public LeftoversWindow(InstalledProgram program, bool forced)
     {
         InitializeComponent();
+        WindowFit.FitToWorkArea(this, 980, 620, 640, 420);
         _program = program;
         TitleText.Text = (forced ? Loc.T("Desinstalación forzada: ") : Loc.T("Restos de ")) + program.Name;
         InfoText.Text = forced

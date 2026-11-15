@@ -23,6 +23,9 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
 - Windows: error «Index was out of range» al eliminar fotos (los archivos sí se borraban, fallaba el refresco de la lista).
 - Windows: las casillas de las tablas se marcan con un solo clic.
 - Windows: la fila seleccionada en las listas ahora se distingue bien (verde con texto blanco).
+- Windows: en portátiles o con el escalado de pantalla al 125-150 % la ventana era más grande que la pantalla y
+  no se veían los botones de cerrar y minimizar. Ahora se ajusta al tamaño disponible, al maximizar los botones
+  quedan dentro de la pantalla y en ventanas estrechas el menú se estrecha y los botones pasan a otra línea.
 - Windows: más programas muestran su icono en el desinstalador (se busca también en el instalador MSI, la carpeta de
   instalación y el menú Inicio); los que no tienen icono propio muestran uno genérico.
 

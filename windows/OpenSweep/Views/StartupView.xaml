@@ -16,12 +16,12 @@
         </DockPanel>
         <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
             <TextBlock x:Name="CountText" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <WrapPanel HorizontalAlignment="Right">
                 <Button Content="{l:T 'Abrir ubicación'}" Click="OpenLocation_Click"/>
                 <Button Content="{l:T 'Eliminar'}" Margin="6,0,0,0" Click="Delete_Click"/>
                 <Button Content="{l:T 'Deshabilitar'}" Margin="6,0,0,0" Click="Disable_Click"/>
                 <Button Content="{l:T 'Habilitar'}" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="Enable_Click"/>
-            </StackPanel>
+            </WrapPanel>
         </DockPanel>
         <Grid>
             <DataGrid x:Name="EntriesGrid" IsReadOnly="True">

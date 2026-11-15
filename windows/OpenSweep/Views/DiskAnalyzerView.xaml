@@ -67,10 +67,10 @@
             </Border>
             <DockPanel Grid.Column="2" Margin="0,0,0,8">
                 <TextBlock Text="{l:T 'Archivos más grandes'}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="0"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <WrapPanel HorizontalAlignment="Right">
                     <Button Content="{l:T 'Abrir ubicación'}" Click="Open_Click"/>
                     <Button Content="{l:T 'Enviar a la papelera'}" Margin="6,0,0,0" Click="Delete_Click"/>
-                </StackPanel>
+                </WrapPanel>
             </DockPanel>
             <DataGrid x:Name="FilesGrid" Grid.Column="2" Grid.Row="1" IsReadOnly="True">
                 <DataGrid.Columns>
