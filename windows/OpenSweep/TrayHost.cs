@@ -43,6 +43,11 @@ public sealed class TrayHost : IDisposable
         _browserTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         _browserTimer.Tick += async (_, _) => await WatchBrowsers();
         _browserTimer.Start();
+
+        // Monitor de instalaciones automático: procesos cada 5 s, programas instalados cada 30 s
+        _traceTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+        _traceTimer.Tick += async (_, _) => await WatchInstalls();
+        _traceTimer.Start();
         // Primera comprobación unos minutos después de iniciar sesión
         _ = Task.Delay(TimeSpan.FromMinutes(3)).ContinueWith(_ => Application.Current.Dispatcher.Invoke(async () => await Check(false)));
     }
@@ -108,8 +113,50 @@ public sealed class TrayHost : IDisposable
         finally { _watching = false; }
     }
 
+    private readonly System.Windows.Threading.DispatcherTimer _traceTimer;
+    private AutoTrace? _autoTrace;
+    private bool _tracing;
+    private int _traceTicks;
+
+    private async Task WatchInstalls()
+    {
+        if (_tracing) return;
+        _tracing = true;
+        try
+        {
+            AppSettings.ReloadIfChanged();
+            if (!AppSettings.Current.AutoTraceInstalls) { _autoTrace = null; return; }
+            if (_autoTrace == null)
+            {
+                // La primera instantánea tarda alrededor de un minuto: en segundo plano y con prioridad baja
+                var t = new AutoTrace();
+                await Task.Run(() =>
+                {
+                    Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+                    t.TakeBaseline();
+                });
+                _autoTrace = t;
+                return;
+            }
+            await Task.Run(_autoTrace.PollProcesses);
+            if (++_traceTicks % 6 != 0) return;   // cada 30 s
+            var trace = await Task.Run(() =>
+            {
+                Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+                return _autoTrace.Check();
+            });
+            if (trace != null)
+                _icon.ShowBalloonTip(6000, "OpenSweep",
+                    $"{Loc.T("Se registró la instalación de")} {trace.Name}. {Loc.T("Al desinstalarlo, OpenSweep sabrá exactamente qué quitar.")}",
+                    Forms.ToolTipIcon.Info);
+        }
+        catch { }
+        finally { _tracing = false; }
+    }
+
     public void Dispose()
     {
+        _traceTimer.Stop();
         _browserTimer.Stop();
         _timer.Stop();
         _icon.Visible = false;

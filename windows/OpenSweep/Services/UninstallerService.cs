@@ -34,6 +34,8 @@ public sealed class InstalledProgram
     public bool IsRecent => InstallDate != null && InstallDate.Value >= DateTime.Today.AddDays(-7);
     /// <summary>Grupo de la lista, como en Revo: instalados en los últimos 7 días y el resto.</summary>
     public string Group => IsRecent ? Loc.T("Instalados recientemente") : Loc.T("Todos los programas");
+    /// <summary>Hay un registro de su instalación (monitor de instalaciones).</summary>
+    public bool Traced { get; set; }
     public string WebsiteText => Website.Replace("https://", "").Replace("http://", "").TrimEnd('/');
 
     public string KeyPath => $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{KeyName}";
@@ -846,8 +848,11 @@ public static partial class UninstallerService
     };
 
     /// <summary>Guarda una copia .reg de las claves que se van a borrar (llamar antes de DeleteLeftover).</summary>
-    public static void BackupRegistryLeftovers(IEnumerable<Leftover> items)
+    /// <summary>Copia de seguridad antes de borrar restos. Devuelve el .reg creado y las tareas exportadas (destino → archivo XML).</summary>
+    public static (string? regFile, List<(string task, string xml)> tasks) BackupRegistryLeftovers(IEnumerable<Leftover> items)
     {
+        string? regFile = null;
+        var exported = new List<(string, string)>();
         var list = items.ToList();
         // Servicios y reglas del firewall también se guardan en el .reg
         var regItems = list.Where(i => i.IsRegistry).ToList();
@@ -860,7 +865,7 @@ public static partial class UninstallerService
             Path = @"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules", IsRegistry = true,
             Hive = RegistryHive.LocalMachine, View = RegistryView.Registry64, ValueName = i.Target,
         }));
-        if (regItems.Count > 0) BackupLeftoverKeys(regItems);
+        if (regItems.Count > 0) regFile = BackupLeftoverKeys(regItems);
 
         // Las tareas programadas se exportan en XML (se pueden volver a importar desde el Programador de tareas)
         var tasks = list.Where(i => i.Special == "task").ToList();
@@ -874,8 +879,10 @@ public static partial class UninstallerService
                 var file = Path.Combine(dir, string.Concat(t.Target[(slash + 1)..].Split(Path.GetInvalidFileNameChars())) + ".xml");
                 Util.PowerShell($"Export-ScheduledTask -TaskPath '{t.Target[..(slash + 1)].Replace("'", "''")}' -TaskName '{t.Target[(slash + 1)..].Replace("'", "''")}' " +
                                 $"| Out-File -Encoding unicode '{file.Replace("'", "''")}'");
+                if (File.Exists(file)) exported.Add((t.Target, file));
             }
         }
+        return (regFile, exported);
     }
 
     /// <summary>Elimina un resto (archivo, carpeta, clave o valor del registro). Devuelve true si se eliminó.</summary>
@@ -935,7 +942,7 @@ public static partial class UninstallerService
         return (ok, list.Count - ok);
     }
 
-    private static void BackupLeftoverKeys(List<Leftover> items)
+    private static string? BackupLeftoverKeys(List<Leftover> items)
     {
         var issues = items.Select(i => new RegistryIssue
         {
@@ -946,7 +953,7 @@ public static partial class UninstallerService
             ValueName = i.ValueName,
             Problem = i.Reason,
         });
-        RegistryCleaner.Backup(issues);
+        return RegistryCleaner.Backup(issues);
     }
 
     // ===================== Modo cazador =====================

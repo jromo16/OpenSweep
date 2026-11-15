@@ -22,6 +22,7 @@ public partial class SettingsView : UserControl
         UpdatesBox.IsChecked = _s.CheckUpdates;
         TrayBox.IsChecked = _s.TrayMonitor;
         BrowserCloseBox.IsChecked = _s.CleanBrowsersOnClose;
+        AutoTraceBox.IsChecked = _s.AutoTraceInstalls;
         Select(TempAge, _s.TempMinAgeHours.ToString(), 1);
         Select(AutoCleanBox, _s.AutoClean, 0);
         Select(ThresholdBox, _s.TrayThresholdMb.ToString(), 1);
@@ -96,25 +97,43 @@ public partial class SettingsView : UserControl
         if (on) try { Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--tray") { UseShellExecute = true }); } catch { }
     }
 
-    private async void BrowserClose_Click(object sender, RoutedEventArgs e)
+    /// <summary>Activa el monitor de la bandeja si hace falta (lo usan la limpieza al cerrar el navegador y el registro de instalaciones).</summary>
+    private async Task<bool> EnsureTray()
     {
-        bool on = BrowserCloseBox.IsChecked == true;
-        if (on && !_s.TrayMonitor)
+        if (!_s.TrayMonitor)
         {
-            // La vigilancia la hace el monitor de la bandeja: se activa también
             if (!await Task.Run(() => Scheduler.SetTray(true)))
             {
                 Dialogs.Show(Loc.T("No se pudo crear la tarea programada."), "OpenSweep");
-                BrowserCloseBox.IsChecked = false;
-                return;
+                return false;
             }
             _s.TrayMonitor = true;
             TrayBox.IsChecked = true;
         }
+        _s.Save();
+        // El monitor solo se abre una vez aunque ya esté en marcha
+        try { Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--tray") { UseShellExecute = true }); } catch { }
+        return true;
+    }
+
+    private async void BrowserClose_Click(object sender, RoutedEventArgs e)
+    {
+        bool on = BrowserCloseBox.IsChecked == true;
         _s.CleanBrowsersOnClose = on;
         _s.Save();
-        if (on) try { Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--tray") { UseShellExecute = true }); } catch { }
-        if (on) Dialogs.Toast(Loc.T("Listo: los navegadores se limpiarán al cerrarlos"));
+        if (!on) return;
+        if (!await EnsureTray()) { BrowserCloseBox.IsChecked = _s.CleanBrowsersOnClose = false; _s.Save(); return; }
+        Dialogs.Toast(Loc.T("Listo: los navegadores se limpiarán al cerrarlos"));
+    }
+
+    private async void AutoTrace_Click(object sender, RoutedEventArgs e)
+    {
+        bool on = AutoTraceBox.IsChecked == true;
+        _s.AutoTraceInstalls = on;
+        _s.Save();
+        if (!on) return;
+        if (!await EnsureTray()) { AutoTraceBox.IsChecked = _s.AutoTraceInstalls = false; _s.Save(); return; }
+        Dialogs.Toast(Loc.T("Listo: en un minuto OpenSweep empezará a registrar las instalaciones"));
     }
 
     private void Log_Click(object sender, RoutedEventArgs e)

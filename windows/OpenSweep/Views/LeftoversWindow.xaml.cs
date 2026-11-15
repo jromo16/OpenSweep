@@ -24,6 +24,7 @@ public partial class LeftoversWindow : Window
     private bool _busy;
     private bool _stillInstalled;
     private string? _backupNote;
+    private UninstallRecord? _record;
 
     /// <summary>Muestra una lista ya conocida (monitor de instalaciones, desinstalación por lotes) sin buscar.</summary>
     public LeftoversWindow(string title, List<Leftover> items) : this(UninstallerService.FakeProgram(title, null), forced: true)
@@ -176,7 +177,24 @@ public partial class LeftoversWindow : Window
         var mode = Mode;
         try
         {
-            _items = await Task.Run(() => UninstallerService.FindLeftovers(_program, mode, CancellationToken.None));
+            _items = await Task.Run(() =>
+            {
+                var found = UninstallerService.FindLeftovers(_program, mode, CancellationToken.None);
+                // Si se registró su instalación, se añade todo lo que creó el instalador y todavía existe
+                var trace = InstallMonitor.TraceFor(_program);
+                if (trace != null)
+                {
+                    var seen = found.Select(i => i.Kind + "|" + i.Display).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    foreach (var extra in InstallMonitor.RemainingItems(trace))
+                    {
+                        if (found.Any(f => !f.IsRegistry && f.IsDirectory && extra.Path.StartsWith(f.Path + "\\", StringComparison.OrdinalIgnoreCase))) continue;
+                        if (!seen.Add(extra.Kind + "|" + extra.Display)) continue;
+                        extra.Reason = Loc.T("Creado por el instalador (registro de instalación)");
+                        found.Add(extra);
+                    }
+                }
+                return found;
+            });
         }
         finally { _busy = false; }
         Go(_items.Any(i => i.IsRegistry || i.Special != null) || _items.Count == 0 ? Step.Registry : Step.Files);
@@ -226,10 +244,13 @@ public partial class LeftoversWindow : Window
 
         _busy = true;
         DeleteBtn.IsEnabled = NextBtn.IsEnabled = BackBtn.IsEnabled = false;
+        _record ??= new UninstallRecord { Program = _program.Name };
         if (sel.Any(i => i.IsRegistry || i.Special != null))
         {
-            await Task.Run(() => UninstallerService.BackupRegistryLeftovers(sel));
-            _backupNote = $"{Loc.T("Copia de seguridad del registro en")} {AppSettings.BackupFolder}";
+            var (regFile, tasks) = await Task.Run(() => UninstallerService.BackupRegistryLeftovers(sel));
+            if (regFile != null) _record.RegFiles.Add(regFile);
+            _record.Tasks.AddRange(tasks.Select(t => new[] { t.task, t.xml }));
+            _backupNote = Loc.T("Puedes deshacer esta limpieza desde «Copias de seguridad» › «Desinstalaciones».");
         }
         var removed = new List<Leftover>();
         await Dialogs.RunAsync(Loc.T("Eliminando restos…"), sel,
@@ -243,6 +264,15 @@ public partial class LeftoversWindow : Window
             (done, bad) => $"{done} {Loc.T("restos eliminados")}" + (bad > 0 ? $" · {bad} {Loc.T("no se pudieron eliminar (pueden estar en uso)")}" : ""));
         _busy = false;
         _deleted.AddRange(removed);
+        // Registro para deshacer: lo que fue a la papelera y cuánto se quitó del registro
+        _record.Recycled.AddRange(removed.Where(i => !i.IsRegistry && i.Special == null).Select(i => i.Path));
+        _record.RegistryItems += removed.Count(i => i.IsRegistry && i.Special == null);
+        _record.OtherItems += removed.Count(i => i.Special is "service" or "firewall");
+        if (removed.Count > 0)
+        {
+            try { UninstallBackups.Save(_record); } catch { }
+            _backupNote = Loc.T("Puedes deshacer esta limpieza desde «Copias de seguridad» › «Desinstalaciones».");
+        }
         _items = _items.Except(removed).ToList();
         NextBtn.IsEnabled = BackBtn.IsEnabled = true;
         ShowTree();

@@ -27,7 +27,13 @@ public partial class UninstallerView : UserControl
     {
         LoadingBar.Visibility = Visibility.Visible;
         bool sys = ShowSystem.IsChecked == true;
-        _programs = await Task.Run(() => UninstallerService.GetInstalledPrograms(sys));
+        _programs = await Task.Run(() =>
+        {
+            var list = UninstallerService.GetInstalledPrograms(sys);
+            var traces = InstallMonitor.LoadAll();
+            foreach (var p in list) p.Traced = InstallMonitor.TraceFor(p, traces) != null;
+            return list;
+        });
         ApplyFilter();
         LoadingBar.Visibility = Visibility.Collapsed;
         // Los iconos se cargan en segundo plano para no bloquear la lista

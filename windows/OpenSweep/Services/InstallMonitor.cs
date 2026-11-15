@@ -22,8 +22,11 @@ public sealed class InstallTrace
     public string? UninstallView { get; set; }
     public string? UninstallHive { get; set; }
     public List<TraceItem> Items { get; set; } = [];
+    /// <summary>Registrada por el monitor automático de la bandeja (no con «Instalar y monitorear»).</summary>
+    public bool Automatic { get; set; }
 
     public string FileName { get; set; } = "";
+    public string ModeText => Automatic ? Loc.T("Automático") : Loc.T("Manual");
     public string DateText => Date.ToString("dd/MM/yyyy HH:mm");
     public int Count => Items.Count;
 }
@@ -248,6 +251,12 @@ public static class InstallMonitor
         }
         return list;
     }
+
+    /// <summary>Registro de instalación de un programa (por su clave de desinstalación), si lo hay.</summary>
+    public static InstallTrace? TraceFor(InstalledProgram p, List<InstallTrace>? all = null) =>
+        (all ?? LoadAll()).FirstOrDefault(t => t.UninstallKey != null
+            && t.UninstallKey.EndsWith("\\" + p.KeyName, StringComparison.OrdinalIgnoreCase)
+            && (t.UninstallHive == "HKCU") == (p.Hive == RegistryHive.CurrentUser));
 
     /// <summary>Programa instalado asociado al registro (si su clave de desinstalación sigue existiendo).</summary>
     public static InstalledProgram? Program(InstallTrace t)

@@ -75,6 +75,9 @@
                     <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
                                Text="{l:T 'Limpia en segundo plano lo que tengas marcado en «Limpieza» (sin privacidad y omitiendo los programas abiertos). El historial se guarda en el registro de actividad.'}"/>
                     <CheckBox x:Name="TrayBox" Content="{l:T 'Mostrar el monitor en la bandeja al iniciar Windows (avisa cuando hay mucha basura)'}" Margin="0,10,0,0" Click="Tray_Click"/>
+                    <CheckBox x:Name="AutoTraceBox" Content="{l:T 'Registrar automáticamente cada instalación'}" Margin="0,10,0,0" Click="AutoTrace_Click"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="26,2,0,0" TextWrapping="Wrap"
+                               Text="{l:T 'Cuando instales un programa, OpenSweep anota qué carpetas y claves del registro crea. Al desinstalarlo sabrá exactamente qué quitar. Usa el monitor de la bandeja.'}"/>
                     <CheckBox x:Name="BrowserCloseBox" Content="{l:T 'Limpiar cada navegador al cerrarlo'}" Margin="0,10,0,0" Click="BrowserClose_Click"/>
                     <TextBlock Style="{StaticResource Muted}" Margin="26,2,0,0" TextWrapping="Wrap"
                                Text="{l:T 'Al cerrar Chrome, Edge, Firefox u otro navegador, se limpia lo que tengas marcado para él en «Limpieza». Usa el monitor de la bandeja.'}"/>

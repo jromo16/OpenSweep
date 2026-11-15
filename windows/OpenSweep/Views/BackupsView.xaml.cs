@@ -26,7 +26,38 @@ public partial class BackupsView : UserControl
     public BackupsView()
     {
         InitializeComponent();
-        Loaded += async (_, _) => { LoadRegs(); await LoadPoints(); };
+        Loaded += async (_, _) => { LoadUndo(); LoadRegs(); await LoadPoints(); };
+    }
+
+    // ---------------- Deshacer desinstalaciones ----------------
+    private void LoadUndo()
+    {
+        var list = UninstallBackups.LoadAll();
+        UndoGrid.ItemsSource = list;
+        UndoEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void Undo_Click(object sender, RoutedEventArgs e)
+    {
+        if (UndoGrid.SelectedItem is not UninstallRecord r) { Dialogs.Show(Loc.T("Elige primero una desinstalación de la lista."), "OpenSweep"); return; }
+        if (r.Restored && Dialogs.Show(Loc.T("Esta limpieza ya se deshizo. ¿Intentarlo otra vez?"), "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (!r.Restored && Dialogs.Show($"{Loc.T("¿Deshacer la limpieza de restos de")} «{r.Program}»?\n\n{r.Summary}\n\n{Loc.T("Se devolverán el registro, las tareas programadas y los archivos que estén en la Papelera de reciclaje. El programa en sí no se reinstala.")}",
+                Loc.T("Deshacer"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        UndoBtn.IsEnabled = false;
+        var (_, failed, message) = await Task.Run(() => UninstallBackups.Restore(r));
+        UndoBtn.IsEnabled = true;
+        LoadUndo();
+        LoadRegs();
+        Dialogs.Show(message, Loc.T("Deshacer"), MessageBoxButton.OK, failed > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+    }
+
+    private void DeleteUndo_Click(object sender, RoutedEventArgs e)
+    {
+        if (UndoGrid.SelectedItem is not UninstallRecord r) return;
+        if (Dialogs.Show($"{Loc.T("¿Quitar")} «{r.Program}» {Loc.T("de la lista? Ya no se podrá deshacer desde aquí.")}", "OpenSweep",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        UninstallBackups.Delete(r);
+        LoadUndo();
     }
 
     private void LoadRegs()

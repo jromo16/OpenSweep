@@ -102,6 +102,20 @@
                                                     </Border.Style>
                                                     <TextBlock Text="{l:T 'Nuevo'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
                                                 </Border>
+                                                <Border DockPanel.Dock="Right" CornerRadius="6" Padding="6,1" Margin="4,0,0,0" Background="{DynamicResource TileBrush}"
+                                                        ToolTip="{l:T 'Se registró su instalación: al desinstalarlo se quitará exactamente lo que creó.'}">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Traced}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{l:T 'Rastreado'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}"/>
+                                                </Border>
                                                 <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
                                             </DockPanel>
                                         </DataTemplate>
@@ -167,6 +181,7 @@
                             <DataGridTextColumn Header="{l:T 'Instalador'}" Binding="{Binding Installer}" Width="*"/>
                             <DataGridTextColumn Header="{l:T 'Fecha'}" Binding="{Binding DateText}" Width="140"/>
                             <DataGridTextColumn Header="{l:T 'Elementos'}" Binding="{Binding Count}" Width="90"/>
+                            <DataGridTextColumn Header="{l:T 'Registro'}" Binding="{Binding ModeText}" Width="100"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>

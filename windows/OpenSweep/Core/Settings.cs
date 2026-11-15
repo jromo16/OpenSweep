@@ -17,6 +17,8 @@ public sealed class AppSettings
     public bool TrayMonitor { get; set; }
     /// <summary>Limpiar cada navegador al cerrarlo (lo hace el monitor de la bandeja).</summary>
     public bool CleanBrowsersOnClose { get; set; }
+    /// <summary>Registrar automáticamente lo que crea cada instalación (lo hace el monitor de la bandeja).</summary>
+    public bool AutoTraceInstalls { get; set; }
     /// <summary>Comentarios del usuario sobre programas instalados (clave: InstalledProgram.Id).</summary>
     public Dictionary<string, string> ProgramComments { get; set; } = [];
     /// <summary>Programas ocultos en la lista del desinstalador (clave: InstalledProgram.Id).</summary>

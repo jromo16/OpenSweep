@@ -21,6 +21,12 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
 - **Más restos encontrados**: la carpeta del programa en `%TEMP%`, el historial de compatibilidad de Windows
   (AppCompatFlags), la caché de nombres (MuiCache) y los archivos de Prefetch de sus ejecutables.
 - Los archivos y carpetas de restos van a la **Papelera de reciclaje** (antes se borraban para siempre).
+- **Deshacer una desinstalación** (Windows): en «Copias de seguridad» › «Desinstalaciones» aparece cada limpieza de restos y,
+  con un clic, se devuelven el registro (claves, servicios y reglas del firewall), las tareas programadas y los archivos
+  de la papelera a su sitio, como el gestor de copias de Revo.
+- **Registro automático de instalaciones** (Windows), como los «Programas rastreados» de Revo: con la opción activada, el monitor
+  de la bandeja anota lo que crea cada programa que instalas (solo lo creado desde que empezó la instalación). Esos programas
+  aparecen como «Rastreado» y al desinstalarlos el asistente añade todo lo que creó su instalador.
 - **Lista de programas**: etiqueta «Nuevo» y filtro «Solo recientes» (últimos 7 días), columnas de sitio web y comentario,
   menú del clic derecho (ejecutar, abrir sitio web/ayuda/actualizaciones, copiar, comentario, ocultar), «Mostrar ocultos»
   y **exportar la lista** a CSV.
