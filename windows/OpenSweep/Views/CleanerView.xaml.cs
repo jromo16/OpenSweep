@@ -54,7 +54,7 @@ public partial class CleanerView : UserControl
     {
         // Solo avisar cuando el cambio lo hace el usuario (no al refrescar la lista)
         if (sender is CheckBox { DataContext: CleanRule r, IsChecked: true } cb && r.Warning != null && (cb.IsMouseOver || cb.IsKeyboardFocused))
-            Dialogs.Show(r.DisplayWarning, $"{r.DisplaySection} - {r.DisplayName}", MessageBoxButton.OK, MessageBoxImage.Information);
+            Dialogs.Show(r.DisplayWarning ?? "", $"{r.DisplaySection} - {r.DisplayName}", MessageBoxButton.OK, MessageBoxImage.Information);
         SaveSelection();
     }
 

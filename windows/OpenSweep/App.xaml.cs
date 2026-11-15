@@ -15,6 +15,7 @@ public partial class App : Application
         var ti = Array.IndexOf(e.Args, "--theme");
         Core.ThemeManager.Apply(ti >= 0 && ti + 1 < e.Args.Length ? e.Args[ti + 1] : Core.AppSettings.Current.Theme);
 
+        Services.AppUpdater.CleanupPortableUpdate();
         var st = Array.IndexOf(e.Args, "--selftest");
         if (st >= 0)
         {
@@ -35,7 +36,12 @@ public partial class App : Application
         {
             // «Destruir con OpenSweep» desde el menú del clic derecho: solo los diálogos, sin la ventana principal
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
-            Dispatcher.BeginInvoke(async () => { await Views.ShredCommand.RunAsync(e.Args[shred + 1]); Shutdown(); });
+            Dispatcher.BeginInvoke(async () =>
+            {
+                try { await Views.ShredCommand.RunAsync(e.Args[shred + 1]); }
+                catch (Exception ex) { Views.Dialogs.Show(ex.Message, "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Error); }
+                finally { Shutdown(); }   // sin ventana principal: si no se cierra aquí, el proceso quedaría oculto
+            });
             return;
         }
         if (e.Args.Contains("--auto-clean"))
@@ -49,7 +55,14 @@ public partial class App : Application
         {
             // Un solo monitor en la bandeja aunque se lance varias veces
             _trayMutex = new Mutex(true, @"Local\OpenSweepTray", out bool first);
-            if (!first) { Shutdown(); return; }
+            if (!first)
+            {
+                // Tras una actualización, el monitor anterior tarda un momento en cerrarse: se espera hasta 10 s
+                bool acquired;
+                try { acquired = _trayMutex.WaitOne(TimeSpan.FromSeconds(10)); }
+                catch (AbandonedMutexException) { acquired = true; }
+                if (!acquired) { Shutdown(); return; }
+            }
             _tray = new TrayHost();
             return;
         }

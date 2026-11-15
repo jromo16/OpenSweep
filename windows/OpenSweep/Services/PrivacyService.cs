@@ -151,8 +151,14 @@ public static class PrivacyService
     // ---- Copia de los valores originales: "HKCU|ruta|nombre" -> valor (null = no existía) ----
     private static Dictionary<string, int?> LoadBackup()
     {
+        if (!File.Exists(BackupFile)) return [];
         try { return JsonSerializer.Deserialize<Dictionary<string, int?>>(File.ReadAllText(BackupFile)) ?? []; }
-        catch { return []; }
+        catch
+        {
+            // Copia dañada: se aparta (no se sobrescribe) para no perder los valores originales
+            try { File.Move(BackupFile, BackupFile + $".dañado-{DateTime.Now:yyyyMMddHHmmss}"); } catch { }
+            return [];
+        }
     }
 
     private static void SaveBackup(Dictionary<string, int?> b)
@@ -169,12 +175,22 @@ public static class PrivacyService
         var backup = LoadBackup();
         try
         {
+            if (enable)
+            {
+                // Solo se cambian valores numéricos (DWORD): así siempre se puede restaurar el original exacto
+                foreach (var v in s.Values)
+                {
+                    using var rk = RegistryKey.OpenBaseKey(v.Hive, RegistryView.Registry64).OpenSubKey(v.Path);
+                    if (rk?.GetValue(v.Name) is { } current && current is not int) return false;
+                    if (!backup.ContainsKey(Key(v))) backup[Key(v)] = Read(v);   // guardar el original una sola vez
+                }
+                SaveBackup(backup);   // la copia se guarda ANTES de tocar el registro
+            }
             foreach (var v in s.Values)
             {
                 using var root = RegistryKey.OpenBaseKey(v.Hive, RegistryView.Registry64);
                 if (enable)
                 {
-                    if (!backup.ContainsKey(Key(v))) backup[Key(v)] = Read(v);   // guardar el original una sola vez
                     using var k = root.CreateSubKey(v.Path, true);
                     k.SetValue(v.Name, v.PrivateValue, RegistryValueKind.DWord);
                 }
@@ -192,6 +208,10 @@ public static class PrivacyService
             Scheduler.Log($"Privacidad: «{s.Title}» {(enable ? "activado" : "restaurado")}");
             return true;
         }
-        catch { SaveBackup(backup); return false; }
+        catch
+        {
+            try { SaveBackup(backup); } catch { }
+            return false;
+        }
     }
 }

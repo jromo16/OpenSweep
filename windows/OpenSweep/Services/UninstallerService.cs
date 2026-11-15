@@ -293,7 +293,11 @@ public static partial class UninstallerService
                 args = idx >= 0 ? trimmed[(idx + exe.Length)..].Trim() : "";
             }
             file = exe;
-            if (!File.Exists(file))
+            // «rundll32.exe C:\…\x.dll,Funcion» (InstallShield antiguos): la ruta encontrada es la DLL, que no se puede ejecutar
+            var rundll = System.Text.RegularExpressions.Regex.Match(trimmed, @"^""?(?:[^""]*\\)?rundll32(?:\.exe)?""?\s+(.+)$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (rundll.Success) { file = "rundll32.exe"; args = rundll.Groups[1].Value; }
+            else if (!file.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || !File.Exists(file))
             {
                 // Último recurso: dejar que cmd interprete la línea completa
                 file = "cmd.exe";
@@ -309,16 +313,22 @@ public static partial class UninstallerService
         // Muchos desinstaladores (NSIS: Au_.exe, Un_A.exe, Inno: _iu14D2N.tmp) se copian a %TEMP% y relanzan.
         for (int i = 0; i < 600; i++)
         {
-            bool running = Process.GetProcesses().Any(pr =>
+            var procs = Process.GetProcesses();
+            bool running;
+            try
             {
-                try
+                running = procs.Any(pr =>
                 {
-                    var n = pr.ProcessName.ToLowerInvariant();
-                    return (n.StartsWith("au_") || n.StartsWith("un_a") || n.StartsWith("_iu") || n.Contains("uninst") || n.StartsWith("unins"))
-                           && pr.StartTime >= start.AddSeconds(-2);
-                }
-                catch { return false; }
-            });
+                    try
+                    {
+                        var n = pr.ProcessName.ToLowerInvariant();
+                        return (n.StartsWith("au_") || n.StartsWith("un_a") || n.StartsWith("_iu") || n.Contains("uninst") || n.StartsWith("unins"))
+                               && pr.StartTime >= start.AddSeconds(-2);
+                    }
+                    catch { return false; }
+                });
+            }
+            finally { foreach (var pr in procs) pr.Dispose(); }   // cada proceso abre un handle: se liberan en cada vuelta
             if (!running) break;
             await Task.Delay(1000);
         }
@@ -480,7 +490,7 @@ public static partial class UninstallerService
                     // carpeta del fabricante vacía o solo con restos de este programa
                     if (mode == ScanMode.Avanzado && subs.Count > 0 && subs.All(sd => Matches(sd.Name, tokens, mode)))
                         AddDir(d.FullName, Loc.T("Carpeta del fabricante (solo contiene este programa)"));
-                    else if (subs.Count == 0 && !Directory.EnumerateFiles(d.FullName).Any())
+                    else if (subs.Count == 0 && !Util.SafeFiles(d.FullName, "*", false).Any() && Directory.Exists(d.FullName))
                         AddDir(d.FullName, Loc.T("Carpeta del fabricante vacía"));
                 }
             }
@@ -551,8 +561,12 @@ public static partial class UninstallerService
                 foreach (var v in k.GetValueNames())
                 {
                     var data = k.GetValue(v) as string ?? "";
-                    if (Matches(v, tokens, mode) || (installDir != null && installDir.Length > 3 && data.Contains(installDir, StringComparison.OrdinalIgnoreCase)))
-                        AddKey(hive, view, path, v, Loc.T("Programa de inicio"));
+                    // Apunta de verdad a la carpeta del programa (con «\» final: «Python3» no es «Python312»)
+                    bool points = installDir != null && installDir.Length > 3 && !PathHelper.IsProtectedFolder(installDir) && PointsTo(data, [installDir]);
+                    if (!points && !Matches(v, tokens, mode)) continue;
+                    AddKey(hive, view, path, v, Loc.T("Programa de inicio"));
+                    // Solo por el nombre (p. ej. «DiscordPTB» al desinstalar «Discord»): sin marcar
+                    if (!points && results.Count > 0 && results[^1].ValueName == v) { results[^1].ByNameOnly = true; results[^1].Selected = false; }
                 }
             }
             catch { }
@@ -570,7 +584,7 @@ public static partial class UninstallerService
                     {
                         using var sk = k.OpenSubKey(sub);
                         var data = sk?.GetValue("") as string ?? "";
-                        if ((installDir != null && installDir.Length > 3 && data.Contains(installDir, StringComparison.OrdinalIgnoreCase)) ||
+                        if ((installDir != null && installDir.Length > 3 && !PathHelper.IsProtectedFolder(installDir) && PointsTo(data, [installDir])) ||
                             Matches(Path.GetFileNameWithoutExtension(sub), tokens, ScanMode.Seguro))
                         {
                             // App Paths es la misma clave en las vistas de 32 y 64 bits: listarla una sola vez
@@ -626,11 +640,38 @@ public static partial class UninstallerService
             bool shared = leaf.Length >= 4 && leaf != fullName && otherNames.Any(n => n.StartsWith(leaf) || leaf.StartsWith(n));
             if (!r.IsRegistry && r.IsDirectory)
                 shared |= otherDirs.Any(d => d.Equals(r.Path, StringComparison.OrdinalIgnoreCase) || d.StartsWith(r.Path + "\\", StringComparison.OrdinalIgnoreCase));
+            // Lo que está DENTRO de la carpeta de otro programa instalado es de ese programa
+            if (!r.IsRegistry)
+                shared |= otherDirs.Any(d => r.Path.StartsWith(d + "\\", StringComparison.OrdinalIgnoreCase));
+            // La entrada de desinstalación de otro programa nunca es un resto de este
+            if (r.IsRegistry && r.Path.Contains(@"\CurrentVersion\Uninstall\", StringComparison.OrdinalIgnoreCase)
+                && !r.Path.EndsWith("\\" + p.KeyName, StringComparison.OrdinalIgnoreCase))
+                shared = true;
             if (shared) { r.Shared = true; r.Selected = false; }
         }
     }
 
     private static bool StillInstalledKey(InstalledProgram p) => StillInstalled(p);
+
+    /// <summary>
+    /// Revisa lo que viene del registro de instalación antes de ofrecerlo: mientras se instalaba el programa pudo
+    /// instalarse o actualizarse otro (Chrome, un VC++…), así que solo se marca lo que está dentro de la carpeta
+    /// del programa o se llama como él. Lo demás aparece sin marcar, y lo de otros programas como compartido.
+    /// </summary>
+    public static void ReviewTraceItems(InstalledProgram p, List<Leftover> items)
+    {
+        var dirs = KnownDirs(p, NameTokens(p));
+        foreach (var i in items)
+        {
+            bool inside = !i.IsRegistry && dirs.Any(d => i.Path.Equals(d, StringComparison.OrdinalIgnoreCase)
+                                                         || i.Path.StartsWith(d + "\\", StringComparison.OrdinalIgnoreCase));
+            bool named = StrongMatch(Path.GetFileNameWithoutExtension(i.Path.TrimEnd('\\')), p)
+                         || (i.IsRegistry && i.Path.EndsWith("\\" + p.KeyName, StringComparison.OrdinalIgnoreCase));
+            if (!inside && !named) { i.Selected = false; i.ByNameOnly = true; }
+            if (!i.IsRegistry && PathHelper.IsProtectedFolder(i.Path)) i.Selected = false;
+        }
+        MarkShared(p, items);
+    }
 
     /// <summary>Tipos de archivo y de enlace que usan muchos programas: nunca se marcan solos.</summary>
     private static readonly HashSet<string> SharedProgIds = new(StringComparer.OrdinalIgnoreCase)
@@ -923,13 +964,14 @@ public static partial class UninstallerService
                 }
                 return true;
             }
-            // Archivos y carpetas a la Papelera de reciclaje (se pueden recuperar); si no se puede, se borran
+            // Archivos y carpetas SOLO a la Papelera de reciclaje (se pueden recuperar y «Deshacer» los devuelve).
+            // Si no se puede (en uso, ruta muy larga…), no se borran para siempre: cuentan como «no se pudo».
             if (i.IsDirectory)
             {
                 if (PathHelper.IsProtectedFolder(i.Path)) return false;
-                return (Native.SendToRecycleBin(i.Path) && !Directory.Exists(i.Path)) || Util.TryDeleteDirectory(i.Path);
+                return Native.SendToRecycleBin(i.Path) && !Directory.Exists(i.Path);
             }
-            return (Native.SendToRecycleBin(i.Path) && !File.Exists(i.Path)) || Util.TryDeleteFile(i.Path);
+            return Native.SendToRecycleBin(i.Path) && !File.Exists(i.Path);
         }
         catch { return false; }
     }

@@ -78,13 +78,13 @@ Diseño moderno inspirado en macOS, con **modo claro y oscuro** automático. Nov
 ## Línea de comandos (Windows)
 
 ```
-OpenSweep.exe --analyze  [--rules <lista>] [--log <archivo>]
+OpenSweep.exe --analyze  [--rules <lista>] [--include-privacy] [--log <archivo>]
 OpenSweep.exe --clean    [--rules <lista>] [--include-privacy] [--log <archivo>]
 OpenSweep.exe --list-rules
 ```
 
 `<lista>` son identificadores de regla separados por comas (los muestra `--list-rules`), `group:Navegadores` o `all`.
-Sin `--rules` se usa lo marcado en «Limpieza». Con grupos o `all` solo se aplican las reglas seguras: el historial,
+Sin `--rules` se usa lo marcado en «Limpieza» (salvo el grupo Privacidad, que necesita `--include-privacy`). Con grupos o `all` solo se aplican las reglas seguras: el historial,
 las cookies y las sesiones solo se borran si se nombran una a una o con `--include-privacy`.
 OpenSweep pide permisos de administrador: ejecútalo desde una consola de administrador para ver la salida, o usa `--log`.
 

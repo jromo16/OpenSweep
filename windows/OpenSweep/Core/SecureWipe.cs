@@ -32,9 +32,30 @@ public static class SecureWipe
         }
     }
 
+    /// <summary>¿Es un enlace (simbólico o junction)? Destruirlo sobrescribiría el destino, que está en otro sitio.</summary>
+    public static bool IsLink(string path)
+    {
+        try { return (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0; }
+        catch { return false; }
+    }
+
+    /// <summary>Quita solo el enlace, sin tocar aquello a lo que apunta.</summary>
+    public static bool RemoveLink(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path)) Directory.Delete(path, false);   // en un junction borra solo el enlace
+            else File.Delete(path);
+            return true;
+        }
+        catch { return false; }
+    }
+
     /// <summary>Destruye un archivo: sobrescribe, renombra con nombre aleatorio y elimina.</summary>
     public static bool ShredFile(string path, int passes, CancellationToken ct = default)
     {
+        // Un enlace se quita sin más: sobrescribirlo destruiría el archivo de destino
+        if (IsLink(path)) return RemoveLink(path);
         try
         {
             File.SetAttributes(path, FileAttributes.Normal);

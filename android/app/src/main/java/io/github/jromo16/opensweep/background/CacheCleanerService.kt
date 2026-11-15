@@ -29,8 +29,9 @@ import kotlinx.coroutines.launch
 class CacheCleanerService : AccessibilityService() {
 
     override fun onServiceConnected() { instance = this }
-    override fun onDestroy() { if (instance === this) instance = null; super.onDestroy() }
-    override fun onUnbind(intent: Intent?): Boolean { if (instance === this) instance = null; return super.onUnbind(intent) }
+    // Si el usuario desactiva el servicio a mitad, la limpieza se detiene
+    override fun onDestroy() { CacheCleaner.cancel(); if (instance === this) instance = null; super.onDestroy() }
+    override fun onUnbind(intent: Intent?): Boolean { CacheCleaner.cancel(); if (instance === this) instance = null; return super.onUnbind(intent) }
     override fun onAccessibilityEvent(event: AccessibilityEvent?) { }   // se consulta la pantalla bajo demanda
     override fun onInterrupt() { CacheCleaner.cancel() }
 
@@ -83,6 +84,11 @@ object CacheCleaner {
         val storage = labels(ctx, listOf("storage_settings_for_app", "storage_label", "storage_settings", "storage_and_cache"),
             listOf("Storage & cache", "Storage and cache", "Storage", "Almacenamiento y caché", "Almacenamiento y memoria caché", "Almacenamiento"))
         val clear = labels(ctx, listOf("clear_cache_btn_text"), listOf("Clear cache", "Borrar caché", "Borrar memoria caché", "Vaciar caché", "Limpiar caché"))
+        // Textos de los botones que BORRAN LOS DATOS de la app: si aparecen junto al botón, no se pulsa nada
+        danger = labels(ctx, listOf("clear_user_data_text", "clear_storage_btn_text", "clear_data_dlg_title", "manage_space_text"),
+            listOf("Clear storage", "Clear data", "Manage space", "Borrar almacenamiento", "Borrar datos", "Eliminar datos",
+                "Administrar espacio", "Gestionar espacio", "Borrar todos los datos", "Liberar espacio"))
+            .map { it.lowercase() }
         running = true; done = 0; total = packages.size; cleaned = 0; lastResult = null
         job = scope.launch {
             var failsInARow = 0
@@ -93,8 +99,8 @@ object CacheCleaner {
                     val ok = cleanOne(service, pkg, label, storage, clear)
                     if (ok) { cleaned++; failsInARow = 0 } else failsInARow++
                     done++
-                    // Si falla varias veces seguidas, la pantalla de Ajustes de este teléfono es distinta: no insistir
-                    if (failsInARow >= 4 && cleaned == 0) break
+                    // Si falla varias veces seguidas (pantalla de Ajustes distinta, el usuario salió…), no insistir
+                    if (failsInARow >= 4) break
                 }
             } finally {
                 running = false; current = ""
@@ -106,6 +112,16 @@ object CacheCleaner {
     }
 
     fun cancel() { running = false }
+
+    @Volatile private var danger: List<String> = emptyList()
+
+    /** ¿El nodo o algo dentro de él muestra un texto de «Borrar almacenamiento / datos»? */
+    private fun mentionsDanger(node: AccessibilityNodeInfo): Boolean {
+        val text = (node.text?.toString().orEmpty() + " " + node.contentDescription?.toString().orEmpty()).lowercase()
+        if (danger.any { it.isNotEmpty() && text.contains(it) }) return true
+        for (i in 0 until node.childCount) node.getChild(i)?.let { if (mentionsDanger(it)) return true }
+        return false
+    }
 
     private suspend fun cleanOne(s: AccessibilityService, pkg: String, appLabel: String, storage: List<String>, clear: List<String>): Boolean {
         s.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg"))
@@ -120,7 +136,11 @@ object CacheCleaner {
         delay(300)
         // 2. «Borrar caché»: el texto suele ir debajo de un botón aparte; se pulsa ese botón
         val label = waitFor(s, clear, scroll = false) { true } ?: return fail(pkg, "sin «Borrar caché»")
+        // Solo dentro de la app de Ajustes (no en otra ventana que muestre el mismo texto)
+        val windowPkg = s.rootInActiveWindow?.packageName?.toString().orEmpty()
+        if (!windowPkg.contains("settings", ignoreCase = true)) return fail(pkg, "la ventana no es de Ajustes ($windowPkg)")
         val button = buttonFor(label) ?: return fail(pkg, "no se encontró el botón")
+        if (mentionsDanger(button)) return fail(pkg, "el botón parece de borrar datos: no se pulsa")
         if (!button.isEnabled) return true            // ya no tenía caché
         if (!button.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return fail(pkg, "no se pudo pulsar «Borrar caché»")
         delay(500)
@@ -140,6 +160,8 @@ object CacheCleaner {
         var container = label.parent
         repeat(2) {
             val c = container ?: return null
+            // Si en este bloque aparece «Borrar almacenamiento/datos», ya no es solo el botón de la caché
+            if (mentionsDanger(c)) return null
             val buttons = mutableListOf<AccessibilityNodeInfo>()
             collectButtons(c, buttons)
             if (buttons.size == 1) return buttons[0]
@@ -149,7 +171,8 @@ object CacheCleaner {
         return null
     }
 
-    private fun isButton(n: AccessibilityNodeInfo) = n.isClickable && n.className?.toString()?.contains("Button") == true
+    /** Cuenta como botón aunque esté desactivado o no sea pulsable: así nunca se confunde «un solo botón». */
+    private fun isButton(n: AccessibilityNodeInfo) = n.className?.toString()?.contains("Button") == true
 
     private fun collectButtons(node: AccessibilityNodeInfo, out: MutableList<AccessibilityNodeInfo>) {
         if (isButton(node)) out += node

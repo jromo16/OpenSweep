@@ -11,6 +11,14 @@ public static class ShredCommand
         path = path.TrimEnd('\\');
         bool isDir = Directory.Exists(path);
         if (!isDir && !File.Exists(path)) return;
+        if (SecureWipe.IsLink(path))
+        {
+            // Enlace o junction: se quita el enlace, nunca se destruye aquello a lo que apunta
+            if (Dialogs.Show($"«{Path.GetFileName(path)}» {Loc.T("es un enlace a otra ubicación. ¿Quitar solo el enlace? Lo que contiene el destino no se toca.")}",
+                    Loc.T("Destruir archivos"), MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                SecureWipe.RemoveLink(path);
+            return;
+        }
         if (isDir && PathHelper.IsProtectedFolder(path))
         {
             Dialogs.Show(Loc.T("Esa carpeta es del sistema y no se puede destruir."), "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);

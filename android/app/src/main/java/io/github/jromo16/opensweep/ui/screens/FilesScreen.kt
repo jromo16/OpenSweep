@@ -82,8 +82,13 @@ fun FilesScreen(modifier: Modifier) {
 
     suspend fun scanner(): StorageScanner = ScanState.scanner ?: ScanState.scan(ctx)
 
+    var loadJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+
     fun load() {
-        scope.launch {
+        // Al cambiar de pestaña se cancela la carga anterior: si no, sus resultados (p. ej. duplicados marcados)
+        // llegarían a la pestaña nueva
+        loadJob?.cancel()
+        loadJob = scope.launch {
             busy = true
             checked.clear()
             val s = scanner()
@@ -164,7 +169,7 @@ fun FilesScreen(modifier: Modifier) {
         }
 
         if (checked.isNotEmpty() && tab in 1..2) {
-            val all = (large + dups.flatten()).distinctBy { it.path }.filter { it.path in checked }
+            val all = (if (tab == 1) large else dups.flatten()).distinctBy { it.path }.filter { it.path in checked }
             Button(onClick = { confirm = true }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Text("${t("Eliminar")} ${all.size} ${t("archivos")} (${formatBytes(all.sumOf { it.size })})")
             }
@@ -172,7 +177,7 @@ fun FilesScreen(modifier: Modifier) {
     }
 
     if (confirm) {
-        val all = (large + dups.flatten()).distinctBy { it.path }.filter { it.path in checked }
+        val all = (if (tab == 1) large else dups.flatten()).distinctBy { it.path }.filter { it.path in checked }
         // Nunca borrar todas las copias de un grupo de duplicados
         val unsafe = tab == 2 && dups.any { g -> g.all { it.path in checked } }
         AlertDialog(
@@ -181,7 +186,7 @@ fun FilesScreen(modifier: Modifier) {
             text = {
                 Text(
                     if (unsafe) t("Has marcado todas las copias de algún grupo. Deja al menos una copia sin marcar.")
-                    else "${t("Se eliminarán")} ${all.size} ${t("archivos")} (${formatBytes(all.sumOf { it.size })}) ${t("de forma permanente.")}"
+                    else "${t("Se eliminarán")} ${all.size} ${t("archivos")} (${formatBytes(all.sumOf { it.size })}) ${t("irán a la papelera de OpenSweep: podrás recuperarlos durante 30 días.")}"
                 )
             },
             confirmButton = {

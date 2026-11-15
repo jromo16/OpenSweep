@@ -25,6 +25,8 @@ Builds:
     versionCode: 4
     commit: v1.3.0
     subdir: android/app
+    # F-Droid firma con su propia clave: se quita la firma de depuración que usa la release sin keystore
+    prebuild: sed -i -e '/signingConfig = /d' build.gradle.kts
     gradle:
       - yes
 

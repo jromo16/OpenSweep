@@ -16,13 +16,18 @@ public static class Scheduler
 
     private static string Esc(string s) => s.Replace("'", "''");
 
-    private static bool Register(string name, string trigger, string args)
+    /// <summary>Señal para cerrar el monitor de la bandeja cuando se desactiva desde Opciones.</summary>
+    public const string TrayStopEvent = @"Local\OpenSweepTrayStop";
+
+    private static bool Register(string name, string trigger, string args, bool noTimeLimit = false)
     {
+        // El monitor de la bandeja dura toda la sesión: sin límite de tiempo (PT0S). La limpieza, 2 horas como mucho.
+        var limit = noTimeLimit ? "New-TimeSpan -Seconds 0" : "New-TimeSpan -Hours 2";
         var script =
             $"$a = New-ScheduledTaskAction -Execute '{Esc(Exe)}' -Argument '{args}'; " +
             $"$t = {trigger}; " +
             "$p = New-ScheduledTaskPrincipal -UserId \"$env:USERDOMAIN\\$env:USERNAME\" -LogonType Interactive -RunLevel Highest; " +
-            "$s = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 2); " +
+            $"$s = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ({limit}); " +
             $"Register-ScheduledTask -TaskPath '{Folder}' -TaskName '{name}' -Action $a -Trigger $t -Principal $p -Settings $s -Force | Out-Null";
         return Util.PowerShell(script).exitCode == 0;
     }
@@ -42,8 +47,14 @@ public static class Scheduler
 
     public static bool SetTray(bool enabled)
     {
-        if (!enabled) { Unregister(TrayTask); return true; }
-        return Register(TrayTask, "New-ScheduledTaskTrigger -AtLogOn -User \"$env:USERDOMAIN\\$env:USERNAME\"", "--tray");
+        if (!enabled)
+        {
+            Unregister(TrayTask);
+            // Cerrar también el monitor que está abierto ahora mismo
+            try { if (EventWaitHandle.TryOpenExisting(TrayStopEvent, out var h)) { h.Set(); h.Dispose(); } } catch { }
+            return true;
+        }
+        return Register(TrayTask, "New-ScheduledTaskTrigger -AtLogOn -User \"$env:USERDOMAIN\\$env:USERNAME\"", "--tray", noTimeLimit: true);
     }
 
     public static string LogFile => Path.Combine(AppSettings.Folder, "historial.log");

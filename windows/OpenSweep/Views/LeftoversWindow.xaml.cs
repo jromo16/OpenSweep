@@ -185,16 +185,28 @@ public partial class LeftoversWindow : Window
                 if (trace != null)
                 {
                     var seen = found.Select(i => i.Kind + "|" + i.Display).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    var extras = new List<Leftover>();
                     foreach (var extra in InstallMonitor.RemainingItems(trace))
                     {
                         if (found.Any(f => !f.IsRegistry && f.IsDirectory && extra.Path.StartsWith(f.Path + "\\", StringComparison.OrdinalIgnoreCase))) continue;
                         if (!seen.Add(extra.Kind + "|" + extra.Display)) continue;
                         extra.Reason = Loc.T("Creado por el instalador (registro de instalación)");
-                        found.Add(extra);
+                        extras.Add(extra);
                     }
+                    // Mientras se instalaba pudo cambiar otro programa: solo se marca lo que es claramente de este
+                    UninstallerService.ReviewTraceItems(_program, extras);
+                    found.AddRange(extras);
                 }
                 return found;
             });
+        }
+        catch (Exception ex)
+        {
+            // Si algo falla, no se queda colgado en «Buscando…»: se avisa y se vuelve a elegir el modo
+            _busy = false;
+            Dialogs.Show($"{Loc.T("No se pudo terminar la búsqueda de restos")}:\n{ex.Message}", "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Go(Step.Mode);
+            return;
         }
         finally { _busy = false; }
         Go(_items.Any(i => i.IsRegistry || i.Special != null) || _items.Count == 0 ? Step.Registry : Step.Files);
@@ -244,25 +256,44 @@ public partial class LeftoversWindow : Window
 
         _busy = true;
         DeleteBtn.IsEnabled = NextBtn.IsEnabled = BackBtn.IsEnabled = false;
-        _record ??= new UninstallRecord { Program = _program.Name };
-        if (sel.Any(i => i.IsRegistry || i.Special != null))
-        {
-            var (regFile, tasks) = await Task.Run(() => UninstallerService.BackupRegistryLeftovers(sel));
-            if (regFile != null) _record.RegFiles.Add(regFile);
-            _record.Tasks.AddRange(tasks.Select(t => new[] { t.task, t.xml }));
-            _backupNote = Loc.T("Puedes deshacer esta limpieza desde «Copias de seguridad» › «Desinstalaciones».");
-        }
         var removed = new List<Leftover>();
-        await Dialogs.RunAsync(Loc.T("Eliminando restos…"), sel,
-            i =>
+        _record ??= new UninstallRecord { Program = _program.Name };
+        try
+        {
+            if (sel.Any(i => i.IsRegistry || i.Special != null))
             {
-                if (!UninstallerService.DeleteLeftover(i)) return false;
-                lock (removed) removed.Add(i);
-                return true;
-            },
-            i => i.ValueName ?? System.IO.Path.GetFileName(i.Path.TrimEnd('\\')),
-            (done, bad) => $"{done} {Loc.T("restos eliminados")}" + (bad > 0 ? $" · {bad} {Loc.T("no se pudieron eliminar (pueden estar en uso)")}" : ""));
-        _busy = false;
+                var (regFile, tasks) = await Task.Run(() => UninstallerService.BackupRegistryLeftovers(sel));
+                bool hasReg = sel.Any(i => i.IsRegistry || i.Special is "service" or "firewall");
+                if (hasReg && !BackupLooksValid(regFile))
+                {
+                    // Sin copia no se podría deshacer: el usuario decide
+                    if (Dialogs.Show(Loc.T("No se pudo guardar la copia de seguridad del registro, así que esto no se podrá deshacer.") + "\n\n" +
+                                     Loc.T("¿Eliminar igualmente lo marcado del registro?"), Loc.T("Eliminar restos"),
+                            MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                        sel = sel.Where(i => !i.IsRegistry && i.Special == null).ToList();
+                }
+                else if (regFile != null) _record.RegFiles.Add(regFile);
+                _record.Tasks.AddRange(tasks.Select(t => new[] { t.task, t.xml }));
+            }
+            await Dialogs.RunAsync(Loc.T("Eliminando restos…"), sel,
+                i =>
+                {
+                    if (!UninstallerService.DeleteLeftover(i)) return false;
+                    lock (removed) removed.Add(i);
+                    return true;
+                },
+                i => i.ValueName ?? System.IO.Path.GetFileName(i.Path.TrimEnd('\\')),
+                (done, bad) => $"{done} {Loc.T("restos eliminados")}" + (bad > 0 ? $" · {bad} {Loc.T("no se pudieron eliminar (pueden estar en uso)")}" : ""));
+        }
+        catch (Exception ex)
+        {
+            Dialogs.Show(ex.Message, "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            _busy = false;
+            NextBtn.IsEnabled = BackBtn.IsEnabled = true;
+        }
         _deleted.AddRange(removed);
         // Registro para deshacer: lo que fue a la papelera y cuánto se quitó del registro
         _record.Recycled.AddRange(removed.Where(i => !i.IsRegistry && i.Special == null).Select(i => i.Path));
@@ -274,8 +305,14 @@ public partial class LeftoversWindow : Window
             _backupNote = Loc.T("Puedes deshacer esta limpieza desde «Copias de seguridad» › «Desinstalaciones».");
         }
         _items = _items.Except(removed).ToList();
-        NextBtn.IsEnabled = BackBtn.IsEnabled = true;
         ShowTree();
+    }
+
+    /// <summary>¿El .reg existe y contiene al menos una clave (no solo la cabecera)?</summary>
+    private static bool BackupLooksValid(string? regFile)
+    {
+        try { return regFile != null && File.Exists(regFile) && File.ReadAllText(regFile).Contains("[HKEY_"); }
+        catch { return false; }
     }
 
     // ---------------- Resumen ----------------

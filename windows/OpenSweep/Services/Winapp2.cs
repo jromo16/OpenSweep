@@ -269,15 +269,28 @@ public static partial class Winapp2
             var flag = p.Length > 2 ? p[2].ToUpperInvariant() : "";
             bool recurse = flag is "RECURSE" or "REMOVESELF";
             bool removeSelf = flag == "REMOVESELF";
+            bool everything = patterns.Any(x => x is "*" or "*.*");
+            // Seguridad: un comodín justo debajo de una carpeta protegida (p. ej. «%LocalAppData%\*») alcanzaría
+            // las carpetas de TODOS los programas: esas reglas se descartan si borran mucho
+            if (WildcardUnderProtected(p[0]) && (recurse || everything || removeSelf)) continue;
             foreach (var dir in ExpandDirs(p[0]))
             {
-                // Seguridad: nunca vaciar una carpeta del sistema o del usuario completa
-                bool everything = patterns.Any(x => x is "*" or "*.*");
-                if (PathHelper.IsProtectedFolder(dir) && (recurse || everything || removeSelf)) continue;
+                // Seguridad: nunca tocar directamente una carpeta del sistema o del usuario (Documentos, Imágenes…)
+                if (PathHelper.IsProtectedFolder(dir)) continue;
                 foreach (var pattern in patterns)
                     yield return new PathSpec(dir, pattern, recurse, 0, recurse, removeSelf);
             }
         }
+    }
+
+    /// <summary>¿El primer tramo con comodín de la ruta está justo debajo de una carpeta protegida?</summary>
+    internal static bool WildcardUnderProtected(string path)
+    {
+        var parts = path.TrimEnd('\\').Split('\\');
+        var i = Array.FindIndex(parts, x => x.Contains('*') || x.Contains('?'));
+        if (i <= 0) return false;
+        var prefix = string.Join("\\", parts[..i]);
+        return ExpandDirs(prefix).Any(PathHelper.IsProtectedFolder);
     }
 
     /// <summary>ExcludeKeyN=FILE|carpeta\|archivos  o  PATH|carpeta\  o  PATH|carpeta\|patrón</summary>

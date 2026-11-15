@@ -256,8 +256,16 @@ public static class RegistryCleaner
             var tmp = Path.Combine(Path.GetTempPath(), "cf_regexp.reg");
             foreach (var g in issues.GroupBy(i => (i.FullKey, i.View)))
             {
-                var flag = g.Key.View == RegistryView.Registry32 ? "/reg:32" : "/reg:64";
-                var (code, _) = Util.Run("reg.exe", $"export \"{g.Key.FullKey}\" \"{tmp}\" /y {flag}", 60_000);
+                var first = g.First();
+                // Si solo se borran VALORES, se guardan solo esos valores: exportar la clave entera haría que al
+                // restaurar volviera todo lo demás tal como estaba (reglas o entradas de inicio quitadas después)
+                if (g.All(i => i.ValueName != null))
+                {
+                    sb.Append(ValuesToReg(first.Hive, first.View, first.KeyPath, g.Select(i => i.ValueName!).Distinct()));
+                    continue;
+                }
+                // Claves de 32 bits: se exporta su ruta real (WOW6432Node) para que «reg import» las devuelva a su sitio
+                var (code, _) = Util.Run("reg.exe", $"export \"{RealKeyPath(first.Hive, first.View, first.KeyPath)}\" \"{tmp}\" /y /reg:64", 60_000);
                 if (code != 0 || !File.Exists(tmp)) continue;
                 var text = File.ReadAllText(tmp, Encoding.Unicode);
                 var idx = text.IndexOf('\n');
@@ -269,6 +277,53 @@ public static class RegistryCleaner
         }
         catch { return null; }
     }
+
+    /// <summary>Ruta completa tal como la ve la vista de 64 bits (las claves de 32 bits de HKLM\SOFTWARE están en WOW6432Node).</summary>
+    internal static string RealKeyPath(RegistryHive hive, RegistryView view, string keyPath)
+    {
+        var root = hive == RegistryHive.CurrentUser ? "HKEY_CURRENT_USER" : hive == RegistryHive.ClassesRoot ? "HKEY_CLASSES_ROOT" : "HKEY_LOCAL_MACHINE";
+        if (view == RegistryView.Registry32 && hive == RegistryHive.LocalMachine && Environment.Is64BitOperatingSystem
+            && keyPath.StartsWith(@"SOFTWARE\", StringComparison.OrdinalIgnoreCase)
+            && !keyPath.StartsWith(@"SOFTWARE\WOW6432Node", StringComparison.OrdinalIgnoreCase))
+            keyPath = @"SOFTWARE\WOW6432Node\" + keyPath[9..];
+        return $@"{root}\{keyPath}";
+    }
+
+    /// <summary>Bloque .reg con solo los valores indicados de una clave (con su tipo exacto).</summary>
+    internal static string ValuesToReg(RegistryHive hive, RegistryView view, string keyPath, IEnumerable<string> names)
+    {
+        var sb = new StringBuilder();
+        sb.Append('[').Append(RealKeyPath(hive, view, keyPath)).Append("]\r\n");
+        try
+        {
+            using var k = RegistryKey.OpenBaseKey(hive, view).OpenSubKey(keyPath);
+            if (k != null)
+                foreach (var n in names)
+                {
+                    var data = k.GetValue(n, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                    if (data == null) continue;
+                    var name = n.Length == 0 ? "@" : $"\"{Escape(n)}\"";
+                    sb.Append(name).Append('=').Append(FormatValue(k.GetValueKind(n), data)).Append("\r\n");
+                }
+        }
+        catch { }
+        return sb.Append("\r\n").ToString();
+    }
+
+    private static string Escape(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+    private static string Hex(IEnumerable<byte> bytes) => string.Join(",", bytes.Select(b => b.ToString("x2")));
+
+    internal static string FormatValue(RegistryValueKind kind, object data) => kind switch
+    {
+        RegistryValueKind.String => $"\"{Escape((string)data)}\"",
+        RegistryValueKind.DWord => $"dword:{unchecked((uint)(int)data):x8}",
+        RegistryValueKind.QWord => "hex(b):" + Hex(BitConverter.GetBytes((long)data)),
+        RegistryValueKind.ExpandString => "hex(2):" + Hex(Encoding.Unicode.GetBytes((string)data + "\0")),
+        RegistryValueKind.MultiString => "hex(7):" + Hex(Encoding.Unicode.GetBytes(string.Concat(((string[])data).Select(s => s + "\0")) + "\0")),
+        RegistryValueKind.Binary => "hex:" + Hex((byte[])data),
+        _ => "hex:" + Hex(data as byte[] ?? []),
+    };
 
     public static (int fixedCount, int failed) Fix(IEnumerable<RegistryIssue> issues)
     {

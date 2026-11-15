@@ -51,6 +51,35 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
   nunca con una foto, y los grupos de capturas no se premarcan.
 - Android: el botón «Eliminar» de Fotos se partía en varias líneas en pantallas estrechas.
 - Windows: en los avisos de borrado, el botón principal decía «Enviar a la papelera» aunque la acción fuera destruir el archivo.
+
+### Seguridad (revisión general de la 1.3.0)
+- Windows: **Imágenes, Música, Vídeos, Juegos guardados, OneDrive** y las carpetas redirigidas no estaban en la lista de carpetas
+  protegidas. Ahora sí (con su ruta real), y las reglas de winapp2 no pueden tocar su raíz ni usar un comodín justo debajo
+  de una carpeta protegida (p. ej. `%LocalAppData%\*`).
+- Windows: «Destruir» sobre un enlace o *junction* destruía lo que había en el destino. Ahora solo quita el enlace.
+- Windows, desinstalador:
+  - lo que viene del registro de instalación pasa por las mismas comprobaciones que el resto (solo se marca lo que es
+    claramente del programa; lo de otros programas, sin marcar);
+  - la desinstalación por lotes ya no ofrece restos de programas cuyo desinstalador se canceló;
+  - el inicio automático se compara con la carpeta exacta («Python3» ya no coincide con «Python312»);
+  - los restos solo van a la Papelera (si no se puede, no se borran para siempre);
+  - si no se pudo guardar la copia del registro, pregunta antes de borrar;
+  - la copia guarda solo los valores borrados (antes la clave entera) y las claves de 32 bits con su ruta real;
+  - desinstaladores con `rundll32` ya funcionan.
+- Windows, actualizaciones: se descargan a una carpeta que solo pueden modificar los administradores y se comprueba la huella
+  SHA-256 publicada por GitHub; el portable se reemplaza sin scripts intermedios.
+- Windows: la línea de comandos trata la Papelera y las carpetas propias como reglas delicadas, y `--rules` sin lista es un error.
+- Windows: el monitor de la bandeja ya no se cierra a las 2 horas y se cierra al desactivarlo; si leer los ajustes falla en un
+  momento dado conserva los anteriores (antes usaba los de fábrica); los ajustes se guardan de forma atómica.
+- Windows: privacidad guarda el valor original antes de cambiarlo; «Mejorarlo ahora» no toca el registro sin copia.
+- Android, caché de las apps: varias capas para no pulsar nunca «Borrar almacenamiento» (si el bloque menciona borrar datos,
+  no pulsa nada; solo dentro de Ajustes) y botón «Detener».
+- Android: las apps archivadas o desinstaladas conservando datos ya no cuentan como «restos»; las carpetas con el nombre de
+  una app no se ofrecen si otra app parecida está instalada.
+- Android: si una foto no puede ir a la papelera, no se borra para siempre; los vídeos «similares» no vienen marcados;
+  nunca se borran todas las fotos de un grupo desde ninguna pestaña; los textos ya no dicen «de forma permanente»
+  cuando los archivos van a la papelera de 30 días.
+- Android: la papelera no deja copias huérfanas y conserva el índice si se daña.
 - Android: si un permiso sale «Controlada por configuración restringida» (APK instalado fuera de la tienda), la app explica
   cómo permitirlo y abre la ficha de OpenSweep.
 

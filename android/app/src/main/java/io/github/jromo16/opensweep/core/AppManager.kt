@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Environment
 import android.os.Process
 import android.os.storage.StorageManager
@@ -102,8 +103,30 @@ object AppManager {
         ctx.packageManager.getApplicationIcon(pkg).toBitmap(96, 96)
     } catch (_: Exception) { null }
 
+    /** Flags para ver también las apps archivadas (Android 15+) y las desinstaladas conservando sus datos. */
+    @Suppress("DEPRECATION")
+    private fun allPackagesFlags(): Long =
+        PackageManager.MATCH_UNINSTALLED_PACKAGES.toLong() or (if (Build.VERSION.SDK_INT >= 35) PackageManager.MATCH_ARCHIVED_PACKAGES else 0L)
+
+    /**
+     * Paquetes que el sistema conoce, incluidas las apps archivadas o desinstaladas conservando datos.
+     * Sus carpetas NO son restos: el usuario puede volver a instalarlas y recuperar todo.
+     */
+    @Suppress("DEPRECATION")
+    fun knownPackages(ctx: Context): Set<String> {
+        val pm = ctx.packageManager
+        val list = try {
+            if (Build.VERSION.SDK_INT >= 33) pm.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(allPackagesFlags()))
+            else pm.getInstalledApplications(PackageManager.MATCH_UNINSTALLED_PACKAGES)
+        } catch (_: Exception) { pm.getInstalledApplications(0) }
+        return list.map { it.packageName }.toHashSet()
+    }
+
+    @Suppress("DEPRECATION")
     fun isInstalled(ctx: Context, pkg: String): Boolean = try {
-        ctx.packageManager.getPackageInfo(pkg, 0); true
+        if (Build.VERSION.SDK_INT >= 33) ctx.packageManager.getPackageInfo(pkg, PackageManager.PackageInfoFlags.of(allPackagesFlags()))
+        else ctx.packageManager.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES)
+        true
     } catch (_: PackageManager.NameNotFoundException) { false }
 
     private val standardDirs = setOf(
@@ -112,14 +135,19 @@ object AppManager {
     )
 
     /** Carpetas que una app desinstalada puede haber dejado en el almacenamiento compartido. */
-    fun leftovers(pkg: String, label: String): List<String> {
+    fun leftovers(ctx: Context, pkg: String, label: String): List<String> {
         val root = Environment.getExternalStorageDirectory().absolutePath
         val candidates = mutableListOf(
             "$root/Android/media/$pkg", "$root/Android/data/$pkg", "$root/Android/obb/$pkg",
         )
         // Carpetas en la raíz con el nombre de la app (p. ej. /sdcard/Telegram)
         val cleanLabel = label.filter { it.isLetterOrDigit() }.lowercase()
-        if (cleanLabel.length >= 4) {
+        // Si otra app instalada tiene un nombre parecido (Telegram / Plus Messenger, Nekogram…), la carpeta puede ser suya
+        val pm = ctx.packageManager
+        val otherLabels = pm.getInstalledApplications(0).filter { it.packageName != pkg }
+            .map { it.loadLabel(pm).toString().filter { c -> c.isLetterOrDigit() }.lowercase() }
+        val shared = otherLabels.any { it.length >= 4 && (it.contains(cleanLabel) || cleanLabel.contains(it)) }
+        if (cleanLabel.length >= 4 && !shared) {
             File(root).listFiles()?.forEach { d ->
                 if (d.isDirectory && d.name !in standardDirs && d.name.filter { it.isLetterOrDigit() }.lowercase() == cleanLabel) candidates.add(d.absolutePath)
             }

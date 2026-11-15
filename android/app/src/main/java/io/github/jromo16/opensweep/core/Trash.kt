@@ -45,7 +45,11 @@ object Trash {
                 val o = arr.getJSONObject(i)
                 TrashEntry(o.getString("id"), o.getString("original"), o.getLong("size"), o.getLong("deletedAt"), o.optBoolean("isDir"))
             }
-        } catch (_: Exception) { mutableListOf() }
+        } catch (_: Exception) {
+            // Índice dañado: se guarda aparte en vez de perderlo (la siguiente escritura lo sobrescribiría)
+            try { indexFile.renameTo(File(root, "index.json.dañado-${System.currentTimeMillis()}")) } catch (_: Exception) { }
+            mutableListOf()
+        }
     }
 
     private fun write(list: List<TrashEntry>) {
@@ -88,10 +92,13 @@ object Trash {
     private fun copyAndDelete(src: File, dest: File): Boolean = try {
         if (src.isDirectory) {
             src.copyRecursively(dest, overwrite = false)
+            // La copia está completa: aunque el original no se borre del todo, se registra para poder recuperarlo
             src.deleteRecursively()
+            true
         } else {
             src.copyTo(dest, overwrite = false)
-            src.delete()
+            // Si el original no se puede borrar, se quita la copia: no debe quedar nada huérfano en la papelera
+            if (src.delete()) true else { dest.delete(); false }
         }
     } catch (_: Exception) {
         dest.deleteRecursively(); false
@@ -103,7 +110,9 @@ object Trash {
         if (!stored.exists()) { write(read().filter { it.id != e.id }); return false }
         var target = File(e.original)
         if (target.exists()) {
-            val base = target.nameWithoutExtension; val ext = target.extension
+            // Las carpetas conservan su nombre completo («com.foo.bar», no «com.foo»)
+            val base = if (e.isDir) target.name else target.nameWithoutExtension
+            val ext = if (e.isDir) "" else target.extension
             var n = 1
             do {
                 val suffix = if (n == 1) " (restaurado)" else " (restaurado $n)"

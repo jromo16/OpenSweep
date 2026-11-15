@@ -42,7 +42,7 @@ public partial class SettingsView : UserControl
     private static void Select(ComboBox box, string tag, int fallback) =>
         box.SelectedItem = box.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == tag) ?? box.Items[fallback];
 
-    private static string Tag(ComboBox box) => (string)((ComboBoxItem)box.SelectedItem).Tag;
+    private static string SelectedTag(ComboBox box) => (string)((ComboBoxItem)box.SelectedItem).Tag;
 
     private void Save(object? sender = null, RoutedEventArgs? e = null)
     {
@@ -52,16 +52,16 @@ public partial class SettingsView : UserControl
         _s.CreateRestorePointBeforeUninstall = RestorePoint.IsChecked == true;
         _s.BackupRegistryBeforeFix = RegBackup.IsChecked == true;
         _s.CheckUpdates = UpdatesBox.IsChecked == true;
-        _s.TempMinAgeHours = int.Parse(Tag(TempAge));
-        _s.TrayThresholdMb = int.Parse(Tag(ThresholdBox));
-        _s.Language = Tag(LanguageBox);
+        _s.TempMinAgeHours = int.Parse(SelectedTag(TempAge));
+        _s.TrayThresholdMb = int.Parse(SelectedTag(ThresholdBox));
+        _s.Language = SelectedTag(LanguageBox);
         _s.Save();
     }
 
     private void Theme_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (_loading) return;
-        _s.Theme = Tag(ThemeBox);
+        _s.Theme = SelectedTag(ThemeBox);
         _s.Save();
         ThemeManager.Apply(_s.Theme);   // se aplica al instante
     }
@@ -83,7 +83,7 @@ public partial class SettingsView : UserControl
     private async void AutoClean_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (_loading) return;
-        var mode = Tag(AutoCleanBox);
+        var mode = SelectedTag(AutoCleanBox);
         bool ok = await Task.Run(() => Scheduler.SetAutoClean(mode));
         if (!ok) { Dialogs.Show(Loc.T("No se pudo crear la tarea programada."), "OpenSweep"); return; }
         _s.AutoClean = mode;
@@ -158,7 +158,10 @@ public partial class SettingsView : UserControl
         CheckNowBtn.IsEnabled = true;
         if (u == null)
         {
-            UpdateStatus.Text = $"{Loc.T("Tienes la última versión")} ({AppUpdater.Current.ToString(3)})";
+            // Un fallo de red o el límite de GitHub no significan que no haya versión nueva
+            UpdateStatus.Text = AppUpdater.LastError != null
+                ? Loc.T("No se pudo comprobar (¿hay conexión a internet?). Inténtalo más tarde.")
+                : $"{Loc.T("Tienes la última versión")} ({AppUpdater.Current.ToString(3)})";
             return;
         }
         UpdateStatus.Text = $"{Loc.T("Hay una versión nueva")}: {u.Version}";

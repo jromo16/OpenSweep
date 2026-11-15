@@ -51,13 +51,14 @@ public partial class WiperView : UserControl
         ShredBtn.IsEnabled = false;
         var targets = _targets.ToList();
         // Lista completa de archivos (las carpetas se expanden) para poder mostrar el porcentaje
-        var files = await Task.Run(() => targets.SelectMany(t => Directory.Exists(t) ? Util.SafeFiles(t).Select(f => f.FullName) : [t]).ToList());
+        // Un enlace o junction cuenta como un elemento (se quita el enlace): nunca se recorre su destino
+        var files = await Task.Run(() => targets.SelectMany(t => Directory.Exists(t) && !SecureWipe.IsLink(t) ? Util.SafeFiles(t).Select(f => f.FullName) : [t]).ToList());
         int ok = await Dialogs.RunAsync(Loc.T("Destruyendo archivos…"), files,
             f => SecureWipe.ShredFile(f, passes),
             f => Path.GetFileName(f),
             (done, bad) => $"{done} {Loc.T("archivos destruidos")}" + (bad > 0 ? $" · {bad} {Loc.T("no se pudieron destruir")}" : ""));
         int fail = files.Count - ok;
-        foreach (var t in targets.Where(Directory.Exists)) Util.RemoveEmptyDirs(t, removeRoot: true);
+        foreach (var t in targets.Where(t => Directory.Exists(t) && !SecureWipe.IsLink(t))) Util.RemoveEmptyDirs(t, removeRoot: true);
         _targets.Clear();
         ShredBtn.IsEnabled = true;
         ShredStatus.Text = $"{ok} {Loc.T("archivos destruidos.")}" + (fail > 0 ? $" {fail} {Loc.T("no se pudieron destruir (en uso o sin permisos).")}" : "");

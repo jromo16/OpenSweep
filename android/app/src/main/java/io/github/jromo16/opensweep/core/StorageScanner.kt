@@ -89,7 +89,7 @@ class StorageScanner(private val ctx: Context) {
 
     fun junkGroups(cacheBytes: Long?): List<JunkGroup> {
         val pm = ctx.packageManager
-        val installed = pm.getInstalledApplications(0).map { it.packageName }.toHashSet()
+        val installed = AppManager.knownPackages(ctx)   // incluye apps archivadas o desinstaladas conservando datos
         val tempExt = setOf("tmp", "temp", "log", "chk", "dmp", "old")
         val tempNames = setOf("thumbs.db", ".ds_store", "desktop.ini")
         val rootPath = root.absolutePath
@@ -220,12 +220,14 @@ class StorageScanner(private val ctx: Context) {
             for (d in folders.sortedByDescending { it.length }) {
                 val dir = File(d)
                 if (!dir.exists()) continue
+                // Tamaño antes de moverla, para contar lo liberado
+                val size = if (recursive) dir.walkTopDown().filter { it.isFile }.sumOf { it.length() } else 0L
                 val ok = when {
                     trashCtx != null && recursive -> Trash.move(trashCtx, d)
                     recursive -> dir.deleteRecursively()
                     else -> dir.list()?.isEmpty() == true && dir.delete()
                 }
-                if (ok) count++
+                if (ok) { count++; bytes += size }
             }
             return bytes to count
         }

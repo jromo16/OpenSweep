@@ -65,12 +65,14 @@ public static class RecycleBin
     /// Devuelve a su sitio los elementos cuya ruta original está en <paramref name="paths"/>
     /// (si hay varios borrados con la misma ruta, el más reciente). Devuelve las rutas restauradas.
     /// </summary>
-    public static List<string> Restore(IEnumerable<string> paths)
+    public static List<string> Restore(IEnumerable<string> paths, DateTime? deletedAfter = null)
     {
         var wanted = new HashSet<string>(paths, StringComparer.OrdinalIgnoreCase);
         var restored = new List<string>();
-        foreach (var e in List().Where(e => wanted.Contains(e.OriginalPath)).OrderByDescending(e => e.Deleted)
-                     .GroupBy(e => e.OriginalPath, StringComparer.OrdinalIgnoreCase).Select(g => g.First()))
+        // Si se indica desde cuándo, se elige el borrado más cercano a esa fecha (el de esa desinstalación, no uno posterior)
+        var candidates = List().Where(e => wanted.Contains(e.OriginalPath) && (deletedAfter == null || e.Deleted >= deletedAfter.Value));
+        candidates = deletedAfter == null ? candidates.OrderByDescending(e => e.Deleted) : candidates.OrderBy(e => e.Deleted);
+        foreach (var e in candidates.GroupBy(e => e.OriginalPath, StringComparer.OrdinalIgnoreCase).Select(g => g.First()))
         {
             try
             {

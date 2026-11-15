@@ -139,8 +139,9 @@ public partial class HealthView : UserControl
             }
             if (_regIssues.Count > 0)
             {
-                RegistryCleaner.Backup(_regIssues);   // en la reparación de un clic siempre se guarda copia
-                regFixed = RegistryCleaner.Fix(_regIssues).fixedCount;
+                // En la reparación de un clic siempre se guarda copia; si no se puede, el registro no se toca
+                if (RegistryCleaner.Backup(_regIssues) is { } backup && File.Exists(backup))
+                    regFixed = RegistryCleaner.Fix(_regIssues).fixedCount;
             }
         });
         Progress.Visibility = Visibility.Collapsed;

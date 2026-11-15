@@ -44,6 +44,11 @@ public sealed class TrayHost : IDisposable
         _browserTimer.Tick += async (_, _) => await WatchBrowsers();
         _browserTimer.Start();
 
+        // Si se desactiva el monitor en Opciones, se cierra este proceso (no solo la tarea programada)
+        _stop = new EventWaitHandle(false, EventResetMode.AutoReset, Scheduler.TrayStopEvent);
+        ThreadPool.RegisterWaitForSingleObject(_stop, (_, _) =>
+            Application.Current.Dispatcher.BeginInvoke(() => { Dispose(); Application.Current.Shutdown(); }), null, -1, true);
+
         // Monitor de instalaciones automático: procesos cada 5 s, programas instalados cada 30 s
         _traceTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         _traceTimer.Tick += async (_, _) => await WatchInstalls();
@@ -114,6 +119,7 @@ public sealed class TrayHost : IDisposable
     }
 
     private readonly System.Windows.Threading.DispatcherTimer _traceTimer;
+    private readonly EventWaitHandle _stop;
     private AutoTrace? _autoTrace;
     private bool _tracing;
     private int _traceTicks;

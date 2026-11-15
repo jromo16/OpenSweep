@@ -127,13 +127,14 @@ public partial class UninstallerView : UserControl
                 if (!UninstallerService.StillInstalled(p)) removed.Add(p);
             }
 
-            // Restos de todos (también de los que el usuario canceló, por si quedaron a medias)
+            // Restos SOLO de los que se desinstalaron de verdad: si el usuario canceló uno, su carpeta y su entrada
+            // siguen en uso y borrarlas lo rompería
             CountText.Text = Loc.T("Buscando restos de los programas desinstalados…");
             var leftovers = await Task.Run(() =>
             {
                 var all = new List<Leftover>();
                 var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var p in programs)
+                foreach (var p in removed)
                     foreach (var l in UninstallerService.FindLeftovers(p, ScanMode.Moderado, CancellationToken.None))
                         if (seen.Add(l.Kind + "|" + l.Display))
                         {
@@ -301,11 +302,19 @@ public partial class UninstallerView : UserControl
                 "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        SearchBox.Text = "";
-        ApplyFilter();
-        ProgramsGrid.SelectedItem = owner;
-        ProgramsGrid.ScrollIntoView(owner);
+        ShowInList(owner);
         Uninstall_Click(this, new RoutedEventArgs());
+    }
+
+    /// <summary>Quita los filtros que lo esconderían (búsqueda, «Solo recientes», ocultos) y lo selecciona.</summary>
+    private void ShowInList(InstalledProgram p)
+    {
+        SearchBox.Text = "";
+        OnlyRecent.IsChecked = false;
+        if (AppSettings.Current.HiddenPrograms.Contains(p.Id)) ShowHidden.IsChecked = true;
+        ApplyFilter();
+        ProgramsGrid.SelectedItem = p;
+        ProgramsGrid.ScrollIntoView(p);
     }
 
     /// <summary>Selecciona el programa al que pertenece el archivo y ofrece acciones.</summary>
@@ -319,10 +328,7 @@ public partial class UninstallerView : UserControl
                     MessageBoxButton.YesNo) == MessageBoxResult.Yes) Util.OpenInExplorer(exe);
             return;
         }
-        SearchBox.Text = "";
-        ApplyFilter();
-        ProgramsGrid.SelectedItem = owner;
-        ProgramsGrid.ScrollIntoView(owner);
+        ShowInList(owner);
         CountText.Text = $"{Loc.T("Encontrado")}: {owner.Name}";
 
         var menu = new ContextMenu();
@@ -471,7 +477,13 @@ public partial class UninstallerView : UserControl
             Filter = "CSV (*.csv)|*.csv|Texto (*.txt)|*.txt",
         };
         if (dlg.ShowDialog() != true) return;
-        static string Q(string v) => "\"" + v.Replace("\"", "\"\"") + "\"";
+        // Los datos vienen del registro (los escribe cada instalador): si empiezan por = + - @ Excel los ejecutaría
+        // como fórmula, así que se anteponen con «'»
+        static string Q(string v)
+        {
+            if (v.Length > 0 && "=+-@\t\r".Contains(v[0])) v = "'" + v;
+            return "\"" + v.Replace("\"", "\"\"") + "\"";
+        }
         var sb = new StringBuilder();
         var sep = dlg.FileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ? "\t" : ";";
         sb.AppendLine(string.Join(sep, new[] { "Nombre", "Versión", "Fabricante", "Tipo", "Instalado", "Tamaño (MB)", "Carpeta", "Sitio web", "Comentario", "Desinstalador" }.Select(Loc.T).Select(Q)));

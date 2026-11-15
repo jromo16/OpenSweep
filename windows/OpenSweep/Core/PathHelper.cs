@@ -130,7 +130,48 @@ public static class PathHelper
         Path.Combine(Util.LocalAppData, "Packages"),
         Path.Combine(Util.LocalAppData, "Temp"),
         @"C:\Users",
+        // Carpetas personales con su ruta REAL (pueden estar redirigidas, p. ej. a OneDrive)
+        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+        Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+        Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+        Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
+        Environment.GetFolderPath(Environment.SpecialFolder.Favorites),
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments),
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonPictures),
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonMusic),
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonVideos),
+        Path.Combine(Util.UserProfile, "Pictures"),
+        Path.Combine(Util.UserProfile, "Music"),
+        Path.Combine(Util.UserProfile, "Videos"),
+        Path.Combine(Util.UserProfile, "Saved Games"),
+        Path.Combine(Util.UserProfile, "Contacts"),
+        Path.Combine(Util.UserProfile, "Links"),
+        Path.Combine(Util.UserProfile, "Favorites"),
+        Path.Combine(Util.UserProfile, "OneDrive"),
+        Util.Env("OneDrive"),
+        Util.Env("OneDriveConsumer"),
+        Util.Env("OneDriveCommercial"),
+        Util.Env("PUBLIC"),
+        KnownFolder("374DE290-123F-4565-9164-39C4925E467B"),   // Descargas
+        KnownFolder("4C5C32FF-BB9D-43b0-B5B4-2D72E54EAAA4"),   // Juegos guardados
     ];
+
+    [System.Runtime.InteropServices.DllImport("shell32.dll")]
+    private static extern int SHGetKnownFolderPath([System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPStruct)] Guid id,
+        uint flags, IntPtr token, out IntPtr path);
+
+    /// <summary>Ruta real de una carpeta conocida de Windows (Descargas, Juegos guardados…), aunque esté redirigida.</summary>
+    private static string KnownFolder(string guid)
+    {
+        try
+        {
+            if (SHGetKnownFolderPath(new Guid(guid), 0, IntPtr.Zero, out var p) != 0) return "";
+            try { return System.Runtime.InteropServices.Marshal.PtrToStringUni(p) ?? ""; }
+            finally { System.Runtime.InteropServices.Marshal.FreeCoTaskMem(p); }
+        }
+        catch { return ""; }
+    }
 
     /// <summary>Indica si una carpeta es crítica y nunca debe eliminarse completa.</summary>
     public static bool IsProtectedFolder(string path)

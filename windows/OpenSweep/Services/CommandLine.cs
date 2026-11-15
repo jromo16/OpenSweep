@@ -72,10 +72,10 @@ public static class CommandLine
         Out();
         Out(Loc.T("Uso:"));
         Out("  OpenSweep.exe --clean    [--rules <lista>] [--include-privacy] [--log <archivo>]");
-        Out("  OpenSweep.exe --analyze  [--rules <lista>] [--log <archivo>]");
+        Out("  OpenSweep.exe --analyze  [--rules <lista>] [--include-privacy] [--log <archivo>]");
         Out("  OpenSweep.exe --list-rules");
         Out();
-        Out(Loc.T("<lista>: identificadores separados por comas, «group:Navegadores» o «all». Sin --rules se usa lo marcado en «Limpieza»."));
+        Out(Loc.T("<lista>: identificadores separados por comas, «group:Navegadores» o «all». Sin --rules se usa lo marcado en «Limpieza» (salvo Privacidad, que necesita --include-privacy)."));
         Out(Loc.T("Con «group:» o «all» solo se usan las reglas seguras. Historial, cookies, sesiones y demás reglas delicadas solo se aplican con --include-privacy o si se nombran una a una."));
         Out(Loc.T("OpenSweep pide permisos de administrador; abre la consola como administrador para ver la salida, o usa --log."));
         return 0;
@@ -107,7 +107,8 @@ public static class CommandLine
             bool everything = parts.Any(p => p.Equals("all", StringComparison.OrdinalIgnoreCase));
             // Lo delicado (privacidad, historial, cookies, sesiones… todo lo que viene desmarcado por defecto)
             // solo si se nombra expresamente o se pide --include-privacy
-            bool sensitive = r.Group == "Privacidad" || !r.DefaultOn;
+            // La Papelera y las carpetas personalizadas también: borran cosas que el usuario puso ahí a propósito
+            bool sensitive = r.Group == "Privacidad" || !r.DefaultOn || r.Id == "win.recycle" || r.Id.StartsWith("custom.");
             if (named || ((inGroup || everything) && (includePrivacy || !sensitive))) chosen.Add(r);
         }
         return chosen;
@@ -115,6 +116,12 @@ public static class CommandLine
 
     private static int Clean(string[] args, bool dryRun)
     {
+        // «--rules» sin lista es un error: no se debe caer en silencio en «lo marcado»
+        if (args.Contains("--rules", StringComparer.OrdinalIgnoreCase) && Arg(args, "--rules") == null)
+        {
+            Out(Loc.T("Falta la lista después de --rules (usa --list-rules para verlas)."));
+            return 2;
+        }
         var rules = SelectRules(JunkCleaner.BuildRules(), Arg(args, "--rules"), args.Contains("--include-privacy", StringComparer.OrdinalIgnoreCase));
         if (rules.Count == 0) { Out(Loc.T("No hay reglas que aplicar.")); return 2; }
         Out(dryRun ? Loc.T("Analizando…") : Loc.T("Limpiando…"));

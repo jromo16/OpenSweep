@@ -41,11 +41,29 @@ public class CommandLineTests
 public class PortableUpdateTests
 {
     [Fact]
-    public void El_script_portable_espera_reemplaza_y_vuelve_a_abrir()
+    public void Lee_la_huella_sha256_que_publica_GitHub()
     {
-        var s = AppUpdater.PortableSwapScript(1234, @"C:\Apps\OpenSweep.exe.new", @"C:\Apps\OpenSweep.exe");
-        Assert.Contains("PID eq 1234", s);
-        Assert.Contains("""move /Y "C:\Apps\OpenSweep.exe.new" "C:\Apps\OpenSweep.exe" """.TrimEnd(), s);
-        Assert.Contains("""start "" "C:\Apps\OpenSweep.exe" """.TrimEnd(), s);
+        using var doc = System.Text.Json.JsonDocument.Parse("""
+            {"tag_name":"v9.0.0","html_url":"https://github.com/jromo16/OpenSweep/releases/tag/v9.0.0","assets":[
+              {"name":"OpenSweep-Setup.exe","browser_download_url":"https://github.com/jromo16/OpenSweep/releases/download/v9.0.0/OpenSweep-Setup.exe","digest":"sha256:ABC123"},
+              {"name":"OpenSweep-windows.exe","browser_download_url":"https://github.com/jromo16/OpenSweep/releases/download/v9.0.0/OpenSweep-windows.exe"}]}
+            """);
+        var u = AppUpdater.Parse(doc.RootElement, new Version(1, 3, 0));
+        Assert.NotNull(u);
+        Assert.Equal("ABC123", u!.SetupSha256);
+        Assert.Null(u.PortableSha256);
+        Assert.Null(AppUpdater.Parse(doc.RootElement, new Version(9, 0, 0)));   // misma versión: nada que hacer
+    }
+
+    [Fact]
+    public void Rechaza_un_archivo_alterado_o_incompleto()
+    {
+        using var t = new TempDir();
+        var file = t.File("OpenSweep.exe", "MZ contenido del ejecutable");
+        var sha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(file)));
+        Assert.True(AppUpdater.Verify(file, new FileInfo(file).Length, sha));
+        Assert.False(AppUpdater.Verify(file, new FileInfo(file).Length, new string('0', 64)));   // otra huella
+        Assert.False(AppUpdater.Verify(file, 999_999, null));                                     // descarga cortada
+        Assert.False(AppUpdater.Verify(t.File("x.exe", "no es un exe"), 0, null));
     }
 }

@@ -117,7 +117,7 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
                 var b = 0L; var c = 0
                 toClean.forEach { g ->
                     val toTrash = g.type in setOf(JunkType.APKS, JunkType.DOWNLOADS, JunkType.LEFTOVERS)
-                    val (bb, cc) = StorageScanner.delete(g.files, g.folders, recursive = g.type == JunkType.LEFTOVERS,
+                    val (bb, cc) = StorageScanner.delete(if (g.type == JunkType.LEFTOVERS) emptyList() else g.files, g.folders, recursive = g.type == JunkType.LEFTOVERS,
                         trashCtx = if (toTrash) ctx else null)
                     b += bb; c += cc
                 }
@@ -127,7 +127,7 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
             StorageWidget.updateAll(ctx)
             val otherCache = JunkType.APP_CACHE in selected && (groups.firstOrNull { it.type == JunkType.APP_CACHE }?.extraBytes ?: 0) > 0
             groups = emptyList()
-            status = "${t("Listo")}: ${formatBytes(bytes)} ${t("liberados")} ($count ${t("elementos")})"
+            status = "${t("Listo")}: ${formatBytes(bytes)} ${t("limpiados")} ($count ${t("elementos")})"
             busy = false
             // La caché de las demás apps: desde Android 11 solo se puede borrar desde los ajustes de cada app
             if (otherCache) {
@@ -155,6 +155,7 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
                 LinearProgressIndicator(progress = { if (CacheCleaner.total == 0) 0f else CacheCleaner.done.toFloat() / CacheCleaner.total }, modifier = Modifier.fillMaxWidth())
                 Text("${t("Borrando caché")}: ${CacheCleaner.done} / ${CacheCleaner.total} · ${CacheCleaner.current}", fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = { CacheCleaner.cancel() }) { Text(t("Detener")) }
             }
             if (busy) {
                 Spacer(Modifier.height(8.dp))
@@ -200,7 +201,7 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
             text = {
                 Text(t("Android no deja que una app borre la caché de otras. OpenSweep puede hacerlo por ti abriendo los ajustes de cada app y pulsando «Borrar caché», con el servicio de accesibilidad.") + "\n\n" +
                     t("Solo lo usa mientras limpias: no lee nada más, no guarda nada y no se conecta a internet.") + "\n\n" +
-                    t("Activa «OpenSweep» en la lista y vuelve a pulsar «Limpiar». Si Android dice «Ajuste restringido», ve a Ajustes › Apps › OpenSweep › ⋮ › Permitir ajustes restringidos."))
+                    t("Activa «OpenSweep» en la lista, vuelve aquí, pulsa «Analizar» y después «Limpiar». Si Android dice «Ajuste restringido», ve a Ajustes › Apps › OpenSweep › ⋮ › Permitir ajustes restringidos."))
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -217,7 +218,7 @@ fun CleanerScreen(modifier: Modifier, onMessengers: () -> Unit) {
         AlertDialog(
             onDismissRequest = { confirm = false },
             title = { Text(t("¿Limpiar ahora?")) },
-            text = { Text("${t("Se eliminarán")} ${formatBytes(total)} ${t("de forma permanente.")}") },
+            text = { Text("${t("Se eliminarán")} ${formatBytes(total)}. ${t("Los instaladores APK, las descargas y los restos de apps van a la papelera de OpenSweep (30 días); lo demás se borra.")}") },
             confirmButton = { TextButton(onClick = { confirm = false; clean() }) { Text(t("Limpiar")) } },
             dismissButton = { TextButton(onClick = { confirm = false }) { Text(t("Cancelar")) } },
         )

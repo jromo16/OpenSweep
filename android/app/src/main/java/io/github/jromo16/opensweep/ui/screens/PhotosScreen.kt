@@ -92,7 +92,7 @@ fun PhotosScreen(modifier: Modifier) {
         selected.clear()
         // Los grupos de capturas de pantalla no se premarcan: dos capturas parecidas pueden tener información distinta
         r.similar.filter { g -> g.none { it.isScreenshot } }.forEach { g -> g.filter { !it.isBest }.forEach { selected.add(it.uri.toString()) } }
-        r.similarVideos.forEach { g -> g.filter { !it.isBest }.forEach { selected.add(it.uri.toString()) } }
+        // Los vídeos «similares» tampoco: solo se compara la miniatura y dos clips distintos pueden parecerse
     }
 
     fun analyze() = scope.launch {
@@ -180,13 +180,16 @@ fun PhotosScreen(modifier: Modifier) {
         }
 
         if (confirm) {
-            val unsafe = section.isSimilar && section.groups.any { (_, g) -> g.all { it.uri.toString() in selected } }
+            // Desde cualquier pestaña (similares, borrosas, oscuras…): nunca borrar todas las fotos de un grupo de similares
+            val markedKeys = marked.map { it.uri.toString() }.toSet()
+            val allGroups = result?.let { it.similar + it.similarVideos }.orEmpty()
+            val unsafe = allGroups.any { g -> g.size > 1 && g.all { it.uri.toString() in markedKeys } }
             AlertDialog(
                 onDismissRequest = { confirm = false },
                 title = { Text(if (unsafe) t("Revisa la selección") else t("¿Eliminar archivos?")) },
                 text = {
                     Text(if (unsafe) t("Has marcado todas las fotos de algún grupo. Deja al menos una sin marcar.")
-                    else "${marked.size} ${t("archivos")} (${formatBytes(marked.sumOf { it.size })}) ${t("se eliminarán de forma permanente.")}")
+                    else "${marked.size} ${t("archivos")} (${formatBytes(marked.sumOf { it.size })}) ${t("irán a la papelera de OpenSweep: podrás recuperarlos durante 30 días.")}")
                 },
                 confirmButton = {
                     if (!unsafe) TextButton(onClick = {

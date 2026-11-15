@@ -43,22 +43,29 @@ public sealed class AppSettings
         {
             var stamp = File.Exists(FilePath) ? File.GetLastWriteTimeUtc(FilePath) : default;
             if (_current != null && stamp == _loadedStamp) return;
-            _current = Load();
+            // Si la lectura falla en este momento (p. ej. la ventana principal está guardando), se conservan los ajustes
+            // actuales y se vuelve a intentar en la próxima comprobación
+            if (TryLoad(out var fresh)) _current = fresh;
         }
         catch { }
     }
 
-    private static AppSettings Load()
+    private static AppSettings Load() => TryLoad(out var s) ? s : new AppSettings();
+
+    private static bool TryLoad(out AppSettings settings)
     {
+        settings = new AppSettings();
         try
         {
-            if (File.Exists(FilePath))
-                _loadedStamp = File.GetLastWriteTimeUtc(FilePath);
-            if (File.Exists(FilePath))
-                return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new AppSettings();
+            if (!File.Exists(FilePath)) { _loadedStamp = default; return true; }
+            var stamp = File.GetLastWriteTimeUtc(FilePath);
+            var loaded = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath));
+            if (loaded == null) return false;
+            settings = loaded;
+            _loadedStamp = stamp;
+            return true;
         }
-        catch { }
-        return new AppSettings();
+        catch { return false; }
     }
 
     public void Save()
@@ -66,7 +73,10 @@ public sealed class AppSettings
         try
         {
             Directory.CreateDirectory(Folder);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+            // Escritura atómica: si se corta a mitad, el archivo anterior sigue intacto
+            var tmp = FilePath + ".tmp";
+            File.WriteAllText(tmp, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(tmp, FilePath, overwrite: true);
         }
         catch { }
     }

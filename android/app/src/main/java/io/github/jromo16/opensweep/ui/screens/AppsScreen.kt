@@ -111,7 +111,7 @@ fun AppsScreen(modifier: Modifier) {
         if (queue.isNotEmpty()) next(::launchUninstall)
         else {
             // Fin de la cola: buscar restos de las apps desinstaladas
-            val found = removed.flatMap { AppManager.leftovers(it.packageName, it.label) }.distinct()
+            val found = removed.flatMap { AppManager.leftovers(ctx, it.packageName, it.label) }.distinct()
             if (removed.isNotEmpty()) {
                 Toast.makeText(ctx, "${removed.size} ${t("apps desinstaladas")}", Toast.LENGTH_SHORT).show()
                 checked.removeAll(removed.map { it.packageName })
@@ -233,8 +233,10 @@ fun AppsScreen(modifier: Modifier) {
                 TextButton(onClick = {
                     val list = leftovers
                     leftovers = emptyList()
-                    scope.launch(Dispatchers.IO) { list.forEach { Trash.move(ctx, it) } }
-                    Toast.makeText(ctx, t("Restos eliminados"), Toast.LENGTH_SHORT).show()
+                    scope.launch {
+                        val moved = withContext(Dispatchers.IO) { list.count { Trash.move(ctx, it) } }
+                        Toast.makeText(ctx, "$moved ${t("carpetas enviadas a la papelera de OpenSweep")}", Toast.LENGTH_SHORT).show()
+                    }
                 }) { Text(t("Eliminar restos")) }
             },
             dismissButton = { TextButton(onClick = { leftovers = emptyList() }) { Text(t("Conservar")) } },

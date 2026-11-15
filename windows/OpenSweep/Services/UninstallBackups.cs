@@ -78,11 +78,12 @@ public static class UninstallBackups
                 $"-TaskName '{t[0][(slash + 1)..].Replace("'", "''")}' -Force | Out-Null");
             if (code == 0) ok++; else failed++;
         }
-        var restored = RecycleBin.Restore(r.Recycled);
+        // Solo lo que se borró en esta desinstalación (o después), no un borrado anterior con la misma ruta
+        var restored = RecycleBin.Restore(r.Recycled, r.Date.AddMinutes(-1));
         ok += restored.Count;
         var missing = r.Recycled.Count - restored.Count;
         failed += missing;
-        r.Restored = true;
+        r.Restored = ok > 0;   // si no volvió nada, se puede volver a intentar
         Save(r);
         Scheduler.Log($"Deshacer desinstalación de {r.Program}: {ok} restaurados, {failed} fallos");
         var msg = $"{ok} {Loc.T("elementos restaurados")}"

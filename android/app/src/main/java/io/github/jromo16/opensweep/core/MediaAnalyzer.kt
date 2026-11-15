@@ -185,7 +185,9 @@ object MediaAnalyzer {
     /** Borra un archivo multimedia (MediaStore + archivo). */
     /** Envía la foto o el vídeo a la papelera de OpenSweep (o lo borra si no tiene ruta de archivo). */
     fun delete(ctx: Context, m: MediaRec): Boolean {
-        if (m.path.isNotEmpty() && File(m.path).exists() && Trash.move(ctx, m.path)) {
+        if (m.path.isNotEmpty() && File(m.path).exists()) {
+            // Si no se puede llevar a la papelera (p. ej. sin espacio para copiarlo), NO se borra para siempre
+            if (!Trash.move(ctx, m.path)) return false
             // Quitarlo también del índice de la galería
             try { ctx.contentResolver.delete(m.uri, null, null) } catch (_: Exception) { }
             return true
