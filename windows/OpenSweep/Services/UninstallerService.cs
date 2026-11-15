@@ -24,6 +24,17 @@ public sealed class InstalledProgram
     public bool IsMsi { get; init; }
     public bool IsSystem { get; init; }
     public ImageSource? Icon { get; set; }
+    public string Website { get; init; } = "";
+    public string HelpLink { get; init; } = "";
+    public string UpdateLink { get; init; } = "";
+
+    /// <summary>Identificador estable para comentarios y programas ocultos.</summary>
+    public string Id => $"{Hive}|{View}|{KeyName}";
+    public string Comment => AppSettings.Current.ProgramComments.GetValueOrDefault(Id, "");
+    public bool IsRecent => InstallDate != null && InstallDate.Value >= DateTime.Today.AddDays(-7);
+    /// <summary>Grupo de la lista, como en Revo: instalados en los últimos 7 días y el resto.</summary>
+    public string Group => IsRecent ? Loc.T("Instalados recientemente") : Loc.T("Todos los programas");
+    public string WebsiteText => Website.Replace("https://", "").Replace("http://", "").TrimEnd('/');
 
     public string KeyPath => $@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{KeyName}";
     public string SizeText => SizeBytes > 0 ? Util.FormatBytes(SizeBytes) : "";
@@ -84,7 +95,7 @@ public sealed class StoreApp
     public bool Selected { get; set; }
 }
 
-public static class UninstallerService
+public static partial class UninstallerService
 {
     private const string UninstallPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
 
@@ -139,6 +150,9 @@ public static class UninstallerService
                             KeyName = sub,
                             IsMsi = Convert.ToInt32(sk.GetValue("WindowsInstaller") ?? 0) == 1 || uninst.Contains("msiexec", StringComparison.OrdinalIgnoreCase),
                             IsSystem = system,
+                            Website = (sk.GetValue("URLInfoAbout") as string ?? "").Trim(),
+                            HelpLink = (sk.GetValue("HelpLink") as string ?? "").Trim(),
+                            UpdateLink = (sk.GetValue("URLUpdateInfo") as string ?? "").Trim(),
                         });
                     }
                     catch { }
@@ -200,7 +214,7 @@ public static class UninstallerService
     }
 
     /// <summary>Ejecutable principal: el .exe de la carpeta de instalación cuyo nombre se parece al del programa (o el más grande).</summary>
-    private static string? MainExecutable(InstalledProgram p)
+    public static string? MainExecutable(InstalledProgram p)
     {
         var dir = Environment.ExpandEnvironmentVariables(p.InstallLocation ?? "").TrimEnd('\\');
         if (dir.Length <= 3 || !Directory.Exists(dir)) return null;
@@ -329,7 +343,28 @@ public static class UninstallerService
         "inc", "corp", "corporation", "ltd", "llc", "gmbh", "company", "the", "for", "x64", "x86", "bit", "64bit", "32bit", "free", "pro",
         "google", "intel", "nvidia", "amd", "realtek", "adobe", "apple", "mozilla", "oracle", "classes", "policies", "wow6432node", "clients",
         "packages", "local", "roaming", "locallow", "tools", "driver", "drivers", "runtime", "redistributable", "visual", "net", "framework",
+        // Palabras de nombre de producto demasiado comunes: «Studio» juntaría OBS Studio, Android Studio y Visual Studio Code
+        "studio", "live", "player", "editor", "manager", "launcher", "center", "centre", "desktop", "client", "helper", "service", "services",
+        "cloud", "online", "plus", "lite", "suite", "toolkit", "code", "office", "studios", "games", "game", "media", "video", "audio",
+        "music", "photo", "photos", "browser", "web", "connect", "sync", "security", "assistant", "creator", "maker", "converter",
+        "download", "downloader", "viewer", "reader", "recorder", "capture", "screen", "remote", "portable", "edition", "home", "basic",
+        "premium", "ultimate", "professional", "enterprise", "standard", "community", "express", "beta", "preview", "insider",
     };
+
+    /// <summary>
+    /// Coincidencia fuerte: el nombre completo del programa, su carpeta de instalación o su ejecutable.
+    /// Todo lo demás (una palabra suelta, o el nombre dentro de otro más largo) es débil y se muestra sin marcar.
+    /// </summary>
+    private static bool StrongMatch(string candidate, InstalledProgram p)
+    {
+        var n = Util.Normalize(candidate);
+        if (n.Length < 3) return false;
+        var strong = new List<string> { Util.Normalize(StripVersion(p.Name)) };
+        if (!string.IsNullOrWhiteSpace(p.InstallLocation)) strong.Add(Util.Normalize(Path.GetFileName(Environment.ExpandEnvironmentVariables(p.InstallLocation).TrimEnd('\\'))));
+        var exe = PathHelper.ExtractPath(p.DisplayIcon);
+        if (exe != null) strong.Add(Util.Normalize(Path.GetFileNameWithoutExtension(exe)));
+        return strong.Any(t => t.Length >= 4 && (n == t || (t.Length >= 6 && n.Length >= 6 && (n.StartsWith(t) || t.StartsWith(n)))));
+    }
 
     private static List<string> NameTokens(InstalledProgram p)
     {
@@ -553,7 +588,21 @@ public static class UninstallerService
             try { results.AddRange(FindSystemLeftovers(p, tokens, mode, seen)); } catch { }
         }
 
+        // ---- 7. Rastros que deja Windows al usar el programa: temporales, compatibilidad, nombres y Prefetch ----
+        if (mode >= ScanMode.Moderado)
+        {
+            ct.ThrowIfCancellationRequested();
+            try { FindUsageTraces(p, tokens, mode, AddDir, AddFile, AddKey); } catch { }
+        }
+
         MarkShared(p, results);
+        // Lo encontrado solo por una palabra o un nombre parecido se muestra sin marcar (el usuario decide)
+        foreach (var r in results)
+        {
+            if (r.Special != null || r.ValueName != null || r.Reason == Loc.T("Carpeta de instalación") || r.Reason == Loc.T("Entrada de desinstalación")) continue;
+            var leaf = Path.GetFileNameWithoutExtension(r.Path.TrimEnd('\\'));
+            if (!StrongMatch(leaf, p)) { r.ByNameOnly = true; r.Selected = false; }
+        }
         return results;
     }
 
@@ -867,8 +916,13 @@ public static class UninstallerService
                 }
                 return true;
             }
-            if (i.IsDirectory) return !PathHelper.IsProtectedFolder(i.Path) && Util.TryDeleteDirectory(i.Path);
-            return Util.TryDeleteFile(i.Path);
+            // Archivos y carpetas a la Papelera de reciclaje (se pueden recuperar); si no se puede, se borran
+            if (i.IsDirectory)
+            {
+                if (PathHelper.IsProtectedFolder(i.Path)) return false;
+                return (Native.SendToRecycleBin(i.Path) && !Directory.Exists(i.Path)) || Util.TryDeleteDirectory(i.Path);
+            }
+            return (Native.SendToRecycleBin(i.Path) && !File.Exists(i.Path)) || Util.TryDeleteFile(i.Path);
         }
         catch { return false; }
     }

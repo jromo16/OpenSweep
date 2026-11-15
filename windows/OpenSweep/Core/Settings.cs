@@ -17,6 +17,10 @@ public sealed class AppSettings
     public bool TrayMonitor { get; set; }
     /// <summary>Limpiar cada navegador al cerrarlo (lo hace el monitor de la bandeja).</summary>
     public bool CleanBrowsersOnClose { get; set; }
+    /// <summary>Comentarios del usuario sobre programas instalados (clave: InstalledProgram.Id).</summary>
+    public Dictionary<string, string> ProgramComments { get; set; } = [];
+    /// <summary>Programas ocultos en la lista del desinstalador (clave: InstalledProgram.Id).</summary>
+    public List<string> HiddenPrograms { get; set; } = [];
     public int TrayThresholdMb { get; set; } = 500;
     public bool CheckUpdates { get; set; } = true;
     public string Language { get; set; } = "auto";

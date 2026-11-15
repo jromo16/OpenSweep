@@ -94,6 +94,21 @@ public static class Dialogs
             : d.Result;
     }
 
+    /// <summary>Pide un texto al usuario. Devuelve null si cancela.</summary>
+    public static string? Prompt(string title, string message, string initial = "")
+    {
+        var d = new ModernDialog();
+        d.SetKind(DialogKind.Info);
+        d.SetText(title, message);
+        var box = d.AddInput(initial);
+        d.AddButton(Loc.T("Cancelar"), MessageBoxResult.Cancel, isCancel: true);
+        d.AddButton(Loc.T("Guardar"), MessageBoxResult.OK, primary: true).IsDefault = true;
+        var owner = Owner();
+        if (owner != null) d.Owner = owner; else d.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        d.ShowDialog();
+        return d.Result == MessageBoxResult.OK ? box.Text.Trim() : null;
+    }
+
     /// <summary>
     /// Ejecuta una tarea elemento a elemento mostrando una barra con porcentaje,
     /// y al terminar un resumen con una marca verde. Devuelve cuántos elementos tuvieron éxito.

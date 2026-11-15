@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Text;
 using System.Windows.Controls;
 using Microsoft.Win32;
 using OpenSweep.Core;
@@ -38,12 +39,22 @@ public partial class UninstallerView : UserControl
     private void ApplyFilter()
     {
         var q = SearchBox.Text.Trim();
-        var filtered = string.IsNullOrEmpty(q)
-            ? _programs
-            : _programs.Where(p => p.Name.Contains(q, StringComparison.OrdinalIgnoreCase) || p.Publisher.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
+        var hidden = AppSettings.Current.HiddenPrograms.ToHashSet();
+        var showHidden = ShowHidden.IsChecked == true;
+        var filtered = _programs
+            .Where(p => showHidden || !hidden.Contains(p.Id))
+            .Where(p => OnlyRecent.IsChecked != true || p.IsRecent)
+            .Where(p => string.IsNullOrEmpty(q) || p.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
+                        || p.Publisher.Contains(q, StringComparison.OrdinalIgnoreCase) || p.Comment.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .ToList();
         ProgramsGrid.ItemsSource = filtered;
-        CountText.Text = $"{filtered.Count} {Loc.T("programas")} · {Util.FormatBytes(filtered.Sum(p => p.SizeBytes))} {Loc.T("en total")}";
+        OnlyRecent.Content = $"{Loc.T("Solo recientes")} ({_programs.Count(p => p.IsRecent && (showHidden || !hidden.Contains(p.Id)))})";
+        var hiddenCount = showHidden ? 0 : _programs.Count(p => hidden.Contains(p.Id));
+        CountText.Text = $"{filtered.Count} {Loc.T("programas")} · {Util.FormatBytes(filtered.Sum(p => p.SizeBytes))} {Loc.T("en total")}"
+                         + (hiddenCount > 0 ? $" · {hiddenCount} {Loc.T("ocultos")}" : "");
     }
+
+    private void ShowHidden_Click(object sender, RoutedEventArgs e) => ApplyFilter();
 
     private void Search_Changed(object sender, TextChangedEventArgs e) => ApplyFilter();
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await LoadPrograms();
@@ -76,33 +87,8 @@ public partial class UninstallerView : UserControl
         if (Dialogs.Show($"{Loc.T("¿Desinstalar «")}{p.Name}»?\n\n{Loc.T("Se ejecutará su desinstalador y después podrás buscar los restos.")}", Loc.T("Desinstalar"),
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
 
-        UninstallBtn.IsEnabled = false;
-        LoadingBar.Visibility = Visibility.Visible;
-        try
-        {
-            if (AppSettings.Current.CreateRestorePointBeforeUninstall)
-            {
-                CountText.Text = Loc.T("Creando punto de restauración del sistema...");
-                await Task.Run(() => UninstallerService.CreateRestorePoint($"{Loc.T("OpenSweep: antes de desinstalar")} {p.Name}"));
-            }
-            CountText.Text = $"{Loc.T("Ejecutando el desinstalador de")} {p.Name}...";
-            try
-            {
-                await UninstallerService.RunUninstallerAsync(p, quiet: false);
-            }
-            catch (Exception ex)
-            {
-                if (Dialogs.Show($"{Loc.T("No se pudo ejecutar el desinstalador")}:\n{ex.Message}\n\n{Loc.T("¿Quieres hacer una desinstalación forzada?")}",
-                        "OpenSweep", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
-            }
-        }
-        finally
-        {
-            LoadingBar.Visibility = Visibility.Collapsed;
-            UninstallBtn.IsEnabled = true;
-        }
-
-        new LeftoversWindow(p, forced: false) { Owner = Window.GetWindow(this) }.ShowDialog();
+        // El asistente crea el punto de restauración, ejecuta el desinstalador y busca los restos
+        new LeftoversWindow(p, forced: false, runUninstaller: true) { Owner = Window.GetWindow(this) }.ShowDialog();
         await LoadPrograms();
     }
 
@@ -382,5 +368,97 @@ public partial class UninstallerView : UserControl
         }
         var fake = UninstallerService.FakeProgram(name, folder.Length > 0 ? folder : null);
         new LeftoversWindow(fake, forced: true) { Owner = Window.GetWindow(this) }.ShowDialog();
+    }
+
+    // ---------------- Menú del clic derecho (como en Revo) ----------------
+    private void Programs_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        var p = Selected();
+        if (p == null) { e.Handled = true; return; }
+        WebItem.IsEnabled = p.Website.StartsWith("http", StringComparison.OrdinalIgnoreCase);
+        HelpItem.IsEnabled = p.HelpLink.StartsWith("http", StringComparison.OrdinalIgnoreCase);
+        UpdateItem.IsEnabled = p.UpdateLink.StartsWith("http", StringComparison.OrdinalIgnoreCase);
+        RunItem.IsEnabled = UninstallerService.MainExecutable(p) != null;
+        HideItem.Header = AppSettings.Current.HiddenPrograms.Contains(p.Id) ? Loc.T("Volver a mostrar en la lista") : Loc.T("Ocultar de la lista");
+    }
+
+    private void Run_Click(object sender, RoutedEventArgs e)
+    {
+        var exe = Selected() is { } p ? UninstallerService.MainExecutable(p) : null;
+        if (exe == null) return;
+        try { Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(exe) }); }
+        catch (Exception ex) { Dialogs.Show($"{Loc.T("No se pudo abrir el programa")}:\n{ex.Message}", "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning); }
+    }
+
+    private void Website_Click(object sender, RoutedEventArgs e) { if (Selected() is { } p) Util.OpenUrl(p.Website); }
+    private void Help_Click(object sender, RoutedEventArgs e) { if (Selected() is { } p) Util.OpenUrl(p.HelpLink); }
+    private void UpdateLink_Click(object sender, RoutedEventArgs e) { if (Selected() is { } p) Util.OpenUrl(p.UpdateLink); }
+
+    private static string Info(InstalledProgram p) =>
+        string.Join("\t", p.Name, p.Version, p.Publisher, p.Arch, p.DateText, p.SizeText, p.InstallLocation, p.Website, p.UninstallString);
+
+    private void Copy(string text)
+    {
+        try { Clipboard.SetText(text); Dialogs.Toast(Loc.T("Copiado al portapapeles")); } catch { }
+    }
+
+    private void CopyName_Click(object sender, RoutedEventArgs e) { if (Selected() is { } p) Copy(p.Name); }
+    private void CopyUninstall_Click(object sender, RoutedEventArgs e) { if (Selected() is { } p) Copy(p.UninstallString); }
+    private void CopyAll_Click(object sender, RoutedEventArgs e)
+    {
+        var sel = ProgramsGrid.SelectedItems.OfType<InstalledProgram>().ToList();
+        if (sel.Count > 0) Copy(string.Join(Environment.NewLine, sel.Select(Info)));
+    }
+
+    private void Comment_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selected() is not { } p) return;
+        var text = Dialogs.Prompt($"{Loc.T("Comentario para")} {p.Name}", Loc.T("Una nota para recordar algo de este programa (solo la ves tú)."), p.Comment);
+        if (text == null) return;
+        var s = AppSettings.Current;
+        if (text.Length == 0) s.ProgramComments.Remove(p.Id); else s.ProgramComments[p.Id] = text;
+        s.Save();
+        ProgramsGrid.Items.Refresh();
+    }
+
+    private void Hide_Click(object sender, RoutedEventArgs e)
+    {
+        var sel = ProgramsGrid.SelectedItems.OfType<InstalledProgram>().ToList();
+        if (sel.Count == 0) return;
+        var s = AppSettings.Current;
+        bool unhide = sel.All(p => s.HiddenPrograms.Contains(p.Id));
+        foreach (var p in sel)
+        {
+            if (unhide) s.HiddenPrograms.Remove(p.Id);
+            else if (!s.HiddenPrograms.Contains(p.Id)) s.HiddenPrograms.Add(p.Id);
+        }
+        s.Save();
+        ApplyFilter();
+        if (!unhide) Dialogs.Toast($"{sel.Count} {Loc.T("ocultos. Márcalos con «Mostrar ocultos» para verlos.")}");
+    }
+
+    /// <summary>Exporta la lista de programas a CSV (se abre en Excel) o a texto.</summary>
+    private void Export_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new SaveFileDialog
+        {
+            Title = Loc.T("Exportar lista de programas"),
+            FileName = $"Programas_{Environment.MachineName}_{DateTime.Now:yyyyMMdd}.csv",
+            Filter = "CSV (*.csv)|*.csv|Texto (*.txt)|*.txt",
+        };
+        if (dlg.ShowDialog() != true) return;
+        static string Q(string v) => "\"" + v.Replace("\"", "\"\"") + "\"";
+        var sb = new StringBuilder();
+        var sep = dlg.FileName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ? "\t" : ";";
+        sb.AppendLine(string.Join(sep, new[] { "Nombre", "Versión", "Fabricante", "Tipo", "Instalado", "Tamaño (MB)", "Carpeta", "Sitio web", "Comentario", "Desinstalador" }.Select(Loc.T).Select(Q)));
+        foreach (var p in _programs.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase))
+            sb.AppendLine(string.Join(sep, new[] { p.Name, p.Version, p.Publisher, p.Arch, p.DateText, (p.SizeBytes / 1048576.0).ToString("0.0"),
+                p.InstallLocation, p.Website, p.Comment, p.UninstallString }.Select(Q)));
+        try
+        {
+            File.WriteAllText(dlg.FileName, sb.ToString(), new UTF8Encoding(true));   // con BOM: Excel lee bien las tildes
+            Dialogs.Toast($"{_programs.Count} {Loc.T("programas exportados")}");
+        }
+        catch (Exception ex) { Dialogs.Show(ex.Message, "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning); }
     }
 }

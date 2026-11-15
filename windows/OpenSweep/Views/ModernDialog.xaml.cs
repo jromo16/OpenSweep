@@ -49,6 +49,16 @@ public partial class ModernDialog : Window
 
     public void ClearButtons() => ButtonsPanel.Children.Clear();
 
+    /// <summary>Añade un cuadro de texto debajo del mensaje (para pedir un dato).</summary>
+    public TextBox AddInput(string text)
+    {
+        var host = (Panel)ProgressPanel.Parent;
+        var box = new TextBox { Text = text, Margin = new Thickness(0, 12, 0, 0), MinWidth = 320 };
+        host.Children.Insert(host.Children.IndexOf(ProgressPanel), box);
+        Loaded += (_, _) => { box.Focus(); box.SelectAll(); };
+        return box;
+    }
+
     /// <summary>Añade un botón. primary = verde (o rojo si danger).</summary>
     public Button AddButton(string text, MessageBoxResult result, bool primary = false, bool danger = false, bool isCancel = false)
     {

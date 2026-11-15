@@ -81,6 +81,14 @@ public partial class MainWindow : Window
         base.OnContentRendered(e);
 #if DEBUG
         // Solo en desarrollo: OpenSweep.exe --demo muestra los diálogos sin borrar nada
+        // Solo en desarrollo: OpenSweep.exe --leftovers "Nombre" "C:\Carpeta" abre el asistente de restos (no borra nada solo)
+        var la = Array.IndexOf(Environment.GetCommandLineArgs(), "--leftovers");
+        if (la > 0 && la + 2 < Environment.GetCommandLineArgs().Length)
+        {
+            var a = Environment.GetCommandLineArgs();
+            new LeftoversWindow(UninstallerService.FakeProgram(a[la + 1], a[la + 2]), forced: true) { Owner = this }.Show();
+            return;
+        }
         if (Environment.GetCommandLineArgs().Contains("--demo"))
         {
             if (Dialogs.Show($"{Loc.T("¿Enviar")} 2 {Loc.T("archivos")} (7.97 MB) {Loc.T("a la papelera?")}\n{Loc.T("Podrás recuperarlos desde la papelera de reciclaje.")}",

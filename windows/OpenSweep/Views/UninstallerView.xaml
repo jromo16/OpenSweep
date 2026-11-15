@@ -22,6 +22,10 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <CheckBox x:Name="ShowSystem" Content="{l:T 'Mostrar componentes del sistema'}" VerticalAlignment="Center" Margin="0,0,12,0" Click="Refresh_Click"/>
+                            <CheckBox x:Name="OnlyRecent" Content="{l:T 'Solo recientes'}" VerticalAlignment="Center" Margin="0,0,12,0" Click="ShowHidden_Click"
+                                      ToolTip="{l:T 'Programas instalados en los últimos 7 días'}"/>
+                            <CheckBox x:Name="ShowHidden" Content="{l:T 'Mostrar ocultos'}" VerticalAlignment="Center" Margin="0,0,12,0" Click="ShowHidden_Click"/>
+                            <Button Content="{l:T 'Exportar lista'}" Margin="0,0,6,0" Click="Export_Click"/>
                             <Button Content="{l:T 'Actualizar'}" Click="Refresh_Click"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
@@ -41,7 +45,30 @@
                     </DockPanel>
                     <Grid>
                         <DataGrid x:Name="ProgramsGrid" IsReadOnly="True" SelectionMode="Extended" MouseDoubleClick="ProgramsGrid_DoubleClick" SelectionChanged="ProgramsGrid_SelectionChanged"
-                                  AllowDrop="True" Drop="Programs_Drop">
+                                  AllowDrop="True" Drop="Programs_Drop" ContextMenuOpening="Programs_ContextMenuOpening">
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="{l:T 'Desinstalar'}" Click="Uninstall_Click" FontWeight="SemiBold"/>
+                                    <MenuItem Header="{l:T 'Desinstalación forzada'}" Click="Forced_Click"/>
+                                    <Separator/>
+                                    <MenuItem x:Name="RunItem" Header="{l:T 'Ejecutar'}" Click="Run_Click"/>
+                                    <MenuItem Header="{l:T 'Abrir carpeta de instalación'}" Click="OpenFolder_Click"/>
+                                    <MenuItem Header="{l:T 'Ver en el registro'}" Click="OpenRegistry_Click"/>
+                                    <Separator/>
+                                    <MenuItem Header="{l:T 'Buscar en Internet'}" Click="SearchWeb_Click"/>
+                                    <MenuItem x:Name="WebItem" Header="{l:T 'Abrir sitio web'}" Click="Website_Click"/>
+                                    <MenuItem x:Name="HelpItem" Header="{l:T 'Abrir ayuda'}" Click="Help_Click"/>
+                                    <MenuItem x:Name="UpdateItem" Header="{l:T 'Buscar actualizaciones'}" Click="UpdateLink_Click"/>
+                                    <Separator/>
+                                    <MenuItem Header="{l:T 'Copiar'}">
+                                        <MenuItem Header="{l:T 'Nombre'}" Click="CopyName_Click"/>
+                                        <MenuItem Header="{l:T 'Comando de desinstalación'}" Click="CopyUninstall_Click"/>
+                                        <MenuItem Header="{l:T 'Toda la información'}" Click="CopyAll_Click"/>
+                                    </MenuItem>
+                                    <MenuItem Header="{l:T 'Añadir comentario…'}" Click="Comment_Click"/>
+                                    <MenuItem x:Name="HideItem" Header="{l:T 'Ocultar de la lista'}" Click="Hide_Click"/>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="" Width="40" CanUserSort="False">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -57,12 +84,36 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="{l:T 'Nombre'}" Binding="{Binding Name}" Width="2*"/>
-                                <DataGridTextColumn Header="{l:T 'Fabricante'}" Binding="{Binding Publisher}" Width="*"/>
-                                <DataGridTextColumn Header="{l:T 'Versión'}" Binding="{Binding Version}" Width="110"/>
+                                <!-- Nombre con la etiqueta «Nuevo» si se instaló en los últimos 7 días (como el grupo «Nuevos» de Revo) -->
+                                <DataGridTemplateColumn Header="{l:T 'Nombre'}" SortMemberPath="Name" Width="2*" MinWidth="160">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <DockPanel VerticalAlignment="Center">
+                                                <Border DockPanel.Dock="Right" CornerRadius="6" Padding="6,1" Margin="6,0,4,0" Background="{DynamicResource AccentSoftBrush}">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsRecent}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{l:T 'Nuevo'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="{l:T 'Fabricante'}" Binding="{Binding Publisher}" Width="*" MinWidth="110"/>
+                                <DataGridTextColumn Header="{l:T 'Versión'}" Binding="{Binding Version}" Width="100"/>
                                 <DataGridTextColumn Header="{l:T 'Tamaño'}" Binding="{Binding SizeText}" SortMemberPath="SizeBytes" Width="90"/>
                                 <DataGridTextColumn Header="{l:T 'Instalado'}" Binding="{Binding DateText}" SortMemberPath="InstallDate" Width="95"/>
                                 <DataGridTextColumn Header="{l:T 'Tipo'}" Binding="{Binding Arch}" Width="75"/>
+                                <DataGridTextColumn Header="{l:T 'Sitio web'}" Binding="{Binding WebsiteText}" Width="0.8*" MinWidth="90"/>
+                                <DataGridTextColumn Header="{l:T 'Comentario'}" Binding="{Binding Comment}" Width="0.7*" MinWidth="90"/>
                             </DataGrid.Columns>
                         </DataGrid>
                         <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Height="4" VerticalAlignment="Top" Visibility="Collapsed"/>

@@ -15,12 +15,24 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
 - **Salud de los discos** (Windows): en el Panel de salud, el estado que informa cada disco (S.M.A.R.T./NVMe),
   con temperatura, vida útil restante del SSD y avisos claros si conviene hacer una copia de seguridad.
 - **Reparar Windows** (Windows): repara archivos del sistema dañados con DISM y SFC, con progreso y el resultado en tu idioma.
+- **Desinstalador renovado como asistente** (Windows), al estilo de Revo Uninstaller: punto de restauración y desinstalador
+  oficial → modo de análisis → restos del registro en árbol (claves y sus valores) → archivos y carpetas en árbol → resumen
+  con lo eliminado y «Ver detalles». Casillas de grupo, «Eliminar» en cada paso y aviso si sigues sin eliminar lo marcado.
+- **Más restos encontrados**: la carpeta del programa en `%TEMP%`, el historial de compatibilidad de Windows
+  (AppCompatFlags), la caché de nombres (MuiCache) y los archivos de Prefetch de sus ejecutables.
+- Los archivos y carpetas de restos van a la **Papelera de reciclaje** (antes se borraban para siempre).
+- **Lista de programas**: etiqueta «Nuevo» y filtro «Solo recientes» (últimos 7 días), columnas de sitio web y comentario,
+  menú del clic derecho (ejecutar, abrir sitio web/ayuda/actualizaciones, copiar, comentario, ocultar), «Mostrar ocultos»
+  y **exportar la lista** a CSV.
 - **Limpiar el navegador al cerrarlo** (Windows): el monitor de la bandeja limpia Chrome, Edge, Firefox… en cuanto los cierras,
   según lo que tengas marcado en «Limpieza».
 
 ### Corregido
 - Android: «Caché de aplicaciones» usaba el diálogo oficial de Android, que en la práctica no liberaba nada.
 - Windows: el monitor de la bandeja ya no se abre dos veces.
+- Windows, desinstalador en modo Avanzado: una palabra común del nombre («Studio» en «TikTok LIVE Studio») arrastraba restos
+  de otros programas (OBS Studio, Visual Studio Code…) y algunos venían marcados. Ahora las palabras comunes no cuentan y
+  lo que solo coincide en parte aparece siempre sin marcar.
 - Android, fotos similares: dos capturas de apps distintas (casi todo fondo blanco) podían salir como «similares» y venir
   marcadas para borrar. Ahora se compara también la imagen en detalle, una captura solo se agrupa con otra casi idéntica,
   nunca con una foto, y los grupos de capturas no se premarcan.
