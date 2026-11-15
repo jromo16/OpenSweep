@@ -29,6 +29,7 @@ public partial class SettingsView : UserControl
         IncludeList.ItemsSource = _s.CustomFolders;
         ExcludeList.ItemsSource = _s.Exclusions;
         CookieList.ItemsSource = _s.CookieWhitelist;
+        UpdateWinapp2Status();
         _loading = false;
     }
 
@@ -99,6 +100,42 @@ public partial class SettingsView : UserControl
         if (!File.Exists(Scheduler.LogFile)) { Dialogs.Show(Loc.T("Todavía no hay actividad registrada."), "OpenSweep"); return; }
         try { Process.Start(new ProcessStartInfo(Scheduler.LogFile) { UseShellExecute = true }); } catch { }
     }
+
+    // ---------------- Reglas de la comunidad (winapp2) ----------------
+    private void UpdateWinapp2Status()
+    {
+        if (Winapp2.Installed)
+        {
+            Winapp2Status.Text = $"{Winapp2.Parse().Count} {Loc.T("reglas disponibles")} · {Loc.T("versión")} {Winapp2.Version()}";
+            Winapp2Btn.Content = Loc.T("Actualizar reglas");
+            Winapp2Remove.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            Winapp2Status.Text = Loc.T("No descargadas");
+            Winapp2Btn.Content = Loc.T("Descargar reglas");
+            Winapp2Remove.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private async void Winapp2Download_Click(object sender, RoutedEventArgs e)
+    {
+        Winapp2Btn.IsEnabled = false;
+        Winapp2Status.Text = Loc.T("Descargando…");
+        var (ok, msg) = await Winapp2.DownloadAsync();
+        Winapp2Btn.IsEnabled = true;
+        UpdateWinapp2Status();
+        if (ok) Dialogs.Toast(msg);
+        else Dialogs.Show($"{Loc.T("No se pudieron descargar las reglas.")}\n\n{msg}", "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private void Winapp2Remove_Click(object sender, RoutedEventArgs e)
+    {
+        Winapp2.Remove();
+        UpdateWinapp2Status();
+    }
+
+    private void Winapp2Project_Click(object sender, RoutedEventArgs e) => Util.OpenUrl(Winapp2.ProjectUrl);
 
     // ---------------- Cookies ----------------
     private void AddCookieDomain(string d)

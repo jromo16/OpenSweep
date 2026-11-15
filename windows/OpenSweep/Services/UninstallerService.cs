@@ -41,14 +41,30 @@ public sealed class Leftover
     public RegistryView View { get; init; }
     public string? ValueName { get; init; }
     public long Size { get; init; }
-    public string Reason { get; init; } = "";
+    public string Reason { get; set; } = "";
     public bool Selected { get; set; } = true;
     /// <summary>Otro programa instalado podría usar este elemento: se muestra sin marcar.</summary>
     public bool Shared { get; set; }
+    /// <summary>Elementos que no son archivos ni claves: "service", "task" o "firewall".</summary>
+    public string? Special { get; init; }
+    /// <summary>Nombre del servicio, ruta completa de la tarea o identificador de la regla del firewall.</summary>
+    public string? Target { get; init; }
+    /// <summary>Solo coincide por el nombre (no apunta a la carpeta del programa): se muestra sin marcar.</summary>
+    public bool ByNameOnly { get; set; }
 
-    public string ReasonText => Loc.T(Reason) + (Shared ? " · " + Loc.T("posible uso por otro programa") : "");
-    public string Kind => IsRegistry ? (ValueName != null ? Loc.T("Valor del registro") : Loc.T("Clave del registro")) : IsDirectory ? Loc.T("Carpeta") : Loc.T("Archivo");
-    public string Display => IsRegistry
+    public Leftover Clone() => (Leftover)MemberwiseClone();
+
+    public string ReasonText => Loc.T(Reason)
+        + (Shared ? " · " + Loc.T("posible uso por otro programa") : "")
+        + (ByNameOnly ? " · " + Loc.T("coincide solo por el nombre") : "");
+    public string Kind => Special switch
+    {
+        "service" => Loc.T("Servicio"),
+        "task" => Loc.T("Tarea programada"),
+        "firewall" => Loc.T("Regla del firewall"),
+        _ => IsRegistry ? (ValueName != null ? Loc.T("Valor del registro") : Loc.T("Clave del registro")) : IsDirectory ? Loc.T("Carpeta") : Loc.T("Archivo"),
+    };
+    public string Display => Special != null ? Path : IsRegistry
         ? (Hive == RegistryHive.CurrentUser ? "HKCU\\" : "HKLM\\") + Path + (ValueName != null ? $"  →  {ValueName}" : "") + (View == RegistryView.Registry32 ? Loc.T("  (32 bits)") : "")
         : Path;
     public string SizeText => Size > 0 ? Util.FormatBytes(Size) : "";
@@ -530,6 +546,13 @@ public static class UninstallerService
             }
         }
 
+        // ---- 6. Servicios, tareas, firewall, menú contextual y asociaciones (modo moderado o avanzado) ----
+        if (mode >= ScanMode.Moderado)
+        {
+            ct.ThrowIfCancellationRequested();
+            try { results.AddRange(FindSystemLeftovers(p, tokens, mode, seen)); } catch { }
+        }
+
         MarkShared(p, results);
         return results;
     }
@@ -558,6 +581,211 @@ public static class UninstallerService
 
     private static bool StillInstalledKey(InstalledProgram p) => StillInstalled(p);
 
+    /// <summary>Tipos de archivo y de enlace que usan muchos programas: nunca se marcan solos.</summary>
+    private static readonly HashSet<string> SharedProgIds = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "mailto", "http", "https", "ftp", "tel", "callto", "sip", "sips", "im", "sms", "webcal", "webcals", "news", "nntp", "snews",
+        "irc", "ircs", "magnet", "feed", "feeds", "ldap", "file", "htmlfile", "txtfile", "jpegfile", "pngfile", "giffile", "pdffile",
+        "AcroExch.Document", "Word.Document", "Excel.Sheet", "mhtmlfile", "xmlfile", "zip", "CompressedFolder",
+    };
+
+    /// <summary>Carpetas que pertenecen con seguridad al programa (para saber si algo «apunta» a él).</summary>
+    private static List<string> KnownDirs(InstalledProgram p, List<string> tokens)
+    {
+        var dirs = new List<string>();
+        void Add(string? d)
+        {
+            if (string.IsNullOrWhiteSpace(d)) return;
+            d = Environment.ExpandEnvironmentVariables(d.Trim().Trim('"')).TrimEnd('\\');
+            if (d.Length > 3 && !PathHelper.IsProtectedFolder(d) && !dirs.Contains(d, StringComparer.OrdinalIgnoreCase)) dirs.Add(d);
+        }
+        Add(p.InstallLocation);
+        var icon = PathHelper.ExtractPath(p.DisplayIcon);
+        if (icon != null && Path.IsPathRooted(icon)) Add(Path.GetDirectoryName(icon));
+        var uninst = PathHelper.ExtractPath(p.UninstallString);
+        if (uninst != null && !p.IsMsi && Path.IsPathRooted(uninst))
+        {
+            var d = Path.GetDirectoryName(uninst);
+            if (d != null && Matches(Path.GetFileName(d), tokens, ScanMode.Moderado)) Add(d);
+        }
+        return dirs;
+    }
+
+    internal static bool PointsTo(string? text, List<string> dirs)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var t = Environment.ExpandEnvironmentVariables(text);
+        return dirs.Any(d => t.Contains(d + "\\", StringComparison.OrdinalIgnoreCase) || t.Contains(d + "\"", StringComparison.OrdinalIgnoreCase)
+                             || t.TrimEnd('"').Equals(d, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>Servicios, tareas programadas, reglas del firewall, menús contextuales y asociaciones de archivos.</summary>
+    private static List<Leftover> FindSystemLeftovers(InstalledProgram p, List<string> tokens, ScanMode mode, HashSet<string> seen)
+    {
+        var found = new List<Leftover>();
+        var dirs = KnownDirs(p, tokens);
+        var winDir = Util.WinDir;
+
+        // Servicios
+        try
+        {
+            using var services = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SYSTEM\CurrentControlSet\Services");
+            foreach (var name in services?.GetSubKeyNames() ?? [])
+            {
+                using var k = services!.OpenSubKey(name);
+                var image = k?.GetValue("ImagePath") as string;
+                var display = k?.GetValue("DisplayName") as string ?? "";
+                if (string.IsNullOrWhiteSpace(image)) continue;
+                bool strong = PointsTo(image, dirs);
+                bool byName = !strong && (Matches(name, tokens, ScanMode.Seguro) || (!display.StartsWith('@') && Matches(display, tokens, ScanMode.Seguro)));
+                if (!strong && !byName) continue;
+                // Los controladores y servicios de Windows nunca, salvo que apunten a la carpeta del programa
+                if (!strong && Environment.ExpandEnvironmentVariables(image).Contains(winDir, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!seen.Add("svc|" + name)) continue;
+                found.Add(new Leftover
+                {
+                    Path = string.IsNullOrWhiteSpace(display) || display.StartsWith('@') || display.Contains(name, StringComparison.OrdinalIgnoreCase)
+                        ? (string.IsNullOrWhiteSpace(display) || display.StartsWith('@') ? name : display)
+                        : $"{display} ({name})",
+                    IsRegistry = false, Special = "service", Target = name, Reason = "Servicio de Windows",
+                    ByNameOnly = byName, Selected = strong,
+                });
+            }
+        }
+        catch { }
+
+        // Tareas programadas (fuera de \Microsoft\)
+        var (code, output) = Util.PowerShell(
+            "Get-ScheduledTask | Where-Object { $_.TaskPath -notlike '\\Microsoft\\*' } | ForEach-Object { " +
+            "$_.TaskPath + '|' + $_.TaskName + '|' + (($_.Actions | ForEach-Object { $_.Execute + ' ' + $_.Arguments }) -join ' ; ') }", 60_000);
+        if (code == 0)
+            foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var parts = line.Trim().Split('|', 3);
+                if (parts.Length < 3) continue;
+                bool strong = PointsTo(parts[2], dirs);
+                bool byName = !strong && Matches(parts[1], tokens, ScanMode.Seguro);
+                if (!strong && !byName) continue;
+                var full = parts[0] + parts[1];
+                if (!seen.Add("task|" + full)) continue;
+                found.Add(new Leftover
+                {
+                    Path = full, IsRegistry = false, Special = "task", Target = full, Reason = "Tarea programada",
+                    ByNameOnly = byName, Selected = strong,
+                });
+            }
+
+        // Reglas del firewall (registro: ...\FirewallPolicy\FirewallRules)
+        try
+        {
+            const string fw = @"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules";
+            using var rules = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(fw);
+            foreach (var id in rules?.GetValueNames() ?? [])
+            {
+                if (rules!.GetValue(id) is not string data) continue;
+                string Field(string key)
+                {
+                    var i = data.IndexOf("|" + key + "=", StringComparison.OrdinalIgnoreCase);
+                    if (i < 0) return "";
+                    var start = i + key.Length + 2;
+                    var end = data.IndexOf('|', start);
+                    return end < 0 ? data[start..] : data[start..end];
+                }
+                var app = Field("App");
+                var ruleName = Field("Name");
+                bool strong = PointsTo(app, dirs);
+                bool byName = !strong && !ruleName.StartsWith('@') && Matches(ruleName, tokens, ScanMode.Seguro);
+                if (!strong && !byName) continue;
+                if (!seen.Add("fw|" + id)) continue;
+                found.Add(new Leftover
+                {
+                    Path = $"{(ruleName.StartsWith('@') ? id : ruleName)} ({Field("Dir")})", IsRegistry = false, Special = "firewall", Target = id,
+                    Hive = RegistryHive.LocalMachine, View = RegistryView.Registry64, ValueName = id,
+                    Reason = "Regla del firewall", ByNameOnly = byName, Selected = strong,
+                });
+            }
+        }
+        catch { }
+
+        // Menú contextual (clic derecho) y asociaciones de archivos
+        string[] menuRoots =
+        [
+            @"*\shell", @"Directory\shell", @"Directory\Background\shell", @"Folder\shell", @"Drive\shell",
+            @"*\shellex\ContextMenuHandlers", @"Directory\shellex\ContextMenuHandlers",
+            @"Directory\Background\shellex\ContextMenuHandlers", @"Folder\shellex\ContextMenuHandlers",
+        ];
+        foreach (var (hive, classes) in new[] { (RegistryHive.LocalMachine, @"SOFTWARE\Classes"), (RegistryHive.CurrentUser, @"Software\Classes") })
+        {
+            RegistryKey? baseKey = null;
+            try { baseKey = RegistryKey.OpenBaseKey(hive, RegistryView.Registry64).OpenSubKey(classes); } catch { }
+            if (baseKey == null) continue;
+            using (baseKey)
+            {
+                foreach (var root in menuRoots)
+                {
+                    using var rk = baseKey.OpenSubKey(root);
+                    foreach (var sub in rk?.GetSubKeyNames() ?? [])
+                    {
+                        string? target = null;
+                        try
+                        {
+                            using var sk = rk!.OpenSubKey(sub);
+                            if (root.EndsWith("shell")) target = sk?.OpenSubKey("command")?.GetValue("") as string;
+                            else
+                            {
+                                // ContextMenuHandlers: el valor es un CLSID; su DLL está en CLSID\{...}\InprocServer32
+                                var clsid = sk?.GetValue("") as string;
+                                if (clsid == null && sub.StartsWith('{')) clsid = sub;
+                                if (clsid != null)
+                                {
+                                    using var inproc = Registry.ClassesRoot.OpenSubKey($@"CLSID\{clsid}\InprocServer32");
+                                    target = inproc?.GetValue("") as string;
+                                }
+                            }
+                        }
+                        catch { }
+                        bool strong = PointsTo(target, dirs);
+                        bool byName = !strong && mode == ScanMode.Avanzado && Matches(sub, tokens, ScanMode.Seguro);
+                        if (!strong && !byName) continue;
+                        var path = $@"{classes}\{root}\{sub}";
+                        if (!seen.Add($"{hive}|{RegistryView.Registry64}|{path}|")) continue;
+                        found.Add(new Leftover
+                        {
+                            Path = path, IsRegistry = true, Hive = hive, View = RegistryView.Registry64,
+                            Reason = "Menú contextual", ByNameOnly = byName, Selected = strong,
+                        });
+                    }
+                }
+
+                // Asociaciones de archivos: tipos (ProgID) cuyo «abrir con» ejecuta el programa
+                if (dirs.Count > 0)
+                    foreach (var progId in baseKey.GetSubKeyNames())
+                    {
+                        if (progId.StartsWith('.') || progId.StartsWith('*') || progId is "CLSID" or "Interface" or "TypeLib" or "AppID"
+                            or "Installer" or "Directory" or "Folder" or "Drive" or "Applications" or "SystemFileAssociations") continue;
+                        string? cmd = null;
+                        try
+                        {
+                            using var c = baseKey.OpenSubKey($@"{progId}\shell\open\command");
+                            cmd = c?.GetValue("") as string;
+                        }
+                        catch { }
+                        if (!PointsTo(cmd, dirs)) continue;
+                        var path = $@"{classes}\{progId}";
+                        if (!seen.Add($"{hive}|{RegistryView.Registry64}|{path}|")) continue;
+                        // Tipos de enlace compartidos (correo, web, llamadas...): otro programa puede necesitarlos
+                        bool sharedType = SharedProgIds.Contains(progId) || progId.StartsWith("ms-", StringComparison.OrdinalIgnoreCase);
+                        found.Add(new Leftover
+                        {
+                            Path = path, IsRegistry = true, Hive = hive, View = RegistryView.Registry64, Reason = "Asociación de archivos",
+                            Shared = sharedType, Selected = !sharedType,
+                        });
+                    }
+            }
+        }
+        return found;
+    }
+
     /// <summary>Restos para una desinstalación forzada indicada solo por nombre/carpeta.</summary>
     public static InstalledProgram FakeProgram(string name, string? folder) => new()
     {
@@ -571,8 +799,34 @@ public static class UninstallerService
     /// <summary>Guarda una copia .reg de las claves que se van a borrar (llamar antes de DeleteLeftover).</summary>
     public static void BackupRegistryLeftovers(IEnumerable<Leftover> items)
     {
-        var regItems = items.Where(i => i.IsRegistry).ToList();
+        var list = items.ToList();
+        // Servicios y reglas del firewall también se guardan en el .reg
+        var regItems = list.Where(i => i.IsRegistry).ToList();
+        regItems.AddRange(list.Where(i => i.Special == "service").Select(i => new Leftover
+        {
+            Path = $@"SYSTEM\CurrentControlSet\Services\{i.Target}", IsRegistry = true, Hive = RegistryHive.LocalMachine, View = RegistryView.Registry64,
+        }));
+        regItems.AddRange(list.Where(i => i.Special == "firewall").Select(i => new Leftover
+        {
+            Path = @"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules", IsRegistry = true,
+            Hive = RegistryHive.LocalMachine, View = RegistryView.Registry64, ValueName = i.Target,
+        }));
         if (regItems.Count > 0) BackupLeftoverKeys(regItems);
+
+        // Las tareas programadas se exportan en XML (se pueden volver a importar desde el Programador de tareas)
+        var tasks = list.Where(i => i.Special == "task").ToList();
+        if (tasks.Count > 0)
+        {
+            var dir = Path.Combine(AppSettings.BackupFolder, $"Tareas_{DateTime.Now:yyyyMMdd_HHmmss}");
+            Directory.CreateDirectory(dir);
+            foreach (var t in tasks)
+            {
+                var slash = t.Target!.LastIndexOf('\\');
+                var file = Path.Combine(dir, string.Concat(t.Target[(slash + 1)..].Split(Path.GetInvalidFileNameChars())) + ".xml");
+                Util.PowerShell($"Export-ScheduledTask -TaskPath '{t.Target[..(slash + 1)].Replace("'", "''")}' -TaskName '{t.Target[(slash + 1)..].Replace("'", "''")}' " +
+                                $"| Out-File -Encoding unicode '{file.Replace("'", "''")}'");
+            }
+        }
     }
 
     /// <summary>Elimina un resto (archivo, carpeta, clave o valor del registro). Devuelve true si se eliminó.</summary>
@@ -580,6 +834,22 @@ public static class UninstallerService
     {
         try
         {
+            switch (i.Special)
+            {
+                case "service":
+                    Util.Run("sc.exe", $"stop \"{i.Target}\"", 30_000);
+                    Util.Run("sc.exe", $"delete \"{i.Target}\"", 30_000);
+                    using (var k = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey($@"SYSTEM\CurrentControlSet\Services\{i.Target}"))
+                        return k == null || (k.GetValue("DeleteFlag") is int flag && flag == 1);   // DeleteFlag: se elimina al reiniciar
+                case "task":
+                    var slash = i.Target!.LastIndexOf('\\');
+                    var (taskCode, _) = Util.PowerShell($"Unregister-ScheduledTask -TaskPath '{i.Target[..(slash + 1)].Replace("'", "''")}' " +
+                        $"-TaskName '{i.Target[(slash + 1)..].Replace("'", "''")}' -Confirm:$false -ErrorAction Stop");
+                    return taskCode == 0;
+                case "firewall":
+                    var (fwCode, _) = Util.PowerShell($"Remove-NetFirewallRule -Name '{i.Target!.Replace("'", "''")}' -ErrorAction Stop");
+                    return fwCode == 0;
+            }
             if (i.IsRegistry)
             {
                 using var baseKey = RegistryKey.OpenBaseKey(i.Hive, i.View);

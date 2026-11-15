@@ -1,0 +1,3 @@
+• 30-day trash: everything you delete can be restored.
+• Suggestions on the home screen.
+• Fixes and automated tests.

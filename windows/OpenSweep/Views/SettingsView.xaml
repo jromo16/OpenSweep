@@ -27,6 +27,22 @@
 
             <Border Style="{StaticResource Card}" Margin="0,0,0,14">
                 <StackPanel>
+                    <TextBlock Text="{l:T 'Reglas de limpieza de la comunidad'}" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,8"
+                               Text="{l:T 'Añade reglas para más de 2.000 programas y juegos, mantenidas por la comunidad Winapp2 (el mismo formato que usan CCleaner y BleachBit). Aparecen desmarcadas en Limpieza, solo para los programas que tienes instalados.'}"/>
+                    <TextBlock x:Name="Winapp2Status" Margin="0,0,0,8" FontWeight="SemiBold"/>
+                    <WrapPanel>
+                        <Button x:Name="Winapp2Btn" Content="{l:T 'Descargar reglas'}" Style="{DynamicResource AccentButtonStyle}" Click="Winapp2Download_Click"/>
+                        <Button x:Name="Winapp2Remove" Content="{l:T 'Quitar reglas'}" Margin="6,0,0,0" Click="Winapp2Remove_Click"/>
+                        <Button Content="{l:T 'Proyecto Winapp2'}" Margin="6,0,0,0" Click="Winapp2Project_Click"/>
+                    </WrapPanel>
+                    <TextBlock Style="{StaticResource Muted}" FontSize="11.5" Margin="0,8,0,0"
+                               Text="{l:T 'Winapp2.ini es obra del proyecto Winapp2 y se distribuye con licencia CC BY-SA 4.0. Se descarga directamente de su repositorio.'}"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                <StackPanel>
                     <TextBlock Text="{l:T 'Cookies a conservar'}" Style="{StaticResource SectionTitle}"/>
                     <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,8"
                                Text="{l:T 'Al limpiar cookies se conservarán las de estos sitios, para que no se cierre tu sesión en ellos. Con la lista vacía se borran todas.'}"/>

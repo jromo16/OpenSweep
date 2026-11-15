@@ -1,0 +1,37 @@
+<UserControl x:Class="OpenSweep.Views.PrivacyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:OpenSweep.Core">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="{l:T 'Privacidad de Windows'}" Style="{StaticResource PageTitle}"/>
+            <TextBlock Text="{l:T 'Reduce los datos que Windows envía a Microsoft y quita la publicidad del sistema. Todos los cambios son reversibles: OpenSweep guarda el valor original de cada ajuste.'}"
+                       Style="{StaticResource PageSubtitle}"/>
+        </StackPanel>
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+            <TextBlock x:Name="StatusText" VerticalAlignment="Center" Style="{StaticResource Muted}"/>
+            <WrapPanel HorizontalAlignment="Right">
+                <Button Content="{l:T 'Restaurar valores de Windows'}" Click="RestoreAll_Click"/>
+                <Button Content="{l:T 'Aplicar recomendados'}" Padding="20,6" Margin="6,0,0,0" Style="{DynamicResource AccentButtonStyle}" Click="ApplyRecommended_Click"/>
+            </WrapPanel>
+        </DockPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="SettingsList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,8" Padding="16,12">
+                            <DockPanel>
+                                <CheckBox DockPanel.Dock="Right" IsChecked="{Binding Enabled, Mode=OneWay}" VerticalAlignment="Center"
+                                          Click="Toggle_Click" ToolTip="{l:T 'Marcado = protegido'}"/>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding TitleText}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock Text="{Binding DescriptionText}" Style="{StaticResource Muted}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

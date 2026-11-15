@@ -45,6 +45,14 @@ public sealed class DiskAnalysis
     public List<FileEntry> LargestFiles { get; } = [];
     public long TotalBytes { get; set; }
     public long TotalFiles { get; set; }
+
+    // ---- Árbol de carpetas para el mapa visual ----
+    public string Root { get; set; } = "";
+    /// <summary>Tamaño total de cada carpeta (incluidas sus subcarpetas).</summary>
+    public Dictionary<string, long> DirSize { get; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Tamaño de los archivos que están directamente en cada carpeta.</summary>
+    public Dictionary<string, long> DirectFiles { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, HashSet<string>> Children { get; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public static class DiskTools
@@ -76,6 +84,8 @@ public static class DiskTools
         var folders = new Dictionary<string, FolderStat>(StringComparer.OrdinalIgnoreCase);
         var top = new PriorityQueue<FileEntry, long>();
         root = root.TrimEnd('\\') + "\\";
+        var rootKey = root.Length <= 3 ? root : root.TrimEnd('\\');   // «C:\» o «D:\Carpeta»
+        result.Root = rootKey;
         long n = 0;
         foreach (var f in Util.SafeFiles(root))
         {
@@ -93,6 +103,21 @@ public static class DiskTools
             fs.Bytes += len;
 
             result.TotalBytes += len; result.TotalFiles++;
+
+            // Árbol: el tamaño se suma a la carpeta del archivo y a todas sus carpetas superiores
+            var dir = f.DirectoryName ?? rootKey;
+            result.DirectFiles[dir] = result.DirectFiles.GetValueOrDefault(dir) + len;
+            while (true)
+            {
+                result.DirSize[dir] = result.DirSize.GetValueOrDefault(dir) + len;
+                if (dir.Length <= rootKey.Length) break;
+                var parent = Path.GetDirectoryName(dir);
+                if (parent == null) break;
+                if (parent.Length < rootKey.Length) parent = rootKey;
+                if (!result.Children.TryGetValue(parent, out var kids)) result.Children[parent] = kids = new(StringComparer.OrdinalIgnoreCase);
+                kids.Add(dir);
+                dir = parent;
+            }
             if (top.Count < topFiles) top.Enqueue(new FileEntry { Path = f.FullName, Size = len, Modified = f.LastWriteTime, Category = cat }, len);
             else if (len > top.Peek().Size) { top.Dequeue(); top.Enqueue(new FileEntry { Path = f.FullName, Size = len, Modified = f.LastWriteTime, Category = cat }, len); }
 

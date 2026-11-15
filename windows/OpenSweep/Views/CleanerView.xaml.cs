@@ -13,14 +13,21 @@ public partial class CleanerView : UserControl
     private List<CleanRule> _rules = [];
     private CancellationTokenSource? _cts;
 
+    private DateTime _winapp2Stamp;
+
     public CleanerView()
     {
         InitializeComponent();
         LoadRules();
+        // Si se descargaron o quitaron las reglas de la comunidad, recargar al volver a esta sección
+        Loaded += (_, _) => { if (Winapp2Stamp() != _winapp2Stamp) LoadRules(); };
     }
+
+    private static DateTime Winapp2Stamp() => File.Exists(Winapp2.FilePath) ? File.GetLastWriteTimeUtc(Winapp2.FilePath) : DateTime.MinValue;
 
     private void LoadRules()
     {
+        _winapp2Stamp = Winapp2Stamp();
         _rules = JunkCleaner.BuildRules();
         GroupsList.ItemsSource = _rules
             .GroupBy(r => r.Group)

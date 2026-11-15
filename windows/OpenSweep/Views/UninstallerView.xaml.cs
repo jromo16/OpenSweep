@@ -143,12 +143,12 @@ public partial class UninstallerView : UserControl
                 var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var p in programs)
                     foreach (var l in UninstallerService.FindLeftovers(p, ScanMode.Moderado, CancellationToken.None))
-                        if (seen.Add(l.Display))
-                            all.Add(new Leftover
-                            {
-                                Path = l.Path, IsRegistry = l.IsRegistry, IsDirectory = l.IsDirectory, Hive = l.Hive, View = l.View,
-                                ValueName = l.ValueName, Size = l.Size, Reason = $"{p.Name}: {l.Reason}", Selected = l.Selected, Shared = l.Shared,
-                            });
+                        if (seen.Add(l.Kind + "|" + l.Display))
+                        {
+                            var copy = l.Clone();
+                            copy.Reason = $"{p.Name}: {Loc.T(l.Reason)}";
+                            all.Add(copy);
+                        }
                 return all;
             });
             Dialogs.Toast($"{removed.Count} {Loc.T("de")} {programs.Count} {Loc.T("programas desinstalados")}");

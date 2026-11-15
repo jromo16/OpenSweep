@@ -4,7 +4,8 @@ using Microsoft.Win32;
 namespace OpenSweep.Services;
 
 /// <summary>Especifica una carpeta y un patrón de archivos a limpiar.</summary>
-public sealed record PathSpec(string Dir, string Pattern = "*", bool Recursive = true, int MinAgeHours = 0, bool RemoveEmptyDirs = true);
+/// <param name="RemoveSelf">Al terminar, elimina también la propia carpeta si quedó vacía (REMOVESELF de winapp2).</param>
+public sealed record PathSpec(string Dir, string Pattern = "*", bool Recursive = true, int MinAgeHours = 0, bool RemoveEmptyDirs = true, bool RemoveSelf = false);
 
 public sealed class CleanRule
 {
@@ -18,6 +19,8 @@ public sealed class CleanRule
     public Func<IEnumerable<PathSpec>>? Paths { get; init; }
     public Func<(long bytes, long count)>? CustomMeasure { get; init; }
     public Action? CustomClean { get; init; }
+    /// <summary>Archivos que esta regla no debe tocar (ExcludeKey de winapp2).</summary>
+    public Func<string, bool>? Exclude { get; init; }
 
     public bool Selected { get; set; }
 
@@ -356,6 +359,9 @@ public static class JunkCleaner
             });
         }
 
+        // Reglas de la comunidad (winapp2.ini), si el usuario las descargó
+        try { rules.AddRange(Winapp2.BuildRules()); } catch { }
+
         foreach (var r in rules)
             r.Selected = s.CleanerSelection.TryGetValue(r.Id, out var sel) ? sel : r.DefaultOn;
         return rules;
@@ -429,6 +435,7 @@ public static class JunkCleaner
                 {
                     if (!seen.Add(f.FullName)) continue;
                     if (s.IsExcluded(f.FullName)) continue;
+                    if (rule.Exclude?.Invoke(f.FullName) == true) continue;
                     if (spec.MinAgeHours > 0 && (now - f.LastWriteTime).TotalHours < spec.MinAgeHours) continue;
                     res.Bytes += f.Length;
                     res.Count++;
@@ -462,7 +469,7 @@ public static class JunkCleaner
         if (rule.Paths != null)
         {
             foreach (var spec in rule.Paths().Where(p => p.RemoveEmptyDirs && p.Recursive && Directory.Exists(p.Dir)))
-                Util.RemoveEmptyDirs(spec.Dir, removeRoot: false);
+                Util.RemoveEmptyDirs(spec.Dir, removeRoot: spec.RemoveSelf && !PathHelper.IsProtectedFolder(spec.Dir));
         }
         return result;
     }

@@ -1,0 +1,3 @@
+• Papelera de 30 días: todo lo borrado se puede recuperar.
+• Sugerencias en la pantalla de inicio.
+• Correcciones y pruebas automáticas.

@@ -42,6 +42,8 @@ public partial class MainWindow : Window
         new("Programas", "", "#32B65A", "Actualizar programas", typeof(UpdaterView)),
         new("OpenSweep", "", "#8E8E93", "Copias de seguridad", typeof(BackupsView)),
         new("OpenSweep", "", "#8E8E93", "Opciones", typeof(SettingsView)),
+        // Al final de la lista para no cambiar los números de --page; en el menú aparece en «General»
+        new("General", "", "#5856D6", "Privacidad de Windows", typeof(PrivacyView)),
     ];
 
     public MainWindow()

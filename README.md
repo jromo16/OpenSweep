@@ -43,12 +43,13 @@ Diseño moderno inspirado en macOS, con **modo claro y oscuro** automático. Nov
 | Módulo | Qué hace |
 |---|---|
 | **Panel de salud** | Análisis en un clic: basura, registro y programas de inicio, con botón «Mejorarlo ahora». Muestra sistema, CPU, RAM y discos. |
-| **Limpieza** | Temporales de usuario y de Windows, papelera, miniaturas, informes de errores, volcados de memoria, logs, caché de Windows Update y de Optimización de distribución, prefetch, caché de sombreadores DirectX/NVIDIA/AMD, caché DNS. Navegadores: Chrome, Edge, Brave, Vivaldi, Opera, Opera GX y Firefox (caché, historial, cookies, sesión y formularios). Apps: Discord, Spotify, Teams, VS Code, Steam, Zoom, Slack, WhatsApp, Office, Epic Games, Adobe, npm, pip, NuGet y Java. Privacidad: documentos recientes, Jump Lists, historial de Ejecutar y portapapeles. Permite añadir carpetas propias y exclusiones. |
+| **Limpieza** | Temporales de usuario y de Windows, papelera, miniaturas, informes de errores, volcados de memoria, logs, caché de Windows Update y de Optimización de distribución, prefetch, caché de sombreadores DirectX/NVIDIA/AMD, caché DNS. Navegadores: Chrome, Edge, Brave, Vivaldi, Opera, Opera GX y Firefox (caché, historial, cookies, sesión y formularios). Apps: Discord, Spotify, Teams, VS Code, Steam, Zoom, Slack, WhatsApp, Office, Epic Games, Adobe, npm, pip, NuGet y Java. Privacidad: documentos recientes, Jump Lists, historial de Ejecutar y portapapeles. Permite añadir carpetas propias y exclusiones. Opcionalmente, las **reglas de la comunidad winapp2** (más de 2.000 programas y juegos). |
 | **Registro** | Detecta DLL compartidas que faltan, entradas de desinstalación huérfanas, rutas de aplicaciones inválidas, caché MUI, programas de inicio rotos, carpetas del instalador, archivos de ayuda y extensiones sin asociación. **Guarda una copia `.reg` antes de reparar.** |
-| **Desinstalador** | Lista todos los programas (64/32 bits, por usuario y para todos) con icono, tamaño y fecha. Ejecuta el desinstalador oficial y después **busca restos** (carpetas, accesos directos, claves del registro, inicio automático, App Paths) en modo Seguro, Moderado o Avanzado. Incluye **desinstalación forzada** para programas rotos, desinstalación de **apps de la Microsoft Store**, **punto de restauración** automático, **modo cazador** (suelta la mira sobre la ventana de un programa o arrastra un acceso directo) y **monitor de instalaciones** (registra todo lo que crea un instalador para desinstalarlo después sin dejar rastro) y **desinstalación por lotes** (varios programas seguidos, con una sola búsqueda de restos al final). |
+| **Desinstalador** | Lista todos los programas (64/32 bits, por usuario y para todos) con icono, tamaño y fecha. Ejecuta el desinstalador oficial y después **busca restos** (carpetas, accesos directos, claves del registro, inicio automático, App Paths, servicios, tareas programadas, reglas del firewall, menús contextuales y asociaciones de archivos) en modo Seguro, Moderado o Avanzado. Incluye **desinstalación forzada** para programas rotos, desinstalación de **apps de la Microsoft Store**, **punto de restauración** automático, **modo cazador** (suelta la mira sobre la ventana de un programa o arrastra un acceso directo) y **monitor de instalaciones** (registra todo lo que crea un instalador para desinstalarlo después sin dejar rastro) y **desinstalación por lotes** (varios programas seguidos, con una sola búsqueda de restos al final). |
 | **Inicio de Windows** | Habilita, deshabilita o elimina programas de inicio (registro y carpeta Inicio) y tareas programadas. Usa el mismo mecanismo que el Administrador de tareas, así que los cambios son reversibles. |
 | **Extensiones** | Lista y elimina extensiones de Chrome, Edge, Brave, Vivaldi, Opera y Firefox. |
-| **Analizador de disco** | Uso por tipo de archivo, carpetas más pesadas y los 500 archivos más grandes. |
+| **Analizador de disco** | **Mapa visual** de carpetas en el que se puede entrar con doble clic, uso por tipo de archivo, carpetas más pesadas y los 500 archivos más grandes. |
+| **Privacidad de Windows** | Desactiva el ID de publicidad, la telemetría opcional, los anuncios de Inicio y de la pantalla de bloqueo, Bing en la búsqueda, el historial de actividad, Recall y Copilot. Todo se puede deshacer. |
 | **Archivos duplicados** | Compara el contenido con SHA-256 (no solo el nombre), con miniaturas. Envía las copias a la papelera y nunca deja que borres todas las copias de un grupo. |
 | **Fotos y vídeos** | Fotos **similares** (ráfagas, copias redimensionadas o reenviadas por WhatsApp) mediante huella perceptual, fotos **borrosas** y **oscuras**, **capturas de pantalla** antiguas y **vídeos similares**. Vista en miniaturas, con la mejor foto de cada grupo marcada para conservar. |
 | **Borrado seguro** | Destructor de archivos (1, 3 o 7 pasadas) y borrado del espacio libre de una unidad. |
@@ -82,6 +83,7 @@ Diseño moderno inspirado en macOS, con **modo claro y oscuro** automático. Nov
 - **Punto de restauración** opcional antes de desinstalar.
 - Los duplicados y los archivos grandes van a la **papelera de reciclaje** (Windows) o a la **papelera de 30 días** de OpenSweep (Android).
 - **Pruebas automáticas** de las funciones que borran datos: se ejecutan en cada cambio (`dotnet test windows/OpenSweep.Tests`, `./gradlew testDebugUnitTest`).
+- **Prueba completa en Windows Sandbox** de todo lo que cambia el sistema. Ver [docs/PRUEBAS.md](docs/PRUEBAS.md).
 
 ## Idiomas
 
@@ -127,10 +129,14 @@ cd android
 windows/OpenSweep/
   Core/        utilidades: rutas, P/Invoke, borrado seguro, ajustes
   Services/    lógica: limpieza, registro, desinstalador, inicio, extensiones, disco, winget
-  Views/       pantallas WPF (tema Fluent oscuro)
+  Views/       pantallas WPF (tema Fluent claro y oscuro)
+windows/OpenSweep.Tests/   pruebas automáticas (xUnit)
 android/app/src/main/java/io/github/jromo16/opensweep/
   core/        permisos, información del equipo, escáner de almacenamiento, gestor de apps
   ui/          tema, componentes y pantallas en Jetpack Compose
+android/fastlane/          ficha de la tienda (F-Droid)
+packaging/                 winget y F-Droid
+tools/sandbox/             prueba completa en Windows Sandbox
 ```
 
 ## Contribuir
@@ -145,6 +151,7 @@ android/app/src/main/java/io/github/jromo16/opensweep/
 
 Al crear una etiqueta `vX.Y.Z`, GitHub Actions compila el instalador, el `.exe` portable y el `.apk`, y los publica en *Releases*.
 Si se configuran certificados como secretos del repositorio, los firma automáticamente. Ver [docs/FIRMA.md](docs/FIRMA.md).
+Para llevarla a winget y F-Droid, ver [packaging/README.md](packaging/README.md).
 
 ## Licencia
 

@@ -1,0 +1,12 @@
+<p>OpenSweep libera espacio en tu teléfono sin anuncios, sin rastreadores y sin pedirte una suscripción. Es software libre: puedes ver y revisar todo su código.</p>
+<ul>
+<li><b>Limpieza</b>: archivos temporales, miniaturas, cachés, APK ya instalados, restos de apps desinstaladas, carpetas vacías y descargas antiguas.</li>
+<li><b>Fotos y vídeos</b>: encuentra duplicados, fotos parecidas, borrosas y capturas de pantalla antiguas.</li>
+<li><b>WhatsApp y Telegram</b>: vídeos, audios y archivos recibidos, por categorías.</li>
+<li><b>Archivos grandes</b> y <b>duplicados</b> en todo el almacenamiento.</li>
+<li><b>Aplicaciones</b>: ve cuánto ocupa cada una y cuáles no usas.</li>
+<li><b>Papelera de 30 días</b>: lo que borras se puede recuperar.</li>
+<li><b>Limpieza programada</b> y widget para la pantalla de inicio.</li>
+<li>Tema claro y oscuro automático. En español e inglés.</li>
+</ul>
+<p>Antes de borrar nada, OpenSweep te enseña la lista y te pide confirmación.</p>

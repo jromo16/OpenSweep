@@ -1,0 +1,12 @@
+<p>OpenSweep frees up space on your phone with no ads, no trackers and no subscription. It is free software: all of its code is open for anyone to read and review.</p>
+<ul>
+<li><b>Cleaning</b>: temporary files, thumbnails, caches, APKs that are already installed, leftovers of uninstalled apps, empty folders and old downloads.</li>
+<li><b>Photos and videos</b>: finds duplicates, similar and blurry photos, and old screenshots.</li>
+<li><b>WhatsApp and Telegram</b>: received videos, voice notes and files, by category.</li>
+<li><b>Large files</b> and <b>duplicates</b> across all your storage.</li>
+<li><b>Apps</b>: see how much space each one uses and which ones you no longer open.</li>
+<li><b>30-day trash</b>: anything you delete can be restored.</li>
+<li><b>Scheduled cleaning</b> and a home screen widget.</li>
+<li>Automatic light and dark theme. In English and Spanish.</li>
+</ul>
+<p>Before deleting anything, OpenSweep shows you the list and asks you to confirm.</p>

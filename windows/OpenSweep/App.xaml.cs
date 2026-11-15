@@ -15,6 +15,15 @@ public partial class App : Application
         var ti = Array.IndexOf(e.Args, "--theme");
         Core.ThemeManager.Apply(ti >= 0 && ti + 1 < e.Args.Length ? e.Args[ti + 1] : Core.AppSettings.Current.Theme);
 
+        var st = Array.IndexOf(e.Args, "--selftest");
+        if (st >= 0)
+        {
+            // Prueba completa (solo en Windows Sandbox). Fuera del hilo de la interfaz para no bloquear los await.
+            var report = st + 1 < e.Args.Length && !e.Args[st + 1].StartsWith("--") ? e.Args[st + 1] : Path.Combine(AppContext.BaseDirectory, "informe-prueba.txt");
+            var failures = Task.Run(() => Services.SelfTest.RunAsync(report, e.Args.Contains("--full"))).GetAwaiter().GetResult();
+            Shutdown(failures);
+            return;
+        }
         if (e.Args.Contains("--auto-clean"))
         {
             // Limpieza programada: sin ventana

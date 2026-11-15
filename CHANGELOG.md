@@ -21,7 +21,21 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
   reemplazados, con el Liberador de espacio y DISM del propio Windows. Desmarcadas por defecto.
 - **Papelera de 30 días** (Android): lo que se elimina de tu contenido se puede restaurar durante 30 días.
 - **Sugerencias en Inicio** (Android): apps que no usas desde hace 3 meses, vídeos de más de 100 MB y descargas antiguas.
-- **Pruebas automáticas** (32) en Windows y Android, ejecutadas en GitHub con cada cambio.
+- **Privacidad de Windows** (Windows): 12 ajustes para el ID de publicidad, los datos de diagnóstico, los anuncios de Inicio
+  y de la pantalla de bloqueo, Bing en la búsqueda, el historial de actividad, Recall y Copilot. Cada cambio guarda el valor
+  original y se puede deshacer uno a uno o todos con «Restaurar valores de Windows».
+- **Reglas de la comunidad winapp2** (Windows): desde Opciones se descargan reglas para más de 2.000 programas y juegos.
+  Solo aparecen las de los programas instalados, desmarcadas y en su propio grupo. Nunca vacían una carpeta protegida.
+- **Restos más profundos** en el desinstalador: servicios, tareas programadas, reglas del firewall, menús contextuales
+  y asociaciones de archivos. Solo se marcan los que apuntan a la carpeta del programa; los que coinciden solo por el nombre
+  o pueden ser compartidos (`http`, `mailto`…) aparecen sin marcar. Se guarda copia antes de borrarlos.
+- **Mapa del disco** (Windows): el analizador dibuja cada carpeta como un rectángulo de tamaño proporcional.
+  Doble clic para entrar, «Subir» para volver y clic derecho para abrirla en el Explorador.
+- **Prueba completa en Windows Sandbox**: `tools/sandbox/probar-en-sandbox.ps1` instala un programa falso con restos de todo tipo
+  en una máquina desechable y comprueba desinstalación, restos, limpieza, registro, privacidad y tareas programadas.
+  Ver [docs/PRUEBAS.md](docs/PRUEBAS.md).
+- Preparada la publicación en **winget** y **F-Droid** (`packaging/`).
+- **Pruebas automáticas** (53) en Windows y Android, ejecutadas en GitHub con cada cambio.
 - Plantillas para informar errores y proponer ideas en GitHub; capturas de pantalla en el README.
 - **Progreso al eliminar**: barra con porcentaje y archivo actual, resumen final con marca verde y aviso breve
   en la parte inferior (fotos, duplicados, analizador de disco, restos, registro y destructor de archivos).

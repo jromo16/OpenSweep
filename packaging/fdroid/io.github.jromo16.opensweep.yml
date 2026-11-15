@@ -1,0 +1,27 @@
+# Receta para fdroiddata (https://gitlab.com/fdroid/fdroiddata), en metadata/io.github.jromo16.opensweep.yml
+# Las descripciones y capturas se toman de android/fastlane/metadata/android/ del repositorio.
+Categories:
+  - System
+License: MIT
+AuthorName: jromo16
+SourceCode: https://github.com/jromo16/OpenSweep
+IssueTracker: https://github.com/jromo16/OpenSweep/issues
+Changelog: https://github.com/jromo16/OpenSweep/blob/main/CHANGELOG.md
+
+AutoName: OpenSweep
+
+RepoType: git
+Repo: https://github.com/jromo16/OpenSweep.git
+
+Builds:
+  - versionName: 1.2.0
+    versionCode: 3
+    commit: v1.2.0
+    subdir: android/app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+CurrentVersion: 1.2.0
+CurrentVersionCode: 3
