@@ -290,6 +290,24 @@ public partial class UninstallerView : UserControl
         if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files) ShowOwner(files[0], 0);
     }
 
+    /// <summary>Desde el menú del clic derecho: busca el programa del acceso directo o ejecutable y ofrece desinstalarlo.</summary>
+    public async Task UninstallFromPath(string path)
+    {
+        if (_programs.Count == 0) await LoadPrograms();
+        var owner = UninstallerService.FindOwner(path, _programs);
+        if (owner == null)
+        {
+            Dialogs.Show($"«{Path.GetFileName(path)}» {Loc.T("no pertenece a ningún programa instalado. Si es un programa portable, basta con borrar su carpeta.")}",
+                "OpenSweep", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        SearchBox.Text = "";
+        ApplyFilter();
+        ProgramsGrid.SelectedItem = owner;
+        ProgramsGrid.ScrollIntoView(owner);
+        Uninstall_Click(this, new RoutedEventArgs());
+    }
+
     /// <summary>Selecciona el programa al que pertenece el archivo y ofrece acciones.</summary>
     private void ShowOwner(string exe, int pid)
     {

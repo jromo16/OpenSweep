@@ -23,6 +23,10 @@ public partial class SettingsView : UserControl
         TrayBox.IsChecked = _s.TrayMonitor;
         BrowserCloseBox.IsChecked = _s.CleanBrowsersOnClose;
         AutoTraceBox.IsChecked = _s.AutoTraceInstalls;
+        ShellMenuBox.IsChecked = ShellMenu.IsEnabled;
+        // Si se movió el .exe portable, las entradas del menú apuntan al sitio antiguo: se actualizan solas
+        if (ShellMenu.IsEnabled && ShellMenu.PointsElsewhere) ShellMenu.Enable();
+        UpdateStatus.Text = $"{Loc.T("Versión instalada")}: {AppUpdater.Current.ToString(3)}" + (AppUpdater.IsInstalledCopy() ? "" : $" ({Loc.T("portable")})");
         Select(TempAge, _s.TempMinAgeHours.ToString(), 1);
         Select(AutoCleanBox, _s.AutoClean, 0);
         Select(ThresholdBox, _s.TrayThresholdMb.ToString(), 1);
@@ -134,6 +138,33 @@ public partial class SettingsView : UserControl
         if (!on) return;
         if (!await EnsureTray()) { AutoTraceBox.IsChecked = _s.AutoTraceInstalls = false; _s.Save(); return; }
         Dialogs.Toast(Loc.T("Listo: en un minuto OpenSweep empezará a registrar las instalaciones"));
+    }
+
+    private void ShellMenu_Click(object sender, RoutedEventArgs e)
+    {
+        if (ShellMenuBox.IsChecked == true)
+        {
+            if (!ShellMenu.Enable()) { ShellMenuBox.IsChecked = false; Dialogs.Show(Loc.T("No se pudo añadir al menú del clic derecho."), "OpenSweep"); return; }
+            Dialogs.Toast(Loc.T("Listo: haz clic derecho sobre un acceso directo, un archivo o una carpeta"));
+        }
+        else ShellMenu.Disable();
+    }
+
+    private async void CheckNow_Click(object sender, RoutedEventArgs e)
+    {
+        CheckNowBtn.IsEnabled = false;
+        UpdateStatus.Text = Loc.T("Buscando…");
+        var u = await AppUpdater.CheckAsync();
+        CheckNowBtn.IsEnabled = true;
+        if (u == null)
+        {
+            UpdateStatus.Text = $"{Loc.T("Tienes la última versión")} ({AppUpdater.Current.ToString(3)})";
+            return;
+        }
+        UpdateStatus.Text = $"{Loc.T("Hay una versión nueva")}: {u.Version}";
+        bool now = Dialogs.Show($"{Loc.T("Hay una versión nueva de OpenSweep")}: {u.Version}\n\n{Loc.T("Se descargará de GitHub, OpenSweep se cerrará un momento y se volverá a abrir actualizado.")}",
+            Loc.T("Actualizar ahora"), MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+        MainWindow.Current?.OfferUpdate(u, now);
     }
 
     private void Log_Click(object sender, RoutedEventArgs e)

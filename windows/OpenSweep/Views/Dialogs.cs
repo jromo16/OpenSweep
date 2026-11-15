@@ -38,16 +38,24 @@ public static class Dialogs
     }
 
     /// <summary>Texto del botón principal según la acción (más claro que «Sí»).</summary>
-    private static string PrimaryVerb(string text)
+    /// <summary>Texto del botón principal según la pregunta (título); si no dice nada, según todo el mensaje.</summary>
+    private static string PrimaryVerb(string text, string? title)
+    {
+        var verb = title != null ? Verb(title) : null;
+        return verb ?? Verb(text) ?? Loc.T("Sí");
+    }
+
+    private static string? Verb(string text)
     {
         var t = text.ToLowerInvariant();
-        if (t.Contains("papelera") || t.Contains("recycle")) return Loc.T("Enviar a la papelera");
+        // «Destruir» antes que «papelera»: un aviso de destrucción dice que NO pasa por la papelera
         if (t.Contains("destru") || t.Contains("shred")) return Loc.T("Destruir");
+        if (t.Contains("papelera") || t.Contains("recycle")) return Loc.T("Enviar a la papelera");
         if (t.Contains("desinstal") || t.Contains("uninstall")) return Loc.T("Desinstalar");
         if (t.Contains("elimin") || t.Contains("borr") || t.Contains("delete")) return Loc.T("Eliminar");
         if (t.Contains("restaur") || t.Contains("restore")) return Loc.T("Restaurar");
         if (t.Contains("reinici") || t.Contains("restart")) return Loc.T("Reiniciar");
-        return Loc.T("Sí");
+        return null;
     }
 
     public static MessageBoxResult Show(string text, string caption = "OpenSweep",
@@ -74,11 +82,11 @@ public static class Dialogs
                 break;
             case MessageBoxButton.OKCancel:
                 d.AddButton(Loc.T("Cancelar"), MessageBoxResult.Cancel, isCancel: true);
-                d.AddButton(destructive ? PrimaryVerb(text) : Loc.T("Aceptar"), MessageBoxResult.OK, primary: true, danger: destructive);
+                d.AddButton(destructive ? PrimaryVerb(text, title) : Loc.T("Aceptar"), MessageBoxResult.OK, primary: true, danger: destructive);
                 break;
             case MessageBoxButton.YesNo:
                 d.AddButton(destructive ? Loc.T("Cancelar") : Loc.T("No"), MessageBoxResult.No, isCancel: true);
-                d.AddButton(PrimaryVerb(text), MessageBoxResult.Yes, primary: true, danger: destructive);
+                d.AddButton(PrimaryVerb(text, title), MessageBoxResult.Yes, primary: true, danger: destructive);
                 break;
             case MessageBoxButton.YesNoCancel:
                 d.AddButton(Loc.T("Cancelar"), MessageBoxResult.Cancel, isCancel: true);

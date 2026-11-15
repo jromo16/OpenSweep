@@ -93,6 +93,13 @@
                         <Button Content="{l:T 'Ver registro de actividad'}" Margin="16,0,0,0" Click="Log_Click"/>
                     </StackPanel>
                     <CheckBox x:Name="UpdatesBox" Content="{l:T 'Buscar versiones nuevas de OpenSweep al iniciar'}" Margin="0,10,0,0" Click="Save"/>
+                    <StackPanel Orientation="Horizontal" Margin="26,6,0,0">
+                        <Button x:Name="CheckNowBtn" Content="{l:T 'Buscar actualizaciones ahora'}" Click="CheckNow_Click"/>
+                        <TextBlock x:Name="UpdateStatus" VerticalAlignment="Center" Margin="10,0,0,0" Style="{StaticResource Muted}"/>
+                    </StackPanel>
+                    <CheckBox x:Name="ShellMenuBox" Content="{l:T 'Añadir OpenSweep al menú del clic derecho del Explorador'}" Margin="0,10,0,0" Click="ShellMenu_Click"/>
+                    <TextBlock Style="{StaticResource Muted}" Margin="26,2,0,0" TextWrapping="Wrap"
+                               Text="{l:T '«Desinstalar con OpenSweep» en accesos directos y programas, y «Destruir con OpenSweep» en archivos y carpetas. En Windows 11 aparecen en «Mostrar más opciones».'}"/>
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                         <TextBlock Text="{l:T 'Tema:'}" VerticalAlignment="Center" Width="60"/>
                         <ComboBox x:Name="ThemeBox" Width="180" Margin="8,0" SelectionChanged="Theme_Changed">

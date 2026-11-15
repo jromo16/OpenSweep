@@ -108,6 +108,15 @@ public partial class MainWindow : Window
 
     private void UpdateLater_Click(object sender, RoutedEventArgs e) => UpdateBanner.Visibility = Visibility.Collapsed;
 
+    /// <summary>Muestra el aviso de versión nueva y, si se pide, empieza a actualizar (botón de Opciones).</summary>
+    public void OfferUpdate(AppUpdate update, bool startNow)
+    {
+        _update = update;
+        UpdateText.Text = $"{Loc.T("Hay una versión nueva de OpenSweep")}: {update.Version}";
+        UpdateBanner.Visibility = Visibility.Visible;
+        if (startNow) UpdateNow_Click(this, new RoutedEventArgs());
+    }
+
     private async void UpdateNow_Click(object sender, RoutedEventArgs e)
     {
         if (_update == null) return;
@@ -136,6 +145,13 @@ public partial class MainWindow : Window
         await Task.Delay(3500);
         if (id != _toastId) return;   // llegó otro aviso mientras tanto
         ToastHost.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, TimeSpan.FromMilliseconds(400)));
+    }
+
+    /// <summary>Abre una sección y devuelve su página.</summary>
+    public T? Open<T>() where T : UserControl
+    {
+        Navigate<T>();
+        return PageHost.Content as T;
     }
 
     /// <summary>Abre la sección de un tipo de página concreto.</summary>

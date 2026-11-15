@@ -58,3 +58,10 @@ Filename: "{app}\OpenSweep.exe"; Description: "{cm:LaunchProgram,OpenSweep}"; Fl
 ; Quitar las tareas programadas (limpieza automática y monitor de la bandeja)
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""Get-ScheduledTask -TaskPath '\OpenSweep\' -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false"""; Flags: runhidden; RunOnceId: "RemoveTasks"
 Filename: "taskkill.exe"; Parameters: "/F /IM OpenSweep.exe"; Flags: runhidden; RunOnceId: "KillTray"
+
+[Registry]
+; Opciones del menú del clic derecho (las crea la app si el usuario las activa): se quitan al desinstalar OpenSweep
+Root: HKCU; Subkey: "Software\Classes\lnkfile\shell\OpenSweep.Uninstall"; Flags: uninsdeletekey dontcreatekey
+Root: HKCU; Subkey: "Software\Classes\exefile\shell\OpenSweep.Uninstall"; Flags: uninsdeletekey dontcreatekey
+Root: HKCU; Subkey: "Software\Classes\*\shell\OpenSweep.Shred"; Flags: uninsdeletekey dontcreatekey
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\OpenSweep.Shred"; Flags: uninsdeletekey dontcreatekey

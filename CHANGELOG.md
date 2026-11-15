@@ -30,6 +30,13 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
 - **Lista de programas**: etiqueta «Nuevo» y filtro «Solo recientes» (últimos 7 días), columnas de sitio web y comentario,
   menú del clic derecho (ejecutar, abrir sitio web/ayuda/actualizaciones, copiar, comentario, ocultar), «Mostrar ocultos»
   y **exportar la lista** a CSV.
+- **Menú del clic derecho del Explorador** (Windows, opcional en Opciones): «Desinstalar con OpenSweep» sobre accesos directos
+  y programas, y «Destruir con OpenSweep» sobre archivos y carpetas.
+- **Línea de comandos** (Windows): `OpenSweep.exe --clean`, `--analyze`, `--list-rules`, con `--rules` y `--log`.
+  Con grupos o `all` solo se aplican las reglas seguras; historial y cookies solo si se piden expresamente.
+- **Actualizar con un clic también en la versión portable** (se reemplaza el .exe al cerrarse) y botón
+  «Buscar actualizaciones ahora» en Opciones. Las descargas solo se aceptan desde las releases de GitHub del proyecto.
+- **Mapa del almacenamiento** (Android): en Archivos › Mapa, cada carpeta es un rectángulo de tamaño proporcional; toca para entrar.
 - **Limpiar el navegador al cerrarlo** (Windows): el monitor de la bandeja limpia Chrome, Edge, Firefox… en cuanto los cierras,
   según lo que tengas marcado en «Limpieza».
 
@@ -43,6 +50,7 @@ Todas las versiones de OpenSweep. El formato de versión es **MAYOR.MENOR.CORREC
   marcadas para borrar. Ahora se compara también la imagen en detalle, una captura solo se agrupa con otra casi idéntica,
   nunca con una foto, y los grupos de capturas no se premarcan.
 - Android: el botón «Eliminar» de Fotos se partía en varias líneas en pantallas estrechas.
+- Windows: en los avisos de borrado, el botón principal decía «Enviar a la papelera» aunque la acción fuera destruir el archivo.
 - Android: si un permiso sale «Controlada por configuración restringida» (APK instalado fuera de la tienda), la app explica
   cómo permitirlo y abre la ficha de OpenSweep.
 

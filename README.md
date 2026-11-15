@@ -52,7 +52,7 @@ Diseño moderno inspirado en macOS, con **modo claro y oscuro** automático. Nov
 | **Privacidad de Windows** | Desactiva el ID de publicidad, la telemetría opcional, los anuncios de Inicio y de la pantalla de bloqueo, Bing en la búsqueda, el historial de actividad, Recall y Copilot. Todo se puede deshacer. |
 | **Archivos duplicados** | Compara el contenido con SHA-256 (no solo el nombre), con miniaturas. Envía las copias a la papelera y nunca deja que borres todas las copias de un grupo. |
 | **Fotos y vídeos** | Fotos **similares** (ráfagas, copias redimensionadas o reenviadas por WhatsApp) mediante huella perceptual, fotos **borrosas** y **oscuras**, **capturas de pantalla** antiguas y **vídeos similares**. Vista en miniaturas, con la mejor foto de cada grupo marcada para conservar. |
-| **Borrado seguro** | Destructor de archivos (1, 3 o 7 pasadas) y borrado del espacio libre de una unidad. |
+| **Borrado seguro** | Destructor de archivos (1, 3 o 7 pasadas) y borrado del espacio libre de una unidad. Opcionalmente, «Destruir con OpenSweep» y «Desinstalar con OpenSweep» en el menú del clic derecho del Explorador. |
 | **Actualizar programas** | Encuentra versiones nuevas e instala las actualizaciones en silencio con `winget`. |
 | **Actualizaciones de Windows** | Elimina la instalación anterior (`Windows.old`, a veces 20-30 GB), los paquetes de controladores antiguos y los componentes de Windows Update reemplazados, usando las herramientas del propio Windows. |
 | **Copias de seguridad** | **Deshace cualquier desinstalación** con un clic (registro, tareas y archivos de la papelera), restaura las copias `.reg` que se guardan antes de cada cambio y gestiona los puntos de restauración del sistema. |
@@ -70,10 +70,23 @@ Diseño moderno inspirado en macOS, con **modo claro y oscuro** automático. Nov
 | **Avisos y widget** | Notificación diaria si hay mucha basura y widget de escritorio con el espacio libre y un botón «Limpiar». |
 | **Limpieza** | **Caché de todas las apps de un toque** (con el servicio de accesibilidad, que activas tú), temporales y logs, miniaturas, APK descargados, **restos de apps desinstaladas**, carpetas vacías y descargas antiguas. |
 | **Apps** | Gestor y desinstalador por lotes. Ordena por tamaño, por último uso («Sin usar») o por fecha de instalación. Después de desinstalar, **busca restos** y ofrece borrarlos. |
-| **Archivos** | Uso por tipo de archivo, archivos grandes y duplicados (MD5). |
+| **Archivos** | Uso por tipo de archivo, **mapa del almacenamiento** por carpetas, archivos grandes y duplicados (MD5). |
 | **Equipo** | Modelo, Android, parche de seguridad, CPU, RAM, almacenamiento y estado de la batería. |
 
 **Permisos de Android:** «Acceso a todos los archivos» (para buscar basura y duplicados), «Acceso de uso» (opcional, para el tamaño y el último uso de cada app), «Solicitar desinstalación de paquetes» y, si quieres borrar la caché de todas las apps, el **servicio de accesibilidad** (solo pulsa «Borrar caché» en los ajustes de cada app mientras limpias; no lee nada más). OpenSweep solo usa Internet para comprobar si hay versiones nuevas en GitHub (se puede desactivar en Ajustes). Tus archivos nunca salen del teléfono.
+
+## Línea de comandos (Windows)
+
+```
+OpenSweep.exe --analyze  [--rules <lista>] [--log <archivo>]
+OpenSweep.exe --clean    [--rules <lista>] [--include-privacy] [--log <archivo>]
+OpenSweep.exe --list-rules
+```
+
+`<lista>` son identificadores de regla separados por comas (los muestra `--list-rules`), `group:Navegadores` o `all`.
+Sin `--rules` se usa lo marcado en «Limpieza». Con grupos o `all` solo se aplican las reglas seguras: el historial,
+las cookies y las sesiones solo se borran si se nombran una a una o con `--include-privacy`.
+OpenSweep pide permisos de administrador: ejecútalo desde una consola de administrador para ver la salida, o usa `--log`.
 
 ## Seguridad
 

@@ -24,6 +24,20 @@ public partial class App : Application
             Shutdown(failures);
             return;
         }
+        if (Services.CommandLine.IsCommand(e.Args))
+        {
+            // Línea de comandos: limpiar o analizar sin ventana
+            Shutdown(Services.CommandLine.Run(e.Args));
+            return;
+        }
+        var shred = Array.IndexOf(e.Args, "--shred");
+        if (shred >= 0 && shred + 1 < e.Args.Length)
+        {
+            // «Destruir con OpenSweep» desde el menú del clic derecho: solo los diálogos, sin la ventana principal
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            Dispatcher.BeginInvoke(async () => { await Views.ShredCommand.RunAsync(e.Args[shred + 1]); Shutdown(); });
+            return;
+        }
         if (e.Args.Contains("--auto-clean"))
         {
             // Limpieza programada: sin ventana
@@ -42,6 +56,16 @@ public partial class App : Application
         var main = new MainWindow();
         main.Closed += (_, _) => { if (_tray == null) Shutdown(); };
         main.Show();
+        // «Desinstalar con OpenSweep» desde el menú del clic derecho
+        var un = Array.IndexOf(e.Args, "--uninstall");
+        if (un >= 0 && un + 1 < e.Args.Length)
+        {
+            var path = e.Args[un + 1];
+            main.ContentRendered += async (_, _) =>
+            {
+                if (main.Open<Views.UninstallerView>() is { } view) await view.UninstallFromPath(path);
+            };
+        }
     }
 
     private TrayHost? _tray;

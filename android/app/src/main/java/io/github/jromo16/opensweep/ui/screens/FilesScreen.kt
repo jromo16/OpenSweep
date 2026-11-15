@@ -22,7 +22,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.jromo16.opensweep.core.FileRec
+import io.github.jromo16.opensweep.core.FolderSizes
 import io.github.jromo16.opensweep.core.MediaStats
 import io.github.jromo16.opensweep.core.StorageScanner
 import io.github.jromo16.opensweep.core.formatBytes
@@ -72,6 +73,7 @@ fun FilesScreen(modifier: Modifier) {
     var stats by remember { mutableStateOf<List<MediaStats>>(emptyList()) }
     var large by remember { mutableStateOf<List<FileRec>>(emptyList()) }
     var dups by remember { mutableStateOf<List<List<FileRec>>>(emptyList()) }
+    var folderSizes by remember { mutableStateOf<FolderSizes?>(null) }
     var minLarge by remember { mutableLongStateOf((NavHints.filesMinMb ?: 50) * MB).also { NavHints.filesMinMb = null } }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
@@ -94,6 +96,7 @@ fun FilesScreen(modifier: Modifier) {
                     dups.forEach { g -> g.drop(1).forEach { checked.add(it.path) } }
                     status = "${dups.size} ${t("grupos")} · ${formatBytes(dups.sumOf { it.first().size * (it.size - 1) })} ${t("recuperables")}"
                 }
+                3 -> folderSizes = withContext(Dispatchers.Default) { FolderSizes(s.root.absolutePath, s.files) }
             }
             busy = false
         }
@@ -109,9 +112,9 @@ fun FilesScreen(modifier: Modifier) {
                 t("Para analizar fotos, vídeos, descargas y duplicados."), t("Conceder acceso"), perms.requestStorage)
             return@Column
         }
-        PrimaryTabRow(selectedTabIndex = tab, containerColor = MaterialTheme.colorScheme.background) {
-            listOf(t("Resumen"), t("Grandes"), t("Duplicados")).forEachIndexed { i, t ->
-                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t) })
+        PrimaryScrollableTabRow(selectedTabIndex = tab, containerColor = MaterialTheme.colorScheme.background, edgePadding = 0.dp) {
+            listOf(t("Resumen"), t("Grandes"), t("Duplicados"), t("Mapa")).forEachIndexed { i, t ->
+                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t, maxLines = 1) })
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -144,6 +147,7 @@ fun FilesScreen(modifier: Modifier) {
                     }
                     FileList(large, checked)
                 }
+                3 -> folderSizes?.let { StorageMapView(it) }
                 else -> Column {
                     if (!busy) Text(status, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -159,7 +163,7 @@ fun FilesScreen(modifier: Modifier) {
             }
         }
 
-        if (checked.isNotEmpty() && tab != 0) {
+        if (checked.isNotEmpty() && tab in 1..2) {
             val all = (large + dups.flatten()).distinctBy { it.path }.filter { it.path in checked }
             Button(onClick = { confirm = true }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Text("${t("Eliminar")} ${all.size} ${t("archivos")} (${formatBytes(all.sumOf { it.size })})")

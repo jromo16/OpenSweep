@@ -65,4 +65,38 @@ class CoreTest {
         assertFalse(Similarity.similar(42L, 42L, a, b, screenshots = true, threshold = 10))
         assertFalse(Similarity.similar(0L, 0b111L, a, a, screenshots = true, threshold = 10))   // 3 bits: demasiados para una captura
     }
+
+    // ---- Mapa del almacenamiento ----
+    @Test
+    fun `el mapa reparte el area de forma proporcional`() {
+        val area = Box(0f, 0f, 400f, 300f)
+        val items = listOf("a" to 50.0, "b" to 25.0, "c" to 15.0, "d" to 10.0)
+        val layout = Treemap.layout(items, area)
+        assertEquals(4, layout.size)
+        for ((item, r) in layout) {
+            val expected = items.first { it.first == item }.second / 100.0 * 400 * 300
+            assertTrue(kotlin.math.abs(r.w * r.h - expected) < expected * 0.01)
+            assertTrue(r.x >= -0.01f && r.y >= -0.01f && r.x + r.w <= 400.01f && r.y + r.h <= 300.01f)
+        }
+    }
+
+    @Test
+    fun `los tamanos de carpeta suman todo su contenido`() {
+        val files = listOf(
+            FileRec("/sdcard/DCIM/Camera/a.jpg", 100, 0),
+            FileRec("/sdcard/DCIM/Camera/b.jpg", 50, 0),
+            FileRec("/sdcard/DCIM/c.jpg", 10, 0),
+            FileRec("/sdcard/Download/d.zip", 40, 0),
+        )
+        val s = FolderSizes("/sdcard", files)
+        assertEquals(200L, s.total["/sdcard"])
+        assertEquals(160L, s.total["/sdcard/DCIM"])
+        assertEquals(150L, s.total["/sdcard/DCIM/Camera"])
+        val root = s.entries("/sdcard")
+        assertEquals(listOf("DCIM", "Download"), root.map { it.name })
+        // En DCIM: la subcarpeta Camera y los archivos sueltos (c.jpg)
+        val dcim = s.entries("/sdcard/DCIM")
+        assertEquals(2, dcim.size)
+        assertEquals(10L, dcim.single { it.isFiles }.bytes)
+    }
 }
