@@ -63,6 +63,8 @@ public sealed class StoreApp
     public string Publisher { get; set; } = "";
     public string Version { get; set; } = "";
     public string InstallLocation { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string PublisherDisplayName { get; set; } = "";
     public bool Selected { get; set; }
 }
 
@@ -683,7 +685,10 @@ public static class UninstallerService
     {
         var (code, output) = Util.PowerShell(
             "Get-AppxPackage | Where-Object { -not $_.IsFramework -and $_.SignatureKind -ne 'System' -and -not $_.NonRemovable } | " +
-            "Select-Object Name, PackageFullName, Publisher, Version, InstallLocation | ConvertTo-Json -Compress", 120_000);
+            "ForEach-Object { $m = $null; try { $m = (Get-AppxPackageManifest $_ -ErrorAction Stop).Package.Properties } catch {} ; " +
+            "[pscustomobject]@{ Name=$_.Name; PackageFullName=$_.PackageFullName; Publisher=$_.Publisher; Version=[string]$_.Version; " +
+            "InstallLocation=$_.InstallLocation; DisplayName=[string]$m.DisplayName; PublisherDisplayName=[string]$m.PublisherDisplayName } } | " +
+            "ConvertTo-Json -Compress", 180_000);
         var list = new List<StoreApp>();
         if (code != 0 || string.IsNullOrWhiteSpace(output)) return list;
         try
@@ -699,10 +704,24 @@ public static class UninstallerService
         catch { }
         foreach (var a in list)
         {
-            var pub = a.Publisher;
-            var cn = pub.IndexOf("CN=", StringComparison.Ordinal);
-            if (cn >= 0) { pub = pub[(cn + 3)..]; var comma = pub.IndexOf(','); if (comma > 0) pub = pub[..comma]; }
+            // Fabricante: el nombre del manifiesto; si no hay, el «CN=» del certificado (a veces es un código)
+            var pub = a.PublisherDisplayName;
+            if (string.IsNullOrWhiteSpace(pub) || pub.StartsWith("ms-resource:", StringComparison.OrdinalIgnoreCase))
+            {
+                pub = a.Publisher;
+                var cn = pub.IndexOf("CN=", StringComparison.Ordinal);
+                if (cn >= 0) { pub = pub[(cn + 3)..]; var comma = pub.IndexOf(','); if (comma > 0) pub = pub[..comma]; }
+            }
             a.Publisher = pub.Trim('"');
+            // Nombre: el del manifiesto; si es un recurso sin resolver, el nombre técnico sin el prefijo («4DF9E0F8.Netflix» → «Netflix»)
+            var name = a.DisplayName;
+            if (string.IsNullOrWhiteSpace(name) || name.StartsWith("ms-resource:", StringComparison.OrdinalIgnoreCase))
+            {
+                name = a.Name;
+                var dot = name.IndexOf('.');
+                if (dot > 0 && dot < name.Length - 1 && (name[..dot].Any(char.IsDigit) || name[..dot].Length >= 8)) name = name[(dot + 1)..];
+            }
+            a.Name = name;
         }
         return list.OrderBy(a => a.Name).ToList();
     }

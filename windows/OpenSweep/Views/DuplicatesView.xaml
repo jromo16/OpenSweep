@@ -49,7 +49,8 @@
         </DockPanel>
         <DataGrid x:Name="DupGrid" RowHeight="56" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
+                <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="52"
+                                        ElementStyle="{StaticResource GridCheckBox}" EditingElementStyle="{StaticResource GridCheckBox}"/>
                 <DataGridTextColumn Header="{l:T 'Grupo'}" Binding="{Binding Group}" Width="60" IsReadOnly="True"/>
                 <DataGridTemplateColumn Header="{l:T 'Vista'}" Width="70" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>

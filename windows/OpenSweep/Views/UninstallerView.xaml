@@ -83,7 +83,8 @@
                     <Grid>
                         <DataGrid x:Name="StoreGrid">
                             <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
+                                <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="52"
+                                        ElementStyle="{StaticResource GridCheckBox}" EditingElementStyle="{StaticResource GridCheckBox}"/>
                                 <DataGridTextColumn Header="{l:T 'Aplicación'}" Binding="{Binding Name}" Width="2*" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="{l:T 'Fabricante'}" Binding="{Binding Publisher}" Width="*" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="{l:T 'Versión'}" Binding="{Binding Version}" Width="120" IsReadOnly="True"/>

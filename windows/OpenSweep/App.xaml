@@ -83,6 +83,17 @@
                 </Setter>
             </Style>
 
+            <!-- ===== Casilla dentro de una tabla: sin el ancho mínimo de Fluent (si no, se corta) ===== -->
+            <Style x:Key="GridCheckBox" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+                <Setter Property="MinWidth" Value="0"/>
+                <Setter Property="MinHeight" Value="0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Margin" Value="0"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="IsHitTestVisible" Value="True"/>
+            </Style>
+
             <!-- ===== Listas (estilo macOS: limpias, separadores finos) ===== -->
             <Style x:Key="GridHeader" TargetType="DataGridColumnHeader">
                 <Setter Property="Background" Value="Transparent"/>

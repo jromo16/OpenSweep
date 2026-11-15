@@ -37,7 +37,8 @@
         </DockPanel>
         <DataGrid x:Name="Grid">
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
+                <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="52"
+                                        ElementStyle="{StaticResource GridCheckBox}" EditingElementStyle="{StaticResource GridCheckBox}"/>
                 <DataGridTextColumn Header="{l:T 'Tipo'}" Binding="{Binding Kind}" Width="130" IsReadOnly="True"/>
                 <DataGridTextColumn Header="{l:T 'Ubicación'}" Binding="{Binding Display}" Width="*" IsReadOnly="True"/>
                 <DataGridTextColumn Header="{l:T 'Tamaño'}" Binding="{Binding SizeText}" SortMemberPath="Size" Width="90" IsReadOnly="True"/>

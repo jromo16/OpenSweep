@@ -46,7 +46,8 @@
                 </DockPanel>
                 <DataGrid x:Name="IssuesGrid">
                     <DataGrid.Columns>
-                        <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
+                        <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="52"
+                                        ElementStyle="{StaticResource GridCheckBox}" EditingElementStyle="{StaticResource GridCheckBox}"/>
                         <DataGridTextColumn Header="{l:T 'Problema'}" Binding="{Binding ProblemText}" Width="220" IsReadOnly="True"/>
                         <DataGridTextColumn Header="{l:T 'Datos'}" Binding="{Binding Data}" Width="*" IsReadOnly="True"/>
                         <DataGridTextColumn Header="{l:T 'Clave del registro'}" Binding="{Binding Entry}" Width="*" IsReadOnly="True"/>

@@ -18,7 +18,8 @@
         <Grid>
             <DataGrid x:Name="UpdatesGrid">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="40"/>
+                    <DataGridCheckBoxColumn Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="52"
+                                        ElementStyle="{StaticResource GridCheckBox}" EditingElementStyle="{StaticResource GridCheckBox}"/>
                     <DataGridTextColumn Header="{l:T 'Programa'}" Binding="{Binding Name}" Width="2*" IsReadOnly="True"/>
                     <DataGridTextColumn Header="{l:T 'Id'}" Binding="{Binding Id}" Width="*" IsReadOnly="True"/>
                     <DataGridTextColumn Header="{l:T 'Instalada'}" Binding="{Binding Current}" Width="110" IsReadOnly="True"/>
